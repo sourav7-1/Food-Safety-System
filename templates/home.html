@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="py-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <p class="text-success fw-semibold mb-2">Inspection and risk analysis platform</p>
+            <h1 class="display-6 fw-bold">Smart Street Food Safety Inspection and Risk Analysis System</h1>
+            <p class="lead text-secondary mt-3">
+                A Flask and MySQL starter project for managing street food inspections,
+                vendor records, safety observations, and risk analysis workflows.
+            </p>
+            <a class="btn btn-success btn-lg mt-2" href="{{ url_for('home') }}">Dashboard Home</a>
+        </div>
+        <div class="col-lg-4">
+            <div class="border rounded-3 p-4 bg-light">
+                <h2 class="h5">Initial Modules</h2>
+                <ul class="mb-0">
+                    <li>Inspection records</li>
+                    <li>Vendor profiles</li>
+                    <li>Risk scoring</li>
+                    <li>Reports and analytics</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
