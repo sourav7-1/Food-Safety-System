@@ -1,0 +1,31 @@
+{% extends "admin/base.html" %}
+{% block content %}
+{% with heading="Vendors", description="Manage registered food businesses and vendor accounts.", create_url=url_for('admin.vendor_create'), create_label="Add Vendor", search_placeholder="Search by business, licence, name or email...", clear_url=url_for('admin.vendors') %}
+    {% include "admin/_list_header.html" %}
+{% endwith %}
+<div class="panel-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead><tr><th>Vendor</th><th>Business</th><th>Licence</th><th>Expiry</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+            {% for vendor in vendors %}
+                <tr>
+                    <td><strong>{{ vendor.user.full_name }}</strong><small>{{ vendor.user.email }}</small></td>
+                    <td>{{ vendor.business_name }}</td>
+                    <td><span class="code-chip">{{ vendor.license_number }}</span></td>
+                    <td>{{ vendor.license_expiry_date.strftime('%d %b %Y') if vendor.license_expiry_date else '—' }}</td>
+                    <td><span class="status-pill status-{{ vendor.user.status }}">{{ vendor.user.status }}</span></td>
+                    <td class="text-end table-actions">
+                        <a href="{{ url_for('admin.vendor_edit', vendor_id=vendor.vendor_id) }}" aria-label="Edit"><i class="fa-solid fa-pen"></i></a>
+                        <form action="{{ url_for('admin.vendor_delete', vendor_id=vendor.vendor_id) }}" method="post" onsubmit="return confirm('Delete this vendor?');">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button class="danger" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}<tr><td colspan="6" class="empty-state">No vendors found.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

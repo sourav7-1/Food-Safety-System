@@ -1,0 +1,18 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="form-heading"><a href="{{ url_for('admin.inspectors') }}"><i class="fa-solid fa-arrow-left"></i></a><div><p class="eyebrow mb-1">INSPECTOR MANAGEMENT</p><h2>{{ page_title }}</h2><p>Create or update an inspector account and field assignment.</p></div></div>
+<form method="post" class="panel-card entity-form">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">{% set user = inspector.user if inspector else none %}
+<div class="row g-3">
+<div class="col-md-6"><label>Full name</label><input class="form-control" name="full_name" value="{{ request.form.get('full_name', user.full_name if user else '') }}" required maxlength="120"></div>
+<div class="col-md-6"><label>Email</label><input class="form-control" type="email" name="email" value="{{ request.form.get('email', user.email if user else '') }}" required maxlength="150"></div>
+<div class="col-md-6"><label>Phone</label><input class="form-control" name="phone" value="{{ request.form.get('phone', user.phone if user and user.phone else '') }}" maxlength="30"></div>
+<div class="col-md-3"><label>Status</label><select class="form-select" name="status">{% for value in ['active','inactive','suspended'] %}<option value="{{ value }}" {{ 'selected' if request.form.get('status', user.status if user else 'active') == value }}>{{ value|title }}</option>{% endfor %}</select></div>
+<div class="col-md-3"><label>Password {{ '(optional)' if inspector }}</label><input class="form-control" type="password" name="password" minlength="8" {{ 'required' if not inspector }}></div>
+<div class="col-md-6"><label>Employee code</label><input class="form-control" name="employee_code" value="{{ request.form.get('employee_code', inspector.employee_code if inspector else '') }}" required maxlength="80"></div>
+<div class="col-md-6"><label>Designation</label><input class="form-control" name="designation" value="{{ request.form.get('designation', inspector.designation if inspector and inspector.designation else '') }}" maxlength="100"></div>
+<div class="col-12"><label>Assigned area</label><select class="form-select" name="assigned_area_id"><option value="">Unassigned</option>{% for area in areas %}<option value="{{ area.area_id }}" {{ 'selected' if request.form.get('assigned_area_id', inspector.assigned_area_id|string if inspector and inspector.assigned_area_id else '')|string == area.area_id|string }}>{{ area.area_name }} — {{ area.city }}</option>{% endfor %}</select></div>
+</div>
+<div class="form-actions"><a class="btn btn-light" href="{{ url_for('admin.inspectors') }}">Cancel</a><button class="btn btn-primary" type="submit">Save Inspector</button></div>
+</form>
+{% endblock %}

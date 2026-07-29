@@ -1,0 +1,38 @@
+<div class="sidebar-inner">
+    <a class="sidebar-brand" href="{{ url_for('dashboard.admin') }}">
+        <span class="brand-mark"><i class="fa-solid fa-shield-heart"></i></span>
+        <span><strong>FoodSafe</strong><small>ADMIN PORTAL</small></span>
+    </a>
+
+    <nav class="sidebar-nav">
+        <p class="sidebar-label">MAIN MENU</p>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'dashboard.admin' }}" href="{{ url_for('dashboard.admin') }}">
+            <i class="fa-solid fa-table-columns"></i><span>Dashboard</span>
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.vendor') }}" href="{{ url_for('admin.vendors') }}">
+            <i class="fa-solid fa-store"></i><span>Vendors</span>
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.stall') }}" href="{{ url_for('admin.stalls') }}">
+            <i class="fa-solid fa-shop"></i><span>Stalls</span>
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.inspector') }}" href="{{ url_for('admin.inspectors') }}">
+            <i class="fa-solid fa-user-shield"></i><span>Inspectors</span>
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.inspections' }}" href="{{ url_for('admin.inspections') }}"><i class="fa-solid fa-clipboard-check"></i><span>Inspections</span></a>
+        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.complaint') }}" href="{{ url_for('admin.complaints') }}"><i class="fa-solid fa-message"></i><span>Complaints</span></a>
+        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.review') }}" href="{{ url_for('admin.reviews') }}"><i class="fa-solid fa-star"></i><span>Reviews</span></a>
+
+        <p class="sidebar-label mt-4">INTELLIGENCE</p>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.risk_engine' }}" href="{{ url_for('admin.risk_engine') }}"><i class="fa-solid fa-triangle-exclamation"></i><span>Risk Engine</span></a>
+        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('reports.') }}" href="{{ url_for('reports.dashboard') }}"><i class="fa-solid fa-chart-line"></i><span>Reports & Analytics</span></a>
+
+        <p class="sidebar-label mt-4">SYSTEM</p>
+        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.user') }}" href="{{ url_for('admin.users') }}"><i class="fa-solid fa-users"></i><span>Users</span></a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.settings' }}" href="{{ url_for('admin.settings') }}"><i class="fa-solid fa-gear"></i><span>Settings</span></a>
+    </nav>
+
+    <form action="{{ url_for('auth.logout') }}" method="post" class="sidebar-logout">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span></button>
+    </form>
+</div>

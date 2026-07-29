@@ -6,6 +6,7 @@ use smart_street_food_safety;
 
 set foreign_key_checks = 0;
 
+drop table if exists street_food_stall_registrations;
 drop table if exists corrective_actions;
 drop table if exists reviews;
 drop table if exists complaints;
@@ -221,6 +222,7 @@ create table inspections (
   inspection_date datetime not null,
   overall_score decimal(6,2) null,
   risk_level enum('low', 'medium', 'high', 'critical') null,
+  reinspection_date date null,
   status enum('draft', 'submitted', 'approved', 'rejected') not null default 'draft',
   remarks text null,
   created_at timestamp not null default current_timestamp,
@@ -241,6 +243,7 @@ create index idx_inspections_inspector_id on inspections (inspector_id);
 create index idx_inspections_inspection_date on inspections (inspection_date);
 create index idx_inspections_status on inspections (status);
 create index idx_inspections_risk_level on inspections (risk_level);
+create index idx_inspections_reinspection_date on inspections (reinspection_date);
 create index idx_inspections_created_at on inspections (created_at);
 
 create table inspection_scores (
@@ -346,18 +349,18 @@ create table corrective_actions (
   due_date date not null,
   status enum('pending', 'in_progress', 'completed', 'overdue', 'cancelled') not null default 'pending',
   completion_notes text null,
+  evidence_path varchar(500) null,
   created_at timestamp not null default current_timestamp,
   completed_at timestamp null,
   primary key (action_id),
-  constraint chk_corrective_actions_source check (inspection_id is not null or complaint_id is not null),
   constraint fk_corrective_actions_inspection_id
     foreign key (inspection_id) references inspections (inspection_id)
     on update cascade
-    on delete set null,
+    on delete restrict,
   constraint fk_corrective_actions_complaint_id
     foreign key (complaint_id) references complaints (complaint_id)
     on update cascade
-    on delete set null,
+    on delete restrict,
   constraint fk_corrective_actions_assigned_to_vendor_id
     foreign key (assigned_to_vendor_id) references vendors (vendor_id)
     on update cascade
@@ -371,3 +374,41 @@ create index idx_corrective_actions_due_date on corrective_actions (due_date);
 create index idx_corrective_actions_status on corrective_actions (status);
 create index idx_corrective_actions_created_at on corrective_actions (created_at);
 create index idx_corrective_actions_completed_at on corrective_actions (completed_at);
+
+create table street_food_stall_registrations (
+  registration_id int not null auto_increment,
+  submitted_at datetime not null,
+  vendor_name varchar(150) not null,
+  phone_number varchar(30) not null,
+  stall_name varchar(200) not null,
+  area varchar(200) not null,
+  full_address varchar(500) not null,
+  food_category varchar(255) not null,
+  food_items varchar(500) not null,
+  average_price_bdt varchar(50) not null,
+  food_covered enum('Yes', 'No') not null,
+  clean_water_used enum('Yes', 'No') not null,
+  waste_bin_available enum('Yes', 'No') not null,
+  vendor_uses_gloves enum('Yes', 'No') not null,
+  payment_method varchar(255) null,
+  stall_photo_url varchar(1000) null,
+  additional_comments text null,
+  source_timestamp varchar(100) not null,
+  created_at timestamp not null default current_timestamp,
+  primary key (registration_id),
+  constraint chk_registrations_vendor_name_not_blank
+    check (char_length(trim(vendor_name)) > 0),
+  constraint chk_registrations_phone_not_blank
+    check (char_length(trim(phone_number)) > 0),
+  constraint chk_registrations_stall_name_not_blank
+    check (char_length(trim(stall_name)) > 0)
+) engine=innodb;
+
+create index idx_registrations_submitted_at
+  on street_food_stall_registrations (submitted_at);
+create index idx_registrations_phone_number
+  on street_food_stall_registrations (phone_number);
+create index idx_registrations_area
+  on street_food_stall_registrations (area);
+create index idx_registrations_stall_name
+  on street_food_stall_registrations (stall_name);

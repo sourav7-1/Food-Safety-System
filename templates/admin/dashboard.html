@@ -1,0 +1,136 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="dashboard-intro d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
+    <div>
+        <p class="eyebrow mb-1">OVERVIEW</p>
+        <h2 class="h3 fw-bold mb-1">Food Safety at a Glance</h2>
+        <p class="text-secondary mb-0">Live operational data from the MySQL safety system.</p>
+    </div>
+    <div class="date-chip"><i class="fa-regular fa-calendar me-2"></i><span id="dashboardDate"></span></div>
+</div>
+
+<section class="row g-3 kpi-grid">
+    {% set cards = [
+        ('Total Vendors', total_vendors, 'fa-store', 'purple', 'Registered operators'),
+        ('Total Stalls', total_stalls, 'fa-shop', 'blue', 'Across all areas'),
+        ("Today's Inspections", todays_inspections, 'fa-clipboard-check', 'green', 'Scheduled and completed'),
+        ('High Risk Stalls', high_risk_stalls, 'fa-triangle-exclamation', 'red', 'High and critical'),
+        ('Pending Complaints', pending_complaints, 'fa-message', 'orange', 'Open or under review'),
+        ('Average Hygiene Score', average_hygiene_score ~ '%', 'fa-chart-simple', 'teal', 'Latest inspections')
+    ] %}
+    {% for label, value, icon, color, note in cards %}
+    <div class="col-12 col-sm-6 col-xl-4 col-xxl-2">
+        <article class="kpi-card kpi-{{ color }}">
+            <div class="kpi-icon"><i class="fa-solid {{ icon }}"></i></div>
+            <div class="kpi-value">{{ value }}</div>
+            <div class="kpi-label">{{ label }}</div>
+            <div class="kpi-note">{{ note }}</div>
+        </article>
+    </div>
+    {% endfor %}
+</section>
+
+<section class="row g-4 mt-1">
+    <div class="col-12 col-xl-8">
+        <article class="panel-card h-100">
+            <div class="panel-header">
+                <div><h3>Inspection Activity</h3><p>Completed records during the last 7 days</p></div>
+                <span class="panel-badge">LIVE</span>
+            </div>
+            <div class="chart-wrap chart-wide"><canvas id="inspectionTrend"></canvas></div>
+        </article>
+    </div>
+    <div class="col-12 col-xl-4">
+        <article class="panel-card h-100">
+            <div class="panel-header">
+                <div><h3>Risk Distribution</h3><p>Latest stall classifications</p></div>
+            </div>
+            <div class="chart-wrap chart-doughnut"><canvas id="riskChart"></canvas></div>
+        </article>
+    </div>
+</section>
+
+<section class="panel-card mt-4">
+    <div class="panel-header">
+        <div><h3>Recent Inspections</h3><p>Latest updates from field inspectors</p></div>
+        <a class="btn btn-sm btn-soft" href="{{ url_for('admin.inspections') }}">View all</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead><tr><th>Stall</th><th>Date</th><th>Score</th><th>Risk</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for inspection in recent_inspections %}
+                <tr>
+                    <td><strong>{{ inspection.stall.stall_name }}</strong><small>{{ inspection.stall.stall_code }}</small></td>
+                    <td>{{ inspection.inspection_date.strftime('%d %b %Y, %I:%M %p') }}</td>
+                    <td><span class="score-value">{{ inspection.overall_score if inspection.overall_score is not none else '—' }}</span></td>
+                    <td><span class="status-pill risk-{{ inspection.risk_level or 'unknown' }}">{{ inspection.risk_level or 'unrated' }}</span></td>
+                    <td><span class="status-pill status-{{ inspection.status }}">{{ inspection.status }}</span></td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5" class="empty-state">No inspection records are available yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+<script>
+document.getElementById("dashboardDate").textContent = new Intl.DateTimeFormat("en", {
+    weekday: "short", day: "2-digit", month: "short", year: "numeric"
+}).format(new Date());
+
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.color = "#64748b";
+
+new Chart(document.getElementById("inspectionTrend"), {
+    type: "line",
+    data: {
+        labels: {{ trend_labels | tojson }},
+        datasets: [{
+            label: "Inspections",
+            data: {{ trend_values | tojson }},
+            borderColor: "#4f46e5",
+            backgroundColor: "rgba(79, 70, 229, .12)",
+            fill: true,
+            tension: .42,
+            pointRadius: 4,
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { display: false }, border: { display: false } },
+            y: { beginAtZero: true, ticks: { precision: 0 }, border: { display: false }, grid: { color: "#eef2f7" } }
+        }
+    }
+});
+
+new Chart(document.getElementById("riskChart"), {
+    type: "doughnut",
+    data: {
+        labels: ["Low", "Medium", "High", "Critical"],
+        datasets: [{
+            data: {{ [risk_counts.low, risk_counts.medium, risk_counts.high, risk_counts.critical] | tojson }},
+            backgroundColor: ["#22c55e", "#f59e0b", "#f97316", "#ef4444"],
+            borderWidth: 0,
+            spacing: 3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "70%",
+        plugins: { legend: { position: "bottom", labels: { usePointStyle: true, padding: 18 } } }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block head %}<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"><link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}">{% endblock %}
+{% block content %}
+<div class="portal-shell">
+    <div class="portal-titlebar">
+        <div><span>VENDOR PORTAL</span><h1>{% block portal_title %}{% endblock %}</h1><p>{% block portal_subtitle %}{% endblock %}</p></div>
+        <nav><a href="{{ url_for('vendor_portal.dashboard') }}"><i class="fa-solid fa-gauge-high"></i> Dashboard</a><a href="{{ url_for('vendor_portal.complaints') }}"><i class="fa-regular fa-message"></i> Complaints</a></nav>
+    </div>
+    {% block portal_content %}{% endblock %}
+</div>
+{% endblock %}

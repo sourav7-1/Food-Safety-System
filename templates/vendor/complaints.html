@@ -1,0 +1,5 @@
+{% extends "vendor/base.html" %}
+{% block title %}Complaints · Vendor Portal{% endblock %}
+{% block portal_title %}Stall Complaints{% endblock %}
+{% block portal_subtitle %}Review customer concerns across all your stalls.{% endblock %}
+{% block portal_content %}<section class="portal-card"><div class="table-responsive"><table class="table portal-table mb-0"><thead><tr><th>Stall</th><th>Complaint</th><th>Type</th><th>Submitted</th><th>Status</th></tr></thead><tbody>{% for complaint in complaints %}<tr><td>{{ complaint.stall.stall_name }}</td><td><strong>{{ complaint.title }}</strong><small>{{ complaint.description }}</small></td><td>{{ complaint.complaint_type.type_name }}</td><td>{{ complaint.submitted_at.strftime('%d %b %Y') }}</td><td><span class="risk-badge status-{{ complaint.status }}">{{ complaint.status|replace('_',' ') }}</span></td></tr>{% else %}<tr><td colspan="5" class="text-center text-secondary">No complaints found.</td></tr>{% endfor %}</tbody></table></div></section>{% endblock %}

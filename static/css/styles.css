@@ -5,3 +5,127 @@ body {
 .navbar-brand {
     letter-spacing: 0;
 }
+
+.auth-card {
+    max-width: 34rem;
+}
+
+.login-shell {
+    display: grid;
+    grid-template-columns: minmax(18rem, .9fr) minmax(22rem, 1.1fr);
+    max-width: 64rem;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.25rem;
+    background: #fff;
+    box-shadow: 0 1.5rem 4rem rgba(15, 23, 42, .1);
+}
+
+.login-role-panel {
+    padding: 3rem;
+    color: #fff;
+    background:
+        radial-gradient(circle at 100% 0, rgba(52, 211, 153, .26), transparent 35%),
+        linear-gradient(145deg, #052e2b, #0f5132);
+}
+
+.login-role-panel h1 {
+    margin: .65rem 0 1rem;
+    font-size: clamp(1.7rem, 3vw, 2.35rem);
+    line-height: 1.14;
+}
+
+.login-role-panel > p {
+    color: rgba(255, 255, 255, .76);
+    line-height: 1.65;
+}
+
+.login-eyebrow {
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .15em;
+}
+
+.login-role-list {
+    display: grid;
+    gap: .7rem;
+    margin-top: 2rem;
+}
+
+.login-role-item {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: .85rem;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: .85rem;
+    background: rgba(255, 255, 255, .07);
+}
+
+.role-symbol {
+    display: grid;
+    width: 2.35rem;
+    height: 2.35rem;
+    flex: 0 0 2.35rem;
+    place-items: center;
+    border-radius: .7rem;
+    color: #052e2b;
+    background: #a7f3d0;
+    font-weight: 800;
+}
+
+.login-role-item strong,
+.login-role-item small {
+    display: block;
+}
+
+.login-role-item small {
+    margin-top: .12rem;
+    color: rgba(255, 255, 255, .65);
+    line-height: 1.35;
+}
+
+.login-form-panel {
+    padding: 3rem;
+}
+
+.login-form-panel .form-control {
+    border-color: #d8e0e8;
+    font-size: 1rem;
+}
+
+.login-form-panel .form-control:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 .2rem rgba(25, 135, 84, .13);
+}
+
+.admin-login-note {
+    margin-top: 1.5rem;
+    padding: .9rem 1rem;
+    border-left: .25rem solid #0d6efd;
+    border-radius: .45rem;
+    color: #334155;
+    background: #eff6ff;
+    font-size: .9rem;
+}
+
+.admin-login-note strong {
+    display: block;
+    color: #1e3a8a;
+}
+
+@media (max-width: 767.98px) {
+    .login-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .login-role-panel,
+    .login-form-panel {
+        padding: 2rem 1.4rem;
+    }
+}
+
+.dashboard-card {
+    max-width: 58rem;
+    margin-inline: auto;
+}

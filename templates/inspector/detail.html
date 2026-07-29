@@ -1,0 +1,42 @@
+{% extends "inspector/base.html" %}
+
+{% block title %}Inspection Result · Street Food Safety{% endblock %}
+{% block inspector_title %}Inspection Result{% endblock %}
+{% block inspector_subtitle %}MySQL-calculated hygiene and risk outcome for {{ inspection.stall.stall_name }}.{% endblock %}
+{% block inspector_action %}
+<a class="btn btn-light border" href="{{ url_for('inspection_workflow.inspections') }}"><i class="fa-solid fa-list me-2"></i>All Inspections</a>
+{% endblock %}
+
+{% block inspector_content %}
+<section class="result-hero risk-border-{{ inspection.risk_level }}">
+    <div>
+        <span class="result-check"><i class="fa-solid fa-check"></i></span>
+        <p>SUBMISSION COMPLETE</p>
+        <h2>{{ inspection.stall.stall_name }}</h2>
+        <small>{{ inspection.inspection_date.strftime('%d %B %Y at %I:%M %p') }} · {{ inspection.stall.stall_code }}</small>
+    </div>
+    <span class="inspection-pill risk-{{ inspection.risk_level }}">{{ inspection.risk_level }} risk</span>
+</section>
+
+<section class="row g-3 result-grid">
+    <div class="col-6 col-lg-3"><article><i class="fa-solid fa-percent score"></i><small>Total score</small><strong>{{ inspection.overall_score }}%</strong><span>Trigger calculated</span></article></div>
+    <div class="col-6 col-lg-3"><article><i class="fa-solid fa-award grade"></i><small>Hygiene grade</small><strong>{{ grade }}</strong><span>MySQL function</span></article></div>
+    <div class="col-6 col-lg-3"><article><i class="fa-solid fa-triangle-exclamation risk"></i><small>Risk level</small><strong class="text-capitalize">{{ inspection.risk_level }}</strong><span>Stored procedure</span></article></div>
+    <div class="col-6 col-lg-3"><article><i class="fa-regular fa-calendar reinspection"></i><small>Next reinspection</small><strong class="result-date">{{ inspection.reinspection_date.strftime('%d %b %Y') if inspection.reinspection_date else 'Not set' }}</strong><span>Automatic schedule</span></article></div>
+</section>
+
+<section class="inspector-panel p-0 overflow-hidden mt-4">
+    <div class="criteria-header"><div class="section-heading mb-0"><span><i class="fa-solid fa-list-check"></i></span><div><h2>Submitted scores</h2><p>Complete criterion-level inspection record.</p></div></div></div>
+    <div class="table-responsive">
+        <table class="table criteria-table align-middle mb-0">
+            <thead><tr><th>Criterion</th><th>Score</th><th>Maximum</th><th>Comments</th></tr></thead>
+            <tbody>
+            {% for item in inspection.scores %}
+                <tr><td><strong>{{ item.criterion.criteria_name }}</strong></td><td><strong>{{ item.score }}</strong></td><td>{{ item.criterion.max_score }}</td><td>{{ item.comments or '—' }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if inspection.remarks %}<div class="result-remarks"><strong>Overall remarks</strong><p>{{ inspection.remarks }}</p></div>{% endif %}
+</section>
+{% endblock %}

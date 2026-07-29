@@ -1,0 +1,41 @@
+{% extends "inspector/base.html" %}
+
+{% block title %}Assigned Inspections · Street Food Safety{% endblock %}
+{% block inspector_title %}Assigned Inspections{% endblock %}
+{% block inspector_subtitle %}
+Review your inspection history{% if inspector.assigned_area %} for {{ inspector.assigned_area.area_name }}{% endif %}.
+{% endblock %}
+{% block inspector_action %}
+<a class="btn btn-success inspector-primary" href="{{ url_for('inspection_workflow.create') }}">
+    <i class="fa-solid fa-plus me-2"></i>New Inspection
+</a>
+{% endblock %}
+
+{% block inspector_content %}
+<div class="inspector-panel p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table inspection-table align-middle mb-0">
+            <thead>
+                <tr><th>Stall</th><th>Inspection date</th><th>Score</th><th>Risk</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+            {% for inspection in inspections %}
+                <tr>
+                    <td>
+                        <strong>{{ inspection.stall.stall_name }}</strong>
+                        <small>{{ inspection.stall.stall_code }} · {{ inspection.stall.area.area_name }}</small>
+                    </td>
+                    <td>{{ inspection.inspection_date.strftime('%d %b %Y, %I:%M %p') }}</td>
+                    <td><strong>{{ inspection.overall_score if inspection.overall_score is not none else '—' }}{% if inspection.overall_score is not none %}%{% endif %}</strong></td>
+                    <td><span class="inspection-pill risk-{{ inspection.risk_level or 'unrated' }}">{{ inspection.risk_level or 'unrated' }}</span></td>
+                    <td><span class="inspection-pill status-{{ inspection.status }}">{{ inspection.status }}</span></td>
+                    <td class="text-end"><a class="view-button" href="{{ url_for('inspection_workflow.detail', inspection_id=inspection.inspection_id) }}">View <i class="fa-solid fa-arrow-right ms-1"></i></a></td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="inspection-empty"><i class="fa-regular fa-clipboard d-block mb-3"></i>No assigned inspections yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

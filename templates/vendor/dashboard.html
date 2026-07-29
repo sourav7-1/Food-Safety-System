@@ -1,0 +1,20 @@
+{% extends "vendor/base.html" %}
+{% block title %}Vendor Dashboard · Street Food Safety{% endblock %}
+{% block portal_title %}{{ vendor.business_name }}{% endblock %}
+{% block portal_subtitle %}Monitor your stalls, safety performance and required actions.{% endblock %}
+{% block portal_content %}
+<div class="row g-3 mb-4">
+    <div class="col-sm-4"><div class="portal-kpi"><i class="fa-solid fa-shop"></i><small>Stalls</small><strong>{{ snapshots|length }}</strong></div></div>
+    <div class="col-sm-4"><div class="portal-kpi warning"><i class="fa-solid fa-list-check"></i><small>Pending actions</small><strong>{{ pending_actions }}</strong></div></div>
+    <div class="col-sm-4"><div class="portal-kpi danger"><i class="fa-regular fa-message"></i><small>Open complaints</small><strong>{{ open_complaints }}</strong></div></div>
+</div>
+<div class="row g-4">
+{% for snapshot in snapshots %}
+<div class="col-md-6"><article class="portal-card stall-card">
+    <div class="d-flex justify-content-between gap-3"><div><span class="code">{{ snapshot.stall.stall_code }}</span><h2>{{ snapshot.stall.stall_name }}</h2><p><i class="fa-solid fa-location-dot me-1"></i>{{ snapshot.stall.area.area_name }}</p></div><span class="risk-badge risk-{{ snapshot.inspection.risk_level if snapshot.inspection else 'unrated' }}">{{ snapshot.inspection.risk_level if snapshot.inspection else 'unrated' }}</span></div>
+    <div class="stall-metrics"><div><small>Hygiene score</small><strong>{{ snapshot.inspection.overall_score ~ '%' if snapshot.inspection and snapshot.inspection.overall_score is not none else '—' }}</strong></div><div><small>Grade</small><strong>{{ snapshot.grade or '—' }}</strong></div><div><small>Reinspection</small><strong class="date">{{ snapshot.inspection.reinspection_date.strftime('%d %b %Y') if snapshot.inspection and snapshot.inspection.reinspection_date else 'Not set' }}</strong></div></div>
+    <a class="portal-link" href="{{ url_for('vendor_portal.stall_profile', stall_id=snapshot.stall.stall_id) }}">Open stall profile <i class="fa-solid fa-arrow-right"></i></a>
+</article></div>
+{% else %}<div class="col-12"><div class="portal-card empty">No stalls are assigned to this vendor.</div></div>{% endfor %}
+</div>
+{% endblock %}

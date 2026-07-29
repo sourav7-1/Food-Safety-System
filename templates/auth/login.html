@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Portal Login · Street Food Safety{% endblock %}
+
+{% block content %}
+<div class="login-shell mx-auto">
+    <section class="login-role-panel">
+        <span class="login-eyebrow">ONE SECURE LOGIN</span>
+        <h1>Choose the account that was assigned to you</h1>
+        <p>
+            Admin, inspector, vendor and customer accounts all use this same
+            login form. Your saved role automatically opens the correct portal.
+        </p>
+
+        <div class="login-role-list">
+            <div class="login-role-item role-admin">
+                <span class="role-symbol">A</span>
+                <div><strong>Administrator</strong><small>Admin dashboard, users, complaints and reports</small></div>
+            </div>
+            <div class="login-role-item role-inspector">
+                <span class="role-symbol">I</span>
+                <div><strong>Inspector</strong><small>Assigned stalls and inspection submission</small></div>
+            </div>
+            <div class="login-role-item role-vendor">
+                <span class="role-symbol">V</span>
+                <div><strong>Vendor</strong><small>Stall profile, food items and corrective actions</small></div>
+            </div>
+            <div class="login-role-item role-customer">
+                <span class="role-symbol">C</span>
+                <div><strong>Customer</strong><small>Search stalls, reviews and complaint tracking</small></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="login-form-panel">
+        <div class="mb-4">
+            <span class="login-eyebrow text-success">PORTAL ACCESS</span>
+            <h2 class="h3 mb-2">Sign in to your account</h2>
+            <p class="text-secondary mb-0">
+                Enter the email and password belonging to your role.
+            </p>
+        </div>
+
+        <form method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label class="form-label" for="email">Email address</label>
+                <input class="form-control form-control-lg" id="email" name="email"
+                       type="email" value="{{ request.form.get('email', '') }}"
+                       autocomplete="email" placeholder="name@example.com" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="password">Password</label>
+                <input class="form-control form-control-lg" id="password"
+                       name="password" type="password"
+                       autocomplete="current-password"
+                       placeholder="Enter your password" required>
+            </div>
+            <div class="form-check mb-4">
+                <input class="form-check-input" id="remember" name="remember"
+                       type="checkbox">
+                <label class="form-check-label" for="remember">
+                    Keep me signed in
+                </label>
+            </div>
+            <button class="btn btn-success btn-lg w-100" type="submit">
+                Continue to my dashboard
+            </button>
+        </form>
+
+        <div class="admin-login-note">
+            <strong>Logging in as Admin?</strong>
+            Use the administrator email and password created by the system
+            owner. The system will recognize the Admin role automatically.
+        </div>
+
+        <p class="text-center text-secondary mt-4 mb-0">
+            New customer?
+            <a href="{{ url_for('auth.register') }}">Create a customer account</a>
+        </p>
+    </section>
+</div>
+{% endblock %}

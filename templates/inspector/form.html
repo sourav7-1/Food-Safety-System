@@ -1,0 +1,124 @@
+{% extends "inspector/base.html" %}
+
+{% block title %}Create Inspection · Street Food Safety{% endblock %}
+{% block inspector_title %}Create Inspection{% endblock %}
+{% block inspector_subtitle %}Score every active hygiene criterion before submitting for MySQL risk analysis.{% endblock %}
+{% block inspector_action %}
+<a class="btn btn-light border" href="{{ url_for('inspection_workflow.inspections') }}"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+{% endblock %}
+
+{% block inspector_content %}
+<form method="post" id="inspectionForm">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <section class="inspector-panel mb-4">
+        <div class="section-heading"><span>1</span><div><h2>Inspection details</h2><p>Select an active stall in your assigned area.</p></div></div>
+        {% if not stalls %}
+            <div class="alert alert-warning mb-0">No active stalls are available in your assigned area.</div>
+        {% else %}
+        <div class="row g-3">
+            <div class="col-md-7">
+                <label class="form-label" for="stall_id">Assigned stall</label>
+                <select class="form-select" id="stall_id" name="stall_id" required>
+                    <option value="">Select a stall</option>
+                    {% for stall in stalls %}
+                    <option value="{{ stall.stall_id }}" {{ 'selected' if request.form.get('stall_id')|string == stall.stall_id|string }}>
+                        {{ stall.stall_name }} — {{ stall.stall_code }} ({{ stall.area.area_name }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label" for="inspection_date">Inspection date and time</label>
+                <input class="form-control" id="inspection_date" name="inspection_date" type="datetime-local"
+                       value="{{ request.form.get('inspection_date', default_inspection_date) }}" required>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="remarks">Overall remarks <span>(optional)</span></label>
+                <textarea class="form-control" id="remarks" name="remarks" rows="2" maxlength="2000"
+                          placeholder="General observations about this inspection...">{{ request.form.get('remarks', '') }}</textarea>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="inspector-panel p-0 overflow-hidden">
+        <div class="criteria-header">
+            <div class="section-heading mb-0"><span>2</span><div><h2>Hygiene criteria</h2><p>Scores are validated against each configured maximum.</p></div></div>
+            <div class="live-total"><small>Entered score</small><strong><span id="enteredScore">0</span> / <span id="maximumScore">0</span></strong></div>
+        </div>
+        <div class="table-responsive">
+            <table class="table criteria-table align-middle mb-0">
+                <thead><tr><th>Criterion</th><th class="text-center">Maximum</th><th>Score</th><th>Comments</th></tr></thead>
+                <tbody>
+                {% for criterion in criteria %}
+                    <tr>
+                        <td>
+                            <strong>{{ criterion.criteria_name }}</strong>
+                            {% if criterion.description %}<small>{{ criterion.description }}</small>{% endif %}
+                        </td>
+                        <td class="text-center"><span class="max-score">{{ criterion.max_score }}</span></td>
+                        <td class="score-column">
+                            <input class="form-control criterion-score" type="number"
+                                   name="score_{{ criterion.criteria_id }}"
+                                   value="{{ request.form.get('score_' ~ criterion.criteria_id, '') }}"
+                                   min="0" max="{{ criterion.max_score }}" step="0.01"
+                                   data-max="{{ criterion.max_score }}" required aria-label="Score for {{ criterion.criteria_name }}">
+                            <div class="invalid-feedback">Enter 0–{{ criterion.max_score }}.</div>
+                        </td>
+                        <td>
+                            <input class="form-control" name="comments_{{ criterion.criteria_id }}"
+                                   value="{{ request.form.get('comments_' ~ criterion.criteria_id, '') }}"
+                                   maxlength="255" placeholder="Observation or evidence..." aria-label="Comments for {{ criterion.criteria_name }}">
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="inspection-empty">No active criteria are configured.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="submission-bar">
+            <div><i class="fa-solid fa-database me-2"></i>Final score and risk are calculated inside MySQL.</div>
+            <button class="btn btn-success inspector-primary" type="submit" {{ 'disabled' if not stalls or not criteria }}>
+                <i class="fa-solid fa-paper-plane me-2"></i>Submit Inspection
+            </button>
+        </div>
+    </section>
+</form>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(() => {
+    const form = document.getElementById("inspectionForm");
+    const scoreInputs = [...document.querySelectorAll(".criterion-score")];
+    const entered = document.getElementById("enteredScore");
+    const maximum = document.getElementById("maximumScore");
+    const totalMaximum = scoreInputs.reduce((sum, input) => sum + Number(input.dataset.max), 0);
+    maximum.textContent = totalMaximum.toFixed(2).replace(/\.00$/, "");
+
+    function updatePreview() {
+        let total = 0;
+        scoreInputs.forEach(input => {
+            const value = Number(input.value);
+            const max = Number(input.dataset.max);
+            const invalid = input.value !== "" && (!Number.isFinite(value) || value < 0 || value > max);
+            input.classList.toggle("is-invalid", invalid);
+            if (!invalid && input.value !== "") total += value;
+        });
+        entered.textContent = total.toFixed(2).replace(/\.00$/, "");
+    }
+    scoreInputs.forEach(input => input.addEventListener("input", updatePreview));
+    form.addEventListener("submit", event => {
+        updatePreview();
+        if (!form.checkValidity() || form.querySelector(".is-invalid")) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add("was-validated");
+    });
+    updatePreview();
+})();
+</script>
+{% endblock %}

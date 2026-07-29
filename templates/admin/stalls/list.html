@@ -1,0 +1,13 @@
+{% extends "admin/base.html" %}
+{% block content %}
+{% with heading="Stalls", description="Manage food stall locations, ownership and operational status.", create_url=url_for('admin.stall_create'), create_label="Add Stall", search_placeholder="Search by stall, code, vendor or area...", clear_url=url_for('admin.stalls') %}
+    {% include "admin/_list_header.html" %}
+{% endwith %}
+<div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0">
+<thead><tr><th>Stall</th><th>Vendor</th><th>Area</th><th>Address</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+<tbody>{% for stall in stalls %}<tr>
+<td><strong>{{ stall.stall_name }}</strong><small>{{ stall.stall_code }}</small></td><td>{{ stall.vendor.business_name }}</td><td>{{ stall.area.area_name }}<small>{{ stall.area.city }}</small></td><td class="address-cell">{{ stall.address }}</td><td><span class="status-pill status-{{ stall.status }}">{{ stall.status }}</span></td>
+<td class="text-end table-actions"><a href="{{ url_for('admin.stall_edit', stall_id=stall.stall_id) }}"><i class="fa-solid fa-pen"></i></a><form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" onsubmit="return confirm('Delete this stall?');"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="danger"><i class="fa-solid fa-trash"></i></button></form></td>
+</tr>{% else %}<tr><td colspan="6" class="empty-state">No stalls found.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

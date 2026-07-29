@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="form-heading"><a href="{{ url_for('admin.stalls') }}"><i class="fa-solid fa-arrow-left"></i></a><div><p class="eyebrow mb-1">STALL MANAGEMENT</p><h2>{{ page_title }}</h2><p>Configure ownership, location and operating details.</p></div></div>
+<form method="post" class="panel-card entity-form">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+{% if not vendors or not areas %}<div class="alert alert-warning">At least one vendor and one area are required before a stall can be created.</div>{% endif %}
+<div class="row g-3">
+<div class="col-md-6"><label>Stall name</label><input class="form-control" name="stall_name" value="{{ request.form.get('stall_name', stall.stall_name if stall else '') }}" required maxlength="150"></div>
+<div class="col-md-6"><label>Stall code</label><input class="form-control" name="stall_code" value="{{ request.form.get('stall_code', stall.stall_code if stall else '') }}" required maxlength="80"></div>
+<div class="col-md-6"><label>Vendor</label><select class="form-select" name="vendor_id" required><option value="">Select vendor</option>{% for vendor in vendors %}<option value="{{ vendor.vendor_id }}" {{ 'selected' if request.form.get('vendor_id', stall.vendor_id|string if stall else '')|string == vendor.vendor_id|string }}>{{ vendor.business_name }}</option>{% endfor %}</select></div>
+<div class="col-md-6"><label>Area</label><select class="form-select" name="area_id" required><option value="">Select area</option>{% for area in areas %}<option value="{{ area.area_id }}" {{ 'selected' if request.form.get('area_id', stall.area_id|string if stall else '')|string == area.area_id|string }}>{{ area.area_name }} — {{ area.city }}</option>{% endfor %}</select></div>
+<div class="col-12"><label>Full address</label><input class="form-control" name="address" value="{{ request.form.get('address', stall.address if stall else '') }}" required maxlength="255"></div>
+<div class="col-md-4"><label>Latitude</label><input class="form-control" name="latitude" value="{{ request.form.get('latitude', stall.latitude if stall and stall.latitude is not none else '') }}"></div>
+<div class="col-md-4"><label>Longitude</label><input class="form-control" name="longitude" value="{{ request.form.get('longitude', stall.longitude if stall and stall.longitude is not none else '') }}"></div>
+<div class="col-md-4"><label>Status</label><select class="form-select" name="status">{% for value in ['active','closed','suspended'] %}<option value="{{ value }}" {{ 'selected' if request.form.get('status', stall.status if stall else 'active') == value }}>{{ value|title }}</option>{% endfor %}</select></div>
+</div>
+<div class="form-actions"><a class="btn btn-light" href="{{ url_for('admin.stalls') }}">Cancel</a><button class="btn btn-primary" type="submit" {{ 'disabled' if not vendors or not areas }}>Save Stall</button></div>
+</form>
+{% endblock %}

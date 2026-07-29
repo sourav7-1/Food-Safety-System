@@ -1,0 +1,11 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="list-heading"><div><p class="eyebrow mb-1">SYSTEM CONFIGURATION</p><h2>Settings</h2><p>Reference data currently used by forms and the MySQL risk engine.</p></div></div>
+<div class="row g-4">
+  <div class="col-xl-6"><section class="panel-card"><h3>Inspection criteria</h3><div class="table-responsive"><table class="table admin-table"><thead><tr><th>Criterion</th><th>Maximum</th><th>Weight</th><th>Active</th></tr></thead><tbody>{% for item in criteria %}<tr><td>{{ item.criteria_name }}</td><td>{{ item.max_score }}</td><td>{{ item.weight }}</td><td>{{ 'Yes' if item.is_active else 'No' }}</td></tr>{% endfor %}</tbody></table></div></section></div>
+  <div class="col-xl-6"><section class="panel-card"><h3>Complaint types</h3><div class="table-responsive"><table class="table admin-table"><thead><tr><th>Type</th><th>Severity</th></tr></thead><tbody>{% for item in complaint_types %}<tr><td>{{ item.type_name }}</td><td><span class="status-pill risk-{{ item.severity_level }}">{{ item.severity_level }}</span></td></tr>{% endfor %}</tbody></table></div></section></div>
+  <div class="col-xl-4"><section class="panel-card"><h3>Roles</h3><p>{{ roles|map(attribute='role_name')|join(', ') }}</p></section></div>
+  <div class="col-xl-4"><section class="panel-card"><h3>Food categories</h3><p>{{ categories|map(attribute='category_name')|join(', ') }}</p></section></div>
+  <div class="col-xl-4"><section class="panel-card"><h3>Areas</h3><p>{{ areas|length }} configured</p></section></div>
+</div>
+{% endblock %}

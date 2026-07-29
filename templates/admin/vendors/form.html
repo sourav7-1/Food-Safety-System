@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="form-heading">
+    <a href="{{ url_for('admin.vendors') }}"><i class="fa-solid fa-arrow-left"></i></a>
+    <div><p class="eyebrow mb-1">VENDOR MANAGEMENT</p><h2>{{ page_title }}</h2><p>Create or update the vendor account and licence profile.</p></div>
+</div>
+<form method="post" class="panel-card entity-form">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    {% set user = vendor.user if vendor else none %}
+    <h3>Account information</h3>
+    <div class="row g-3">
+        <div class="col-md-6"><label>Full name</label><input class="form-control" name="full_name" value="{{ request.form.get('full_name', user.full_name if user else '') }}" required maxlength="120"></div>
+        <div class="col-md-6"><label>Email</label><input class="form-control" type="email" name="email" value="{{ request.form.get('email', user.email if user else '') }}" required maxlength="150"></div>
+        <div class="col-md-6"><label>Phone</label><input class="form-control" name="phone" value="{{ request.form.get('phone', user.phone if user and user.phone else '') }}" maxlength="30"></div>
+        <div class="col-md-3"><label>Status</label><select class="form-select" name="status">{% for value in ['active','inactive','suspended'] %}<option value="{{ value }}" {{ 'selected' if request.form.get('status', user.status if user else 'active') == value }}>{{ value|title }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><label>Password {{ '(optional)' if vendor }}</label><input class="form-control" type="password" name="password" minlength="8" {{ 'required' if not vendor }}></div>
+    </div>
+    <hr>
+    <h3>Business and licence</h3>
+    <div class="row g-3">
+        <div class="col-md-6"><label>Business name</label><input class="form-control" name="business_name" value="{{ request.form.get('business_name', vendor.business_name if vendor else '') }}" required maxlength="150"></div>
+        <div class="col-md-6"><label>Licence number</label><input class="form-control" name="license_number" value="{{ request.form.get('license_number', vendor.license_number if vendor else '') }}" required maxlength="80"></div>
+        <div class="col-md-6"><label>Licence expiry date</label><input class="form-control" type="date" name="license_expiry_date" value="{{ request.form.get('license_expiry_date', vendor.license_expiry_date.isoformat() if vendor and vendor.license_expiry_date else '') }}"></div>
+        <div class="col-md-6"><label>National ID</label><input class="form-control" name="national_id" value="{{ request.form.get('national_id', vendor.national_id if vendor and vendor.national_id else '') }}" maxlength="80"></div>
+    </div>
+    <div class="form-actions"><a class="btn btn-light" href="{{ url_for('admin.vendors') }}">Cancel</a><button class="btn btn-primary" type="submit">Save Vendor</button></div>
+</form>
+{% endblock %}

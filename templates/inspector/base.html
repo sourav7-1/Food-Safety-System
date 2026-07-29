@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inspector.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="inspector-shell">
+    <header class="inspector-header">
+        <div>
+            <span class="inspector-eyebrow"><i class="fa-solid fa-user-shield me-2"></i>INSPECTOR WORKSPACE</span>
+            <h1>{% block inspector_title %}{% endblock %}</h1>
+            <p>{% block inspector_subtitle %}{% endblock %}</p>
+        </div>
+        {% block inspector_action %}{% endblock %}
+    </header>
+    {% block inspector_content %}{% endblock %}
+</div>
+{% endblock %}

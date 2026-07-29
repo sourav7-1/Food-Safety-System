@@ -1,0 +1,15 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="list-heading">
+  <div><p class="eyebrow mb-1">FIELD OPERATIONS</p><h2>Inspections</h2><p>Review submitted scores, risk decisions and reinspection dates.</p></div>
+  <form class="search-form" method="get">
+    <select class="form-select" name="status"><option value="">All statuses</option>{% for value in ['draft','submitted','approved','rejected'] %}<option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|replace('_',' ')|title }}</option>{% endfor %}</select>
+    <select class="form-select" name="risk"><option value="">All risks</option>{% for value in ['low','medium','high','critical'] %}<option value="{{ value }}" {{ 'selected' if selected_risk == value }}>{{ value|title }}</option>{% endfor %}</select>
+    <button class="btn btn-primary">Filter</button>
+  </form>
+</div>
+<div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0">
+  <thead><tr><th>ID</th><th>Stall</th><th>Inspector</th><th>Date</th><th>Score</th><th>Risk</th><th>Reinspection</th><th>Status</th></tr></thead>
+  <tbody>{% for inspection in inspections %}<tr><td>#{{ inspection.inspection_id }}</td><td><strong>{{ inspection.stall.stall_name }}</strong><small>{{ inspection.stall.stall_code }}</small></td><td>{{ inspection.inspector.user.full_name }}</td><td>{{ inspection.inspection_date.strftime('%d %b %Y, %H:%M') }}</td><td>{{ inspection.overall_score if inspection.overall_score is not none else '—' }}{% if inspection.overall_score is not none %}%{% endif %}</td><td><span class="status-pill risk-{{ inspection.risk_level or 'unrated' }}">{{ inspection.risk_level or 'unrated' }}</span></td><td>{{ inspection.reinspection_date.strftime('%d %b %Y') if inspection.reinspection_date else '—' }}</td><td><span class="status-pill status-{{ inspection.status }}">{{ inspection.status }}</span></td></tr>{% else %}<tr><td colspan="8" class="empty-state">No inspections found.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

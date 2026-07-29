@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}{{ dashboard_title }} · Street Food Safety{% endblock %}
+
+{% block content %}
+<section class="dashboard-card border rounded-3 bg-white shadow-sm p-4 p-md-5">
+    <span class="badge text-bg-success mb-3">{{ dashboard_role }}</span>
+    <h1 class="h2">{{ dashboard_title }}</h1>
+    <p class="lead text-secondary mb-4">{{ dashboard_description }}</p>
+
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Signed in as</dt>
+        <dd class="col-sm-9">{{ current_user.full_name }}</dd>
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">{{ current_user.email }}</dd>
+        <dt class="col-sm-3">Account status</dt>
+        <dd class="col-sm-9"><span class="badge text-bg-success">{{ current_user.status }}</span></dd>
+    </dl>
+</section>
+{% endblock %}

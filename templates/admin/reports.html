@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="dashboard-intro d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
+    <div><p class="eyebrow mb-1">MYSQL ANALYTICS</p><h2 class="h3 fw-bold mb-1">Food Safety Reports</h2><p class="text-secondary mb-0">Inspection, risk, hygiene and complaint intelligence.</p></div>
+    <div class="date-chip"><i class="fa-solid fa-rotate me-2"></i>Generated {{ generated_at.strftime('%d %b %Y') }}</div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-xl-8"><section class="panel-card h-100"><div class="panel-header"><div><h3>Inspection Trend</h3><p>Daily inspections during the last 30 days</p></div></div><div class="report-chart report-wide"><canvas id="inspectionTrendReport"></canvas></div></section></div>
+    <div class="col-12 col-xl-4"><section class="panel-card h-100"><div class="panel-header"><div><h3>Risk Distribution</h3><p>Latest classification for each inspected stall</p></div></div><div class="report-chart"><canvas id="riskDistributionReport"></canvas></div></section></div>
+    <div class="col-12 col-xl-7"><section class="panel-card h-100"><div class="panel-header"><div><h3>Area-wise Hygiene Score</h3><p>Average of each stall's latest inspection</p></div></div><div class="report-chart report-wide"><canvas id="areaHygieneReport"></canvas></div></section></div>
+    <div class="col-12 col-xl-5"><section class="panel-card h-100"><div class="panel-header"><div><h3>Complaint Distribution</h3><p>Complaints grouped by classification</p></div></div><div class="report-chart report-wide"><canvas id="complaintReport"></canvas></div></section></div>
+    <div class="col-12 col-xl-8"><section class="panel-card h-100"><div class="panel-header"><div><h3>Top Hygienic Stalls</h3><p>Highest current hygiene scores</p></div></div><div class="report-chart report-wide"><canvas id="topStallsReport"></canvas></div></section></div>
+    <div class="col-12 col-xl-4"><section class="panel-card h-100"><div class="panel-header"><div><h3>Reinspection Due</h3><p>Overdue and upcoming within 30 days</p></div></div><div class="report-chart"><canvas id="reinspectionReport"></canvas></div></section></div>
+    <div class="col-12"><section class="panel-card"><div class="panel-header"><div><h3>High-risk Stalls</h3><p>Latest scores for high and critical risk stalls</p></div></div><div class="report-chart report-wide"><canvas id="highRiskStallsReport"></canvas></div></section></div>
+</div>
+
+<section class="panel-card mt-4">
+    <div class="panel-header"><div><h3>High-risk Stalls</h3><p>Latest high and critical risk classifications</p></div><span class="panel-badge">{{ high_risk_stalls|length }} STALLS</span></div>
+    <div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>Stall</th><th>Area</th><th>Score</th><th>Risk</th><th>Reinspection</th></tr></thead><tbody>
+    {% for row in high_risk_stalls %}<tr><td><strong>{{ row.stall_name }}</strong></td><td>{{ row.area_name }}</td><td><span class="score-value">{{ row.overall_score }}%</span></td><td><span class="status-pill risk-{{ row.risk_level }}">{{ row.risk_level }}</span></td><td>{{ row.reinspection_date.strftime('%d %b %Y') if row.reinspection_date else 'Not scheduled' }}</td></tr>{% else %}<tr><td colspan="5" class="empty-state">No high-risk stalls found.</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+
+<section class="panel-card mt-4">
+    <div class="panel-header"><div><h3>Reinspection Schedule</h3><p>Active stalls due within 30 days</p></div></div>
+    <div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>Stall</th><th>Area</th><th>Risk</th><th>Due date</th><th>Timing</th></tr></thead><tbody>
+    {% for row in reinspection_rows %}<tr><td><strong>{{ row.stall_name }}</strong></td><td>{{ row.area_name }}</td><td><span class="status-pill risk-{{ row.risk_level }}">{{ row.risk_level }}</span></td><td>{{ row.reinspection_date.strftime('%d %b %Y') }}</td><td>{% set days=(row.reinspection_date-generated_at).days %}<span class="status-pill {{ 'risk-critical' if days < 0 else 'risk-medium' }}">{{ (-days) ~ ' days overdue' if days < 0 else 'in ' ~ days ~ ' days' }}</span></td></tr>{% else %}<tr><td colspan="5" class="empty-state">No reinspections due within 30 days.</td></tr>{% endfor %}
+    </tbody></table></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+<script>
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.color = "#64748b";
+const grid = {color:"#eef2f7"};
+new Chart(document.getElementById("inspectionTrendReport"),{type:"line",data:{labels:{{ trend_labels|tojson }},datasets:[{data:{{ trend_values|tojson }},borderColor:"#4f46e5",backgroundColor:"rgba(79,70,229,.12)",fill:true,tension:.35,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{precision:0},grid}}}});
+new Chart(document.getElementById("riskDistributionReport"),{type:"doughnut",data:{labels:["Low","Medium","High","Critical"],datasets:[{data:{{ [risk_map.low,risk_map.medium,risk_map.high,risk_map.critical]|tojson }},backgroundColor:["#22c55e","#f59e0b","#f97316","#ef4444"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:"68%",plugins:{legend:{position:"bottom",labels:{usePointStyle:true}}}}});
+new Chart(document.getElementById("areaHygieneReport"),{type:"bar",data:{labels:{{ area_labels|tojson }},datasets:[{data:{{ area_values|tojson }},backgroundColor:"#38bdf8",borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:100,grid},y:{grid:{display:false}}}}});
+new Chart(document.getElementById("complaintReport"),{type:"bar",data:{labels:{{ complaint_labels|tojson }},datasets:[{data:{{ complaint_values|tojson }},backgroundColor:["#8b5cf6","#ec4899","#f97316","#14b8a6","#3b82f6"],borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{precision:0},grid}}}});
+new Chart(document.getElementById("topStallsReport"),{type:"bar",data:{labels:{{ top_stall_labels|tojson }},datasets:[{data:{{ top_stall_values|tojson }},backgroundColor:"#22c55e",borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:100,grid},y:{grid:{display:false}}}}});
+new Chart(document.getElementById("reinspectionReport"),{type:"doughnut",data:{labels:["Overdue","Due in 7 days","Due in 30 days"],datasets:[{data:{{ [due_counts.overdue,due_counts.due_7_days,due_counts.due_30_days]|tojson }},backgroundColor:["#ef4444","#f59e0b","#3b82f6"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:"65%",plugins:{legend:{position:"bottom",labels:{usePointStyle:true}}}}});
+new Chart(document.getElementById("highRiskStallsReport"),{type:"bar",data:{labels:{{ high_risk_labels|tojson }},datasets:[{data:{{ high_risk_values|tojson }},backgroundColor:{{ high_risk_colors|tojson }},borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,max:100,grid}}}});
+</script>
+{% endblock %}
