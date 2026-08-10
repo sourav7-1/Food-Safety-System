@@ -146,7 +146,10 @@ def dashboard():
         )
         .join(latest, latest.c.stall_id == Stall.stall_id)
         .join(Area, Area.area_id == Stall.area_id)
-        .filter(latest.c.risk_level.in_(("high", "critical")))
+        .filter(
+            latest.c.risk_level.in_(("high", "critical")),
+            latest.c.overall_score.is_not(None),
+        )
         .order_by(
             latest.c.risk_level.desc(),
             latest.c.overall_score,

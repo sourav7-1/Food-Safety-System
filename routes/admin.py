@@ -10,7 +10,7 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from extensions import db
@@ -33,6 +33,16 @@ from routes import role_required
 
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+USER_STATUSES = {"active", "inactive", "suspended"}
+STALL_STATUSES = {"active", "closed", "suspended"}
+COMPLAINT_STATUSES = {"open", "under_review", "resolved", "rejected"}
+COMPLAINT_TRANSITIONS = {
+    "open": {"open", "under_review"},
+    "under_review": {"under_review", "resolved", "rejected", "open"},
+    "resolved": {"resolved", "under_review"},
+    "rejected": {"rejected", "under_review"},
+}
 
 
 def _parse_date(value):
@@ -63,6 +73,55 @@ def _commit(success_message, failure_message):
         return False
     flash(success_message, "success")
     return True
+
+
+def _refresh_stall_risk(stall_id):
+    """Re-run calculate_stall_risk against a stall's latest inspection.
+
+    Complaint status changes shift the procedure's complaint-severity
+    penalty, so the latest inspection's risk_level/reinspection_date must
+    be recalculated whenever a complaint against that stall opens,
+    resolves, or is rejected -- otherwise it silently goes stale.
+    """
+    latest = (
+        Inspection.query.filter(
+            Inspection.stall_id == stall_id,
+            Inspection.status.in_(("submitted", "approved")),
+        )
+        .order_by(
+            Inspection.inspection_date.desc(),
+            Inspection.inspection_id.desc(),
+        )
+        .first()
+    )
+    if latest is None:
+        return
+    db.session.execute(
+        text(
+            """
+            CALL calculate_stall_risk(
+              :stall_id,
+              @calculated_risk_level,
+              @calculated_risk_score,
+              @calculated_reinspection_date
+            )
+            """
+        ),
+        {"stall_id": stall_id},
+    )
+    result = db.session.execute(
+        text(
+            """
+            SELECT
+              @calculated_risk_level AS risk_level,
+              @calculated_reinspection_date AS reinspection_date
+            """
+        )
+    ).mappings().one()
+    if result["risk_level"] is not None:
+        latest.risk_level = result["risk_level"]
+        latest.reinspection_date = result["reinspection_date"]
+        db.session.commit()
 
 
 @admin_bp.route("/vendors")
@@ -113,13 +172,22 @@ def vendor_create():
                 vendor=None,
             ), 400
 
+        status = request.form.get("status", "active").strip() or "active"
+        if status not in USER_STATUSES:
+            flash("Select a valid account status.", "danger")
+            return render_template(
+                "admin/vendors/form.html",
+                page_title="Add Vendor",
+                vendor=None,
+            ), 400
+
         try:
             user = User(
                 role_id=vendor_role.role_id,
                 full_name=request.form.get("full_name", "").strip(),
                 email=request.form.get("email", "").strip().lower(),
                 phone=request.form.get("phone", "").strip() or None,
-                status=request.form.get("status", "active"),
+                status=status,
             )
             user.set_password(password)
             vendor = Vendor(
@@ -169,7 +237,15 @@ def vendor_edit(vendor_id):
         vendor.user.full_name = request.form.get("full_name", "").strip()
         vendor.user.email = request.form.get("email", "").strip().lower()
         vendor.user.phone = request.form.get("phone", "").strip() or None
-        vendor.user.status = request.form.get("status", "active")
+        status = request.form.get("status", "active").strip() or "active"
+        if status not in USER_STATUSES:
+            flash("Select a valid account status.", "danger")
+            return render_template(
+                "admin/vendors/form.html",
+                page_title="Edit Vendor",
+                vendor=vendor,
+            ), 400
+        vendor.user.status = status
         password = request.form.get("password", "")
         if password:
             if len(password) < 8:
@@ -266,6 +342,9 @@ def stall_create():
     areas = Area.query.order_by(Area.area_name).all()
     if request.method == "POST":
         try:
+            status = request.form.get("status", "active").strip() or "active"
+            if status not in STALL_STATUSES:
+                raise ValueError("Select a valid stall status.")
             stall = Stall(
                 vendor_id=int(request.form["vendor_id"]),
                 area_id=int(request.form["area_id"]),
@@ -278,7 +357,7 @@ def stall_create():
                 longitude=_parse_decimal(
                     request.form.get("longitude"), "Longitude"
                 ),
-                status=request.form.get("status", "active"),
+                status=status,
             )
             db.session.add(stall)
         except (KeyError, ValueError) as error:
@@ -330,7 +409,10 @@ def stall_edit(stall_id):
             stall.longitude = _parse_decimal(
                 request.form.get("longitude"), "Longitude"
             )
-            stall.status = request.form.get("status", "active")
+            status = request.form.get("status", "active").strip() or "active"
+            if status not in STALL_STATUSES:
+                raise ValueError("Select a valid stall status.")
+            stall.status = status
         except (KeyError, ValueError) as error:
             flash(str(error), "danger")
             return render_template(
@@ -425,12 +507,22 @@ def inspector_create():
                 areas=areas,
             ), 400
 
+        status = request.form.get("status", "active").strip() or "active"
+        if status not in USER_STATUSES:
+            flash("Select a valid account status.", "danger")
+            return render_template(
+                "admin/inspectors/form.html",
+                page_title="Add Inspector",
+                inspector=None,
+                areas=areas,
+            ), 400
+
         user = User(
             role_id=inspector_role.role_id,
             full_name=request.form.get("full_name", "").strip(),
             email=request.form.get("email", "").strip().lower(),
             phone=request.form.get("phone", "").strip() or None,
-            status=request.form.get("status", "active"),
+            status=status,
         )
         user.set_password(password)
         try:
@@ -489,7 +581,16 @@ def inspector_edit(inspector_id):
         inspector.user.phone = (
             request.form.get("phone", "").strip() or None
         )
-        inspector.user.status = request.form.get("status", "active")
+        status = request.form.get("status", "active").strip() or "active"
+        if status not in USER_STATUSES:
+            flash("Select a valid account status.", "danger")
+            return render_template(
+                "admin/inspectors/form.html",
+                page_title="Edit Inspector",
+                inspector=inspector,
+                areas=areas,
+            ), 400
+        inspector.user.status = status
         password = request.form.get("password", "")
         if password:
             if len(password) < 8:
@@ -579,8 +680,21 @@ def complaint_manage(complaint_id):
     complaint = db.get_or_404(Complaint, complaint_id)
     if request.method == "POST":
         status = request.form.get("status", "")
-        if status not in {"open", "under_review", "resolved", "rejected"}:
+        if status not in COMPLAINT_STATUSES:
             flash("Select a valid complaint status.", "danger")
+            return redirect(
+                url_for(
+                    "admin.complaint_manage",
+                    complaint_id=complaint.complaint_id,
+                )
+            )
+        current_status = complaint.status
+        if status not in COMPLAINT_TRANSITIONS.get(current_status, set()):
+            flash(
+                f"Complaint cannot move from '{current_status}' to "
+                f"'{status}' directly.",
+                "danger",
+            )
             return redirect(
                 url_for(
                     "admin.complaint_manage",
@@ -598,6 +712,7 @@ def complaint_manage(complaint_id):
         due_date = request.form.get("due_date", "")
         if action_description:
             if not due_date:
+                db.session.rollback()
                 flash(
                     "A due date is required for a corrective action.",
                     "danger",
@@ -617,22 +732,39 @@ def complaint_manage(complaint_id):
                     page_title="Manage Complaint",
                     complaint=complaint,
                 ), 400
-            db.session.add(
-                CorrectiveAction(
-                    complaint_id=complaint.complaint_id,
-                    assigned_to_vendor_id=complaint.stall.vendor_id,
-                    action_description=action_description,
-                    due_date=action_due_date,
-                    status="pending",
-                )
+            existing_open_action = next(
+                (
+                    action
+                    for action in complaint.corrective_actions
+                    if action.status in {"pending", "in_progress"}
+                ),
+                None,
             )
-            if status == "open":
-                complaint.status = "under_review"
+            if existing_open_action is not None:
+                flash(
+                    "An open corrective action already exists for this "
+                    "complaint; resolve or cancel it before adding another.",
+                    "warning",
+                )
+            else:
+                db.session.add(
+                    CorrectiveAction(
+                        complaint_id=complaint.complaint_id,
+                        assigned_to_vendor_id=complaint.stall.vendor_id,
+                        action_description=action_description,
+                        due_date=action_due_date,
+                        status="pending",
+                    )
+                )
+                if status == "open":
+                    complaint.status = "under_review"
 
         if _commit(
             "Complaint updated successfully.",
             "Complaint could not be updated.",
         ):
+            if status != current_status:
+                _refresh_stall_risk(complaint.stall_id)
             return redirect(
                 url_for(
                     "admin.complaint_manage",
@@ -671,6 +803,38 @@ def inspections():
         selected_status=status,
         selected_risk=risk,
     )
+
+
+@admin_bp.route("/inspections/<int:inspection_id>/approve", methods=["POST"])
+@login_required
+@role_required("admin")
+def inspection_approve(inspection_id):
+    inspection = db.get_or_404(Inspection, inspection_id)
+    if inspection.status != "submitted":
+        flash("Only a submitted inspection can be approved.", "danger")
+        return redirect(url_for("admin.inspections"))
+    inspection.status = "approved"
+    _commit(
+        "Inspection approved.",
+        "Inspection could not be approved.",
+    )
+    return redirect(url_for("admin.inspections"))
+
+
+@admin_bp.route("/inspections/<int:inspection_id>/reject", methods=["POST"])
+@login_required
+@role_required("admin")
+def inspection_reject(inspection_id):
+    inspection = db.get_or_404(Inspection, inspection_id)
+    if inspection.status != "submitted":
+        flash("Only a submitted inspection can be rejected.", "danger")
+        return redirect(url_for("admin.inspections"))
+    inspection.status = "rejected"
+    _commit(
+        "Inspection rejected.",
+        "Inspection could not be rejected.",
+    )
+    return redirect(url_for("admin.inspections"))
 
 
 @admin_bp.route("/reviews")

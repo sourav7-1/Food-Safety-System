@@ -223,7 +223,7 @@ def food_item_create(stall_id):
             raise ValueError("Price cannot be negative.")
         item = FoodItem(
             stall_id=stall.stall_id,
-            category_id=int(request.form["category_id"]),
+            category_id=int(request.form.get("category_id", "")),
             item_name=request.form.get("item_name", "").strip(),
             price=price,
             is_available=request.form.get("is_available") == "on",
@@ -260,7 +260,7 @@ def food_item_edit(stall_id, item_id):
         item.price = Decimal(raw_price) if raw_price else None
         if item.price is not None and item.price < 0:
             raise ValueError
-        item.category_id = int(request.form["category_id"])
+        item.category_id = int(request.form.get("category_id", ""))
         item.item_name = request.form.get("item_name", "").strip()
         item.is_available = request.form.get("is_available") == "on"
         db.session.commit()
@@ -328,6 +328,13 @@ def submit_corrective_action(action_id):
         action_id=action_id,
         assigned_to_vendor_id=vendor.vendor_id,
     ).first_or_404()
+    if action.status not in ("pending", "in_progress"):
+        flash(
+            f"This corrective action is already '{action.status}' and "
+            "cannot be resubmitted.",
+            "danger",
+        )
+        return redirect(request.referrer or url_for("vendor_portal.dashboard"))
     notes = request.form.get("completion_notes", "").strip()
     evidence = request.files.get("evidence")
     if not notes:

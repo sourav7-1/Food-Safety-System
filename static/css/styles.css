@@ -3,7 +3,19 @@ body {
 }
 
 .navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
     letter-spacing: 0;
+}
+
+.navbar-logo {
+    width: 2.65rem;
+    height: 2.65rem;
+    border: 2px solid rgba(255, 255, 255, .86);
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
 }
 
 .auth-card {
@@ -27,6 +39,27 @@ body {
     background:
         radial-gradient(circle at 100% 0, rgba(52, 211, 153, .26), transparent 35%),
         linear-gradient(145deg, #052e2b, #0f5132);
+}
+
+.login-logo-lockup {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    margin-bottom: 1.5rem;
+    color: #fff;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.login-logo-lockup img {
+    width: 4.5rem;
+    height: 4.5rem;
+    flex: 0 0 4.5rem;
+    border: 3px solid rgba(255, 255, 255, .9);
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
+    box-shadow: 0 .75rem 2rem rgba(0, 0, 0, .2);
 }
 
 .login-role-panel h1 {

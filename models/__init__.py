@@ -352,6 +352,9 @@ class Complaint(db.Model):
     stall = db.relationship("Stall", back_populates="complaints")
     complaint_type = db.relationship("ComplaintType")
     submitted_by = db.relationship("User")
+    corrective_actions = db.relationship(
+        "CorrectiveAction", back_populates="complaint"
+    )
 
 
 class FoodCategory(db.Model):
@@ -494,7 +497,7 @@ class CorrectiveAction(db.Model):
     completed_at = db.Column(db.DateTime)
 
     inspection = db.relationship("Inspection")
-    complaint = db.relationship("Complaint")
+    complaint = db.relationship("Complaint", back_populates="corrective_actions")
     vendor = db.relationship("Vendor")
 
 

@@ -60,6 +60,10 @@ def _source_key(row):
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:12]
 
 
+def _identity_key(value):
+    return hashlib.sha256(_clean(value).encode("utf-8")).hexdigest()[:12]
+
+
 def import_registration_zip(zip_path):
     vendor_role = Role.query.filter(
         func.lower(Role.role_name) == "vendor"
@@ -135,7 +139,12 @@ def import_registration_zip(zip_path):
                 db.session.add(area)
                 db.session.flush()
 
-            email = f"imported.vendor.{source_key}@local.invalid"
+            # Keyed by phone (when present) rather than the per-row source
+            # key, so re-importing a later submission from the same vendor
+            # (different timestamp, e.g. a correction) reuses their
+            # existing account instead of creating a duplicate one.
+            vendor_key = _identity_key(phone) if phone else source_key
+            email = f"imported.vendor.{vendor_key}@local.invalid"
             user = User.query.filter_by(email=email).first()
             if user is None:
                 usable_phone = (

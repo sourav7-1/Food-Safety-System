@@ -22,6 +22,11 @@ auth_bp = Blueprint("auth", __name__)
 def _is_safe_redirect(target):
     if not target:
         return False
+    # Reject backslashes and "//" up front: browsers normalize a leading
+    # "\" or "//" to a scheme-relative URL, which urljoin/urlparse below
+    # would otherwise resolve as same-host and let slip through.
+    if "\\" in target or not target.startswith("/") or target.startswith("//"):
+        return False
     host_url = urlparse(request.host_url)
     redirect_url = urlparse(urljoin(request.host_url, target))
     return (

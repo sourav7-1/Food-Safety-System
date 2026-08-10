@@ -102,6 +102,30 @@ def create():
                     "No active inspection criteria are configured."
                 )
 
+            inspection_date = _parse_inspection_date(
+                request.form.get("inspection_date")
+            )
+            latest_existing = (
+                Inspection.query.filter(
+                    Inspection.stall_id == stall.stall_id,
+                    Inspection.status.in_(("submitted", "approved")),
+                )
+                .order_by(Inspection.inspection_date.desc())
+                .first()
+            )
+            if (
+                latest_existing is not None
+                and inspection_date < latest_existing.inspection_date
+            ):
+                raise ValueError(
+                    "Inspection date cannot be earlier than this stall's "
+                    "most recent inspection ("
+                    + latest_existing.inspection_date.strftime(
+                        "%Y-%m-%d %H:%M"
+                    )
+                    + ")."
+                )
+
             submitted_scores = []
             for criterion in criteria:
                 raw_score = request.form.get(
@@ -136,9 +160,7 @@ def create():
             inspection = Inspection(
                 stall_id=stall.stall_id,
                 inspector_id=inspector.inspector_id,
-                inspection_date=_parse_inspection_date(
-                    request.form.get("inspection_date")
-                ),
+                inspection_date=inspection_date,
                 status="submitted",
                 remarks=request.form.get("remarks", "").strip() or None,
             )
