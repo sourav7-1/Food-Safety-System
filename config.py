@@ -24,6 +24,9 @@ class Config:
         str(Path(__file__).resolve().parent / "static" / "uploads" / "evidence"),
     )
 
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+
     MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
     MYSQL_PORT = os.getenv("MYSQL_PORT", "3306")
     MYSQL_USER = os.getenv("MYSQL_USER", "root")

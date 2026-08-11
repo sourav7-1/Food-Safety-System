@@ -10,16 +10,63 @@ administrative reporting.
 - Flask, Flask-Login, and Flask-SQLAlchemy
 - MySQL 8.0+
 - Werkzeug password hashing
-- Bootstrap 5, Font Awesome, and Chart.js
+- Bootstrap 5, Bootstrap Icons, Font Awesome, and Chart.js
+- Inter (Google Fonts) for site typography
 
 ## Main modules
 
+- Public landing page with live, database-backed platform statistics
 - Role-based authentication for administrators, inspectors, vendors, and customers
 - Admin dashboard and vendor, stall, inspector, and complaint management
 - Transactional inspector workflow with MySQL score triggers and risk procedure
 - Vendor safety profiles, food item CRUD, corrective actions, and evidence uploads
 - Customer stall discovery, reviews, complaints, and complaint tracking
 - MySQL-backed reports and reusable analytical SQL
+
+## Public landing page
+
+The `/` route (`app.py`) renders `templates/home.html`, which extends the
+shared `templates/base.html` layout. It is the public-facing homepage shown
+before login.
+
+**Layout** (single scrollable page):
+
+- Sticky navbar with anchor links (Home, Features, How It Works, About,
+  Contact) plus Login/Register — recolors with a shadow once the page is
+  scrolled
+- Hero section with headline, supporting copy, Sign In / Create Account CTAs,
+  and a CSS-built "live" vendor risk-dashboard preview card
+- Trust/stats strip showing **Vendors Tracked**, **Inspections Logged**,
+  **Risk Alerts Resolved**, and **Cities Covered**
+- Features grid: Inspection Records, Vendor Profiles, Risk Scoring, Reports &
+  Analytics
+- "How It Works" 3-step process: Register Vendor → Conduct Inspection & Score
+  Risk → Review Reports & Act on Alerts
+- "Why It Matters" / About section on the public-health value of the platform
+- Full-width call-to-action banner
+- Site-wide footer (logo, quick links, portals, contact, copyright)
+
+**Live stats, not placeholders.** The stats strip is populated on every
+request directly from MySQL, in the `home()` view in `app.py`:
+
+| Stat | Source query |
+| --- | --- |
+| Vendors Tracked | `Vendor.query.count()` |
+| Inspections Logged | `Inspection.query.count()` |
+| Risk Alerts Resolved | `CorrectiveAction` rows with `status="completed"` |
+| Cities Covered | distinct `Area.city` values |
+
+Numbers are recalculated on each page load, so they always reflect the
+current database — no caching, no manual updates required.
+
+**Visual details.** Styling lives in `static/css/styles.css` (brand tokens:
+`--brand-green: #1f7a4d`, `--brand-green-dark`, `--brand-green-light`,
+`--surface-bg: #f7f8f9`) and a small script in `templates/base.html` drives
+scroll-triggered fade/slide-in animations (`.reveal` / `.reveal-visible`,
+via `IntersectionObserver`) and the navbar's scrolled state. Decorative
+blurred accent shapes and dot-grid textures sit behind the hero, about, and
+CTA sections. All motion respects `prefers-reduced-motion` and degrades to
+static, fully visible content without JavaScript.
 
 ## Quick start
 

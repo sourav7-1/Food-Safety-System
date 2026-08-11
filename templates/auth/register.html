@@ -39,6 +39,8 @@
             <button class="btn btn-success w-100" type="submit">Create account</button>
         </form>
 
+        {% include "auth/_google_button.html" %}
+
         <p class="text-center text-secondary mt-4 mb-0">
             Already registered?
             <a href="{{ url_for('auth.login') }}">Login</a>

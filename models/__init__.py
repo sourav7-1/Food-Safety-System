@@ -31,7 +31,14 @@ class User(UserMixin, db.Model):
     full_name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(150), nullable=False, unique=True)
     phone = db.Column(db.String(30), unique=True)
-    password_hash = db.Column(db.String(255), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)
+    google_id = db.Column(db.String(255), unique=True)
+    auth_provider = db.Column(
+        db.Enum("local", "google"),
+        nullable=False,
+        default="local",
+        server_default="local",
+    )
     status = db.Column(
         db.Enum("active", "inactive", "suspended"),
         nullable=False,
@@ -73,6 +80,8 @@ class User(UserMixin, db.Model):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        if not self.password_hash:
+            return False
         try:
             return check_password_hash(self.password_hash, password)
         except (TypeError, ValueError):

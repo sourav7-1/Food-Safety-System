@@ -41,16 +41,20 @@ create table users (
   full_name varchar(120) not null,
   email varchar(150) not null,
   phone varchar(30) null,
-  password_hash varchar(255) not null,
+  password_hash varchar(255) null,
+  google_id varchar(255) null,
+  auth_provider enum('local', 'google') not null default 'local',
   status enum('active', 'inactive', 'suspended') not null default 'active',
   created_at timestamp not null default current_timestamp,
   updated_at timestamp not null default current_timestamp on update current_timestamp,
   primary key (user_id),
   constraint uq_users_email unique (email),
   constraint uq_users_phone unique (phone),
+  constraint uq_users_google_id unique (google_id),
   constraint chk_users_full_name_not_blank check (char_length(trim(full_name)) > 0),
   constraint chk_users_email_not_blank check (char_length(trim(email)) > 0),
   constraint chk_users_password_hash_not_blank check (char_length(trim(password_hash)) > 0),
+  constraint chk_users_password_or_google check (password_hash is not null or google_id is not null),
   constraint fk_users_role_id
     foreign key (role_id) references roles (role_id)
     on update cascade

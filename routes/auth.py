@@ -1,7 +1,9 @@
 from urllib.parse import urljoin, urlparse
 
+from authlib.integrations.base_client.errors import OAuthError
 from flask import (
     Blueprint,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -12,7 +14,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
-from extensions import db
+from extensions import db, oauth
 from models import Role, User
 
 
@@ -47,6 +49,21 @@ def _dashboard_url(user):
     if not endpoint:
         return url_for("home")
     return url_for(endpoint)
+
+
+def _google_oauth_configured():
+    return bool(
+        current_app.config.get("GOOGLE_CLIENT_ID")
+        and current_app.config.get("GOOGLE_CLIENT_SECRET")
+    )
+
+
+def _default_customer_role():
+    return (
+        Role.query.filter(func.lower(Role.role_name).in_(("customer", "consumer")))
+        .order_by((func.lower(Role.role_name) == "customer").desc())
+        .first()
+    )
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -85,6 +102,87 @@ def login():
     return render_template("auth/login.html")
 
 
+@auth_bp.route("/auth/google/login")
+def google_login():
+    if current_user.is_authenticated:
+        return redirect(_dashboard_url(current_user))
+
+    if not _google_oauth_configured():
+        flash("Google sign-in is not configured.", "danger")
+        return redirect(url_for("auth.login"))
+
+    redirect_uri = url_for("auth.google_callback", _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+
+@auth_bp.route("/auth/google/callback")
+def google_callback():
+    if not _google_oauth_configured():
+        flash("Google sign-in is not configured.", "danger")
+        return redirect(url_for("auth.login"))
+
+    try:
+        token = oauth.google.authorize_access_token()
+    except OAuthError:
+        flash("Google sign-in was cancelled or failed. Please try again.", "danger")
+        return redirect(url_for("auth.login"))
+
+    userinfo = token.get("userinfo") or oauth.google.userinfo(token=token)
+    google_id = userinfo.get("sub")
+    email = (userinfo.get("email") or "").strip().lower()
+    full_name = userinfo.get("name") or (email.split("@")[0] if email else "")
+
+    if not google_id or not email or not userinfo.get("email_verified"):
+        flash(
+            "Could not verify your Google account email. Please try again "
+            "or sign in with your email and password.",
+            "danger",
+        )
+        return redirect(url_for("auth.login"))
+
+    user = User.query.filter_by(google_id=google_id).first()
+
+    if user is None:
+        user = User.query.filter(func.lower(User.email) == email).first()
+
+        if user is not None:
+            # Existing local (or previously-linked) account: link, never duplicate.
+            user.google_id = google_id
+        else:
+            customer_role = _default_customer_role()
+            if customer_role is None:
+                flash("Google sign-up is temporarily unavailable.", "danger")
+                return redirect(url_for("auth.login"))
+
+            user = User(
+                role_id=customer_role.role_id,
+                full_name=full_name or email,
+                email=email,
+                google_id=google_id,
+                auth_provider="google",
+                status="active",
+            )
+            db.session.add(user)
+
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("Could not complete Google sign-in. Please try again.", "danger")
+            return redirect(url_for("auth.login"))
+
+    if not user.is_active:
+        flash(
+            "Your account is disabled. Please contact an administrator.",
+            "danger",
+        )
+        return redirect(url_for("auth.login"))
+
+    login_user(user)
+    flash(f"Welcome, {user.full_name}.", "success")
+    return redirect(_dashboard_url(user))
+
+
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
     if current_user.is_authenticated:
@@ -111,11 +209,7 @@ def register():
         if phone and User.query.filter_by(phone=phone).first():
             errors.append("An account with that phone number already exists.")
 
-        customer_role = Role.query.filter(
-            func.lower(Role.role_name).in_(("customer", "consumer"))
-        ).order_by(
-            (func.lower(Role.role_name) == "customer").desc()
-        ).first()
+        customer_role = _default_customer_role()
         if customer_role is None:
             errors.append(
                 "Customer registration is temporarily unavailable."

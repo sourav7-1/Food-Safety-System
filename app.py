@@ -15,7 +15,7 @@ from flask import (
 from flask_login import current_user, logout_user
 
 from config import Config
-from extensions import db, login_manager
+from extensions import db, login_manager, oauth
 
 
 def create_app(config_class=Config):
@@ -27,6 +27,16 @@ def create_app(config_class=Config):
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Please log in to access that page."
     login_manager.login_message_category = "warning"
+
+    oauth.init_app(app)
+    if app.config.get("GOOGLE_CLIENT_ID") and app.config.get("GOOGLE_CLIENT_SECRET"):
+        oauth.register(
+            name="google",
+            client_id=app.config["GOOGLE_CLIENT_ID"],
+            client_secret=app.config["GOOGLE_CLIENT_SECRET"],
+            server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+            client_kwargs={"scope": "openid email profile"},
+        )
 
     @login_manager.user_loader
     def load_user(user_id):
