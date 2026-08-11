@@ -136,6 +136,7 @@ create table stalls (
   address varchar(255) not null,
   latitude decimal(10,8) null,
   longitude decimal(11,8) null,
+  photo_url varchar(1000) null,
   status enum('active', 'closed', 'suspended') not null default 'active',
   created_at timestamp not null default current_timestamp,
   primary key (stall_id),
