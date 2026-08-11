@@ -30,6 +30,7 @@ from models import (
     Vendor,
 )
 from routes import role_required
+from services.registration_import import cache_photo
 
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -345,12 +346,16 @@ def stall_create():
             status = request.form.get("status", "active").strip() or "active"
             if status not in STALL_STATUSES:
                 raise ValueError("Select a valid stall status.")
+            stall_code = request.form.get("stall_code", "").strip()
             stall = Stall(
                 vendor_id=int(request.form["vendor_id"]),
                 area_id=int(request.form["area_id"]),
                 stall_name=request.form.get("stall_name", "").strip(),
-                stall_code=request.form.get("stall_code", "").strip(),
+                stall_code=stall_code,
                 address=request.form.get("address", "").strip(),
+                photo_url=cache_photo(
+                    request.form.get("photo_url", ""), stall_code
+                ),
                 latitude=_parse_decimal(
                     request.form.get("latitude"), "Latitude"
                 ),
@@ -403,6 +408,9 @@ def stall_edit(stall_id):
                 "stall_code", ""
             ).strip()
             stall.address = request.form.get("address", "").strip()
+            stall.photo_url = cache_photo(
+                request.form.get("photo_url", ""), stall.stall_code
+            )
             stall.latitude = _parse_decimal(
                 request.form.get("latitude"), "Latitude"
             )

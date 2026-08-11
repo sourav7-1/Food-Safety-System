@@ -3,11 +3,16 @@ import hashlib
 import io
 import re
 import secrets
+import urllib.request
 import zipfile
 from datetime import datetime
 from decimal import Decimal
+from pathlib import Path
+from urllib.error import URLError
+from urllib.parse import urlparse
 
 from sqlalchemy import func
+from werkzeug.utils import secure_filename
 
 from extensions import db
 from models import (
@@ -20,6 +25,17 @@ from models import (
     User,
     Vendor,
 )
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PHOTO_CACHE_DIR = PROJECT_ROOT / "static" / "uploads" / "stall_photos"
+MAX_PHOTO_BYTES = 8 * 1024 * 1024
+PHOTO_EXTENSION_BY_CONTENT_TYPE = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
 
 
 BANGLA_DIGITS = str.maketrans("০১২৩৪৫৬৭৮৯", "0123456789")
@@ -62,6 +78,71 @@ def _source_key(row):
 
 def _identity_key(value):
     return hashlib.sha256(_clean(value).encode("utf-8")).hexdigest()[:12]
+
+
+DRIVE_ID_PATTERN = re.compile(r"(?:[?&]id=|/file/d/)([\w-]+)")
+
+
+def normalize_photo_url(value):
+    """Turn a Google Drive share/view link into a directly embeddable URL.
+
+    Forms responses store the uploaded photo as a share link such as
+    ``drive.google.com/u/0/open?usp=forms_web&id=FILE_ID`` or
+    ``drive.google.com/file/d/FILE_ID/view``, neither of which an <img> tag
+    can load directly. Google's ``uc?export=view`` endpoint serves the raw
+    file for links that are shared "anyone with the link".
+    """
+    url = _clean(value)
+    if not url:
+        return None
+    host = urlparse(url).netloc.lower()
+    if host == "drive.google.com" or host.endswith(".drive.google.com"):
+        match = DRIVE_ID_PATTERN.search(url)
+        if match:
+            return f"https://drive.google.com/uc?export=view&id={match.group(1)}"
+    return url
+
+
+def cache_photo(source_url, stall_code):
+    """Download a stall photo once and serve it from our own static files.
+
+    Providers such as Google Drive send ``Cross-Origin-Resource-Policy:
+    same-site`` on their image responses, which makes browsers refuse to
+    load the image in an <img> tag on any other origin -- a plain HTTP
+    fetch (this function, or a quick server-side check) succeeds even
+    though every visitor's browser silently fails to render it. Caching a
+    local copy avoids depending on the source host's CORP policy at all.
+    """
+    url = normalize_photo_url(source_url)
+    if not url or not url.startswith(("http://", "https://")):
+        return url
+
+    try:
+        request = urllib.request.Request(
+            url, headers={"User-Agent": "Mozilla/5.0"}
+        )
+        with urllib.request.urlopen(request, timeout=15) as response:
+            content_type = (
+                response.headers.get("Content-Type", "")
+                .split(";")[0]
+                .strip()
+                .lower()
+            )
+            extension = PHOTO_EXTENSION_BY_CONTENT_TYPE.get(content_type)
+            if extension is None:
+                return None
+            data = response.read(MAX_PHOTO_BYTES + 1)
+            if len(data) > MAX_PHOTO_BYTES:
+                return None
+    except (URLError, OSError, ValueError):
+        return None
+
+    filename = secure_filename(f"{stall_code}{extension}") or None
+    if filename is None:
+        return None
+    PHOTO_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    (PHOTO_CACHE_DIR / filename).write_bytes(data)
+    return f"/static/uploads/stall_photos/{filename}"
 
 
 def import_registration_zip(zip_path):
@@ -182,6 +263,7 @@ def import_registration_zip(zip_path):
                     stall_name=stall_name,
                     stall_code=stall_code,
                     address=_clean(row[5]),
+                    photo_url=cache_photo(row[14], stall_code),
                     status="active",
                 )
                 db.session.add(stall)

@@ -86,7 +86,22 @@ def create_app(config_class=Config):
 
     @app.route("/")
     def home():
-        return render_template("home.html")
+        from sqlalchemy import func
+
+        from models import Area, CorrectiveAction, Inspection, Vendor
+
+        stats = {
+            "vendors": Vendor.query.count(),
+            "inspections": Inspection.query.count(),
+            "risk_alerts_resolved": CorrectiveAction.query.filter_by(
+                status="completed"
+            ).count(),
+            "cities": db.session.query(
+                func.count(func.distinct(Area.city))
+            ).scalar()
+            or 0,
+        }
+        return render_template("home.html", stats=stats)
 
     @app.errorhandler(403)
     def forbidden(_error):

@@ -149,6 +149,7 @@ class Stall(db.Model):
     address = db.Column(db.String(255), nullable=False)
     latitude = db.Column(db.Numeric(10, 8))
     longitude = db.Column(db.Numeric(11, 8))
+    photo_url = db.Column(db.String(1000))
     status = db.Column(
         db.Enum("active", "closed", "suspended"),
         nullable=False,
