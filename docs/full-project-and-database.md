@@ -165,7 +165,7 @@ flask --app app import-stalls "C:\path\registrations.zip"
 - **Character set:** `utf8mb4`
 - **Collation:** `utf8mb4_unicode_ci`
 - **Normal form:** Designed to 3NF with lookup, master, transaction, and detail data separated.
-- **Tables:** 16
+- **Tables:** 16 (`stalls` gained a nullable `photo_url` column; apply `database/migrations/002_add_stall_photo_url.sql` on databases created before this change)
 - **Views:** 5
 - **Stored functions:** 1
 - **Stored procedures:** 1
@@ -223,7 +223,7 @@ One-to-one inspector profile. Columns: `inspector_id` PK, unique `user_id` FK, u
 
 ### 11.6 `stalls`
 
-Operational street-food stall. Columns: `stall_id` PK, `vendor_id` FK, `area_id` FK, `stall_name`, unique `stall_code`, `address`, coordinates, `status`, `created_at`. Status: `active`, `closed`, or `suspended`.
+Operational street-food stall. Columns: `stall_id` PK, `vendor_id` FK, `area_id` FK, `stall_name`, unique `stall_code`, `address`, coordinates, nullable `photo_url`, `status`, `created_at`. Status: `active`, `closed`, or `suspended`. `photo_url` is populated automatically from a CSV import's Google Drive photo link and is also editable on the admin stall form. The source photo is downloaded once and cached under `static/uploads/stall_photos/` rather than hotlinked, because Google Drive's image responses send `Cross-Origin-Resource-Policy: same-site`, which makes every visitor's browser silently refuse to load it directly from `drive.google.com`; `photo_url` therefore stores a local `/static/...` path. The customer search cards and stall-detail page display it, falling back to a placeholder icon if the image is missing.
 
 ### 11.7 `food_categories`
 
