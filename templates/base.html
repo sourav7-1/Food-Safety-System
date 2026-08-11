@@ -5,46 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Smart Street Food Safety Inspection and Risk Analysis System{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/food-safety-logo.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <a class="visually-hidden-focusable skip-link" href="#main-content">Skip to main content</a>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success sticky-top" aria-label="Primary navigation">
         <div class="container">
             <a class="navbar-brand fw-semibold" href="{{ url_for('home') }}">
-                <img class="navbar-logo" src="{{ url_for('static', filename='images/food-safety-logo.png') }}" alt="Smart Food Safety Inspection logo">
+                <img class="navbar-logo" src="{{ url_for('static', filename='images/food-safety-logo.png') }}" alt="Street Food Safety logo">
                 <span>Street Food Safety</span>
             </a>
-            <div class="d-flex align-items-center gap-2">
-                {% if current_user.is_authenticated %}
-                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.dashboard_redirect') }}">Dashboard</a>
-                    <span class="text-white small d-none d-md-inline">{{ current_user.full_name }}</span>
-                    <form action="{{ url_for('auth.logout') }}" method="post" class="m-0">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                        <button class="btn btn-light btn-sm" type="submit">Logout</button>
-                    </form>
-                {% else %}
-                    <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.login') }}">Login</a>
-                    <a class="btn btn-light btn-sm" href="{{ url_for('auth.register') }}">Register</a>
-                {% endif %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#primaryNav"
+                    aria-controls="primaryNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="primaryNav">
+                <ul class="navbar-nav mx-lg-auto my-3 my-lg-0 gap-lg-1">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}#features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}#how-it-works">How It Works</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}#contact">Contact</a></li>
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    {% if current_user.is_authenticated %}
+                        <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.dashboard_redirect') }}">Dashboard</a>
+                        <span class="text-white small d-none d-md-inline">{{ current_user.full_name }}</span>
+                        <form action="{{ url_for('auth.logout') }}" method="post" class="m-0">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-light btn-sm" type="submit">Logout</button>
+                        </form>
+                    {% else %}
+                        <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.login') }}" aria-label="Login to your account">Login</a>
+                        <a class="btn btn-light btn-sm" href="{{ url_for('auth.register') }}" aria-label="Create a new account">Register</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>
 
-    <main class="container py-5">
+    <main id="main-content" class="{% block main_class %}container py-5{% endblock %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
+                <div class="container{% block flash_top_pad %} pt-4{% endblock %}">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
         {% block content %}{% endblock %}
     </main>
+
+    <footer class="site-footer">
+        <div class="container py-5">
+            <div class="row gy-4">
+                <div class="col-lg-4">
+                    <a class="footer-brand" href="{{ url_for('home') }}">
+                        <img src="{{ url_for('static', filename='images/food-safety-logo.png') }}" alt="Street Food Safety logo">
+                        <span>Street Food Safety</span>
+                    </a>
+                    <p class="footer-tagline">Data-driven inspection and risk analysis for safer street food, city-wide.</p>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h2 class="footer-heading">Quick Links</h2>
+                    <ul class="footer-links">
+                        <li><a href="{{ url_for('home') }}#features">Features</a></li>
+                        <li><a href="{{ url_for('home') }}#about">About</a></li>
+                        <li><a href="{{ url_for('home') }}#contact">Contact</a></li>
+                        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <h2 class="footer-heading">Portals</h2>
+                    <ul class="footer-links">
+                        <li><a href="{{ url_for('auth.register') }}">Vendor Registration</a></li>
+                        <li><a href="{{ url_for('auth.login') }}">Inspector Login</a></li>
+                        <li><a href="{{ url_for('auth.login') }}">Admin Login</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3" id="contact">
+                    <h2 class="footer-heading">Contact</h2>
+                    <ul class="footer-links">
+                        <li><a href="mailto:support@streetfoodsafety.example">support@streetfoodsafety.example</a></li>
+                        <li><span>City Health &amp; Safety Office</span></li>
+                        <li><span>Mon&ndash;Fri, 9:00&ndash;17:00</span></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="footer-rule">
+            <p class="footer-copyright">&copy; {{ current_year|default(2026) }} Street Food Safety. All rights reserved.</p>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {% block scripts %}{% endblock %}

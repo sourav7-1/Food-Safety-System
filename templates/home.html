@@ -1,33 +1,224 @@
 {% extends "base.html" %}
 
+{% block main_class %}landing-main{% endblock %}
+{% block flash_top_pad %}{% endblock %}
+
 {% block content %}
-<section class="py-4">
-    <div class="row align-items-center g-4">
-        <div class="col-lg-8">
-            <p class="text-success fw-semibold mb-2">Inspection and risk analysis platform</p>
-            <h1 class="display-6 fw-bold">Smart Street Food Safety Inspection and Risk Analysis System</h1>
-            <p class="lead text-secondary mt-3">
-                A Flask and MySQL starter project for managing street food inspections,
-                vendor records, safety observations, and risk analysis workflows.
-            </p>
-            {% if current_user.is_authenticated %}
-                <a class="btn btn-success btn-lg mt-2" href="{{ url_for('auth.dashboard_redirect') }}">Open Dashboard</a>
-            {% else %}
-                <a class="btn btn-success btn-lg mt-2" href="{{ url_for('auth.login') }}">Sign In</a>
-                <a class="btn btn-outline-success btn-lg mt-2" href="{{ url_for('auth.register') }}">Create Account</a>
-            {% endif %}
-        </div>
-        <div class="col-lg-4">
-            <div class="border rounded-3 p-4 bg-light">
-                <h2 class="h5">Initial Modules</h2>
-                <ul class="mb-0">
-                    <li>Inspection records</li>
-                    <li>Vendor profiles</li>
-                    <li>Risk scoring</li>
-                    <li>Reports and analytics</li>
-                </ul>
+
+<!-- Hero -->
+<section class="hero-section" aria-labelledby="hero-heading">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <p class="eyebrow">Inspection &amp; Risk Analysis Platform</p>
+                <h1 id="hero-heading" class="hero-heading">Smart Street Food Safety Inspection and Risk Analysis System</h1>
+                <p class="hero-lead">
+                    Street Food Safety helps city health teams register vendors, log on-site inspections,
+                    and automatically score risk &mdash; so inspectors, vendors, and officials all work from
+                    one accurate, up-to-date picture of food safety across the city.
+                </p>
+                <div class="hero-cta">
+                    {% if current_user.is_authenticated %}
+                        <a class="btn btn-success btn-lg" href="{{ url_for('auth.dashboard_redirect') }}">Open Dashboard</a>
+                    {% else %}
+                        <a class="btn btn-success btn-lg" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">Sign In</a>
+                        <a class="btn btn-outline-success btn-lg" href="{{ url_for('auth.register') }}" aria-label="Create a new account">Create Account</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="preview-card" role="img" aria-label="Preview of a vendor risk dashboard showing an overall safety score and recent inspection results">
+                    <div class="preview-card__header">
+                        <div class="preview-card__title">
+                            <span class="preview-dot preview-dot--live" aria-hidden="true"></span>
+                            <span>Vendor Risk Overview</span>
+                        </div>
+                        <span class="badge preview-badge">Live Preview</span>
+                    </div>
+                    <div class="preview-card__body">
+                        <div class="preview-score">
+                            <div class="preview-score__ring" style="--score: 82;">
+                                <span class="preview-score__value">82</span>
+                            </div>
+                            <div>
+                                <p class="preview-score__label">Overall Safety Score</p>
+                                <p class="preview-score__status"><i class="bi bi-shield-check" aria-hidden="true"></i> Low Risk</p>
+                            </div>
+                        </div>
+                        <ul class="preview-list">
+                            <li>
+                                <span class="preview-list__dot preview-list__dot--low" aria-hidden="true"></span>
+                                <span class="preview-list__name">Golden Wok Noodles</span>
+                                <span class="badge preview-badge-low">Low</span>
+                            </li>
+                            <li>
+                                <span class="preview-list__dot preview-list__dot--medium" aria-hidden="true"></span>
+                                <span class="preview-list__name">Riverside Grill Cart</span>
+                                <span class="badge preview-badge-medium">Medium</span>
+                            </li>
+                            <li>
+                                <span class="preview-list__dot preview-list__dot--high" aria-hidden="true"></span>
+                                <span class="preview-list__name">Sunset BBQ Stall</span>
+                                <span class="badge preview-badge-high">High</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </section>
+
+<!-- Trust / stats strip -->
+<section class="stats-strip" aria-label="Platform statistics">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-6 col-lg-3">
+                <p class="stat-number">{{ "{:,}".format(stats.vendors) }}</p>
+                <p class="stat-label">Vendors Tracked</p>
+            </div>
+            <div class="col-6 col-lg-3">
+                <p class="stat-number">{{ "{:,}".format(stats.inspections) }}</p>
+                <p class="stat-label">Inspections Logged</p>
+            </div>
+            <div class="col-6 col-lg-3">
+                <p class="stat-number">{{ "{:,}".format(stats.risk_alerts_resolved) }}</p>
+                <p class="stat-label">Risk Alerts Resolved</p>
+            </div>
+            <div class="col-6 col-lg-3">
+                <p class="stat-number">{{ "{:,}".format(stats.cities) }}</p>
+                <p class="stat-label">Cities Covered</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section id="features" class="features-section" aria-labelledby="features-heading">
+    <div class="container">
+        <div class="section-heading">
+            <p class="eyebrow">What You Can Do</p>
+            <h2 id="features-heading">One platform for the entire inspection workflow</h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-clipboard2-pulse" aria-hidden="true"></i></div>
+                    <h3>Inspection Records</h3>
+                    <p>Log and track the full inspection history for every vendor, with photos, notes, and outcomes in one place.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-shop" aria-hidden="true"></i></div>
+                    <h3>Vendor Profiles</h3>
+                    <p>Centralized vendor and location data, so every stall's history and status is a search away.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></div>
+                    <h3>Risk Scoring</h3>
+                    <p>Automated risk classification per vendor, based on inspection findings and history &mdash; no manual guesswork.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-bar-chart-line" aria-hidden="true"></i></div>
+                    <h3>Reports &amp; Analytics</h3>
+                    <p>Dashboards and exportable reports that turn raw inspection data into clear, actionable insight.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How it works -->
+<section id="how-it-works" class="how-section" aria-labelledby="how-heading">
+    <div class="container">
+        <div class="section-heading">
+            <p class="eyebrow">How It Works</p>
+            <h2 id="how-heading">From registration to resolution, in three steps</h2>
+        </div>
+        <ol class="how-steps">
+            <li class="how-step">
+                <span class="how-step__number" aria-hidden="true">1</span>
+                <h3>Register Vendor</h3>
+                <p>Add a street food vendor's profile, stall location, and food category to the system.</p>
+            </li>
+            <li class="how-step">
+                <span class="how-step__number" aria-hidden="true">2</span>
+                <h3>Conduct Inspection &amp; Score Risk</h3>
+                <p>Inspectors record on-site findings; the platform automatically calculates a risk score.</p>
+            </li>
+            <li class="how-step">
+                <span class="how-step__number" aria-hidden="true">3</span>
+                <h3>Review Reports &amp; Act on Alerts</h3>
+                <p>Officials review dashboards and reports, and follow up on high-risk alerts quickly.</p>
+            </li>
+        </ol>
+    </div>
+</section>
+
+<!-- About / why it matters -->
+<section id="about" class="about-section" aria-labelledby="about-heading">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+                <p class="eyebrow">Why It Matters</p>
+                <h2 id="about-heading">Public health, backed by data</h2>
+                <p class="about-lead">
+                    Street food is a vital part of city life &mdash; and keeping it safe requires more than
+                    paper checklists. Street Food Safety brings transparency to the inspection process,
+                    gives vendors a clear path to compliance, and gives officials the data they need to
+                    act on risk before it becomes a public health incident.
+                </p>
+                <p class="about-lead">
+                    By centralizing inspection history and automating risk scoring, the platform helps
+                    cities enforce standards consistently and fairly, while building public trust in the
+                    food vendors that communities rely on every day.
+                </p>
+            </div>
+            <div class="col-lg-5">
+                <div class="about-panel">
+                    <div class="about-panel__item">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                        <div>
+                            <strong>Transparency</strong>
+                            <span>Open, consistent inspection records for every stall.</span>
+                        </div>
+                    </div>
+                    <div class="about-panel__item">
+                        <i class="bi bi-heart-pulse" aria-hidden="true"></i>
+                        <div>
+                            <strong>Safer Food</strong>
+                            <span>Earlier detection of risk before it reaches the public.</span>
+                        </div>
+                    </div>
+                    <div class="about-panel__item">
+                        <i class="bi bi-cpu" aria-hidden="true"></i>
+                        <div>
+                            <strong>Data-Driven Enforcement</strong>
+                            <span>Risk scores that prioritize where inspectors act next.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA banner -->
+<section class="cta-banner">
+    <div class="container text-center">
+        <h2>Ready to get started?</h2>
+        <p>Create an account to register a vendor, schedule inspections, or track risk across the city.</p>
+        {% if current_user.is_authenticated %}
+            <a class="btn btn-light btn-lg" href="{{ url_for('auth.dashboard_redirect') }}">Open Dashboard</a>
+        {% else %}
+            <a class="btn btn-light btn-lg" href="{{ url_for('auth.register') }}" aria-label="Create a new account">Create Account</a>
+        {% endif %}
+    </div>
+</section>
+
 {% endblock %}

@@ -1,0 +1,367 @@
+/* Customer portal visual system — scoped to .customer-shell so the
+   vendor/inspector portals (which share portal.css) are unaffected. */
+
+.customer-shell {
+    --cf-green: #198754;
+    --cf-green-dark: #0f5132;
+    --cf-green-soft: #e6f6ec;
+    --cf-amber: #a3670a;
+    --cf-amber-soft: #fdf1dd;
+    --cf-orange: #b85615;
+    --cf-orange-soft: #fdece0;
+    --cf-red: #c0323a;
+    --cf-red-soft: #fceceb;
+    --cf-grey: #64748b;
+    --cf-grey-soft: #eef1f5;
+    --cf-ink: #16212e;
+    --cf-ink-dim: #64748b;
+    --cf-border: #e4eaf1;
+    --cf-surface: #ffffff;
+}
+
+/* ---------- Hero titlebar ---------- */
+.customer-shell .portal-titlebar {
+    position: relative;
+    align-items: center;
+    padding: 30px 30px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #0f5132 0%, #146c44 55%, #1c8a54 100%);
+    box-shadow: 0 20px 44px rgba(15, 81, 50, .2);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.customer-shell .portal-titlebar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 88% -20%, rgba(255, 255, 255, .22), transparent 45%);
+    pointer-events: none;
+}
+
+.customer-shell .portal-titlebar > div > span {
+    color: #bdf0d2;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.customer-shell .portal-titlebar h1 {
+    color: #fff;
+}
+
+.customer-shell .portal-titlebar p {
+    color: rgba(255, 255, 255, .8);
+}
+
+.customer-shell .portal-titlebar nav {
+    background: rgba(255, 255, 255, .14);
+    border-color: rgba(255, 255, 255, .22);
+    position: relative;
+    z-index: 1;
+}
+
+.customer-shell .portal-titlebar nav a {
+    color: #eafff4;
+    transition: background .15s ease, color .15s ease;
+}
+
+.customer-shell .portal-titlebar nav a:hover {
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+}
+
+.customer-shell .portal-titlebar nav a.active {
+    background: #fff;
+    color: var(--cf-green-dark);
+}
+
+/* ---------- Cards ---------- */
+.customer-shell .portal-card {
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.customer-shell .customer-stall {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border-top: 4px solid var(--cf-grey);
+}
+
+.customer-shell .customer-stall.risk-accent-low { border-top-color: var(--cf-green); }
+.customer-shell .customer-stall.risk-accent-medium { border-top-color: var(--cf-amber); }
+.customer-shell .customer-stall.risk-accent-high { border-top-color: var(--cf-orange); }
+.customer-shell .customer-stall.risk-accent-critical { border-top-color: var(--cf-red); }
+.customer-shell .customer-stall.risk-accent-unrated { border-top-color: var(--cf-grey); }
+
+.customer-shell .customer-stall:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 36px rgba(18, 32, 51, .1);
+}
+
+.customer-shell .customer-stall .portal-link {
+    margin-top: auto;
+    padding-top: 14px;
+}
+
+/* ---------- Stall photos ---------- */
+.customer-shell .stall-photo {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    margin: -20px -20px 16px;
+    border-radius: 14px 14px 0 0;
+    overflow: hidden;
+    background: var(--cf-green-soft);
+}
+
+.customer-shell .stall-photo img {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.customer-shell .stall-photo.photo-error img {
+    display: none;
+}
+
+.customer-shell .stall-photo-fallback {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--cf-green);
+    font-size: 24px;
+    opacity: .55;
+}
+
+.customer-shell .stall-banner {
+    width: 100%;
+    aspect-ratio: 21 / 6;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 22px;
+    box-shadow: 0 14px 32px rgba(18, 32, 51, .1);
+    background: var(--cf-green-soft);
+}
+
+.customer-shell .stall-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+@media (max-width: 575.98px) {
+    .customer-shell .stall-banner {
+        aspect-ratio: 16 / 9;
+    }
+}
+
+.customer-shell .risk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.customer-shell .risk-badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .85;
+}
+
+/* ---------- Search bar ---------- */
+.customer-shell .search-bar {
+    background: var(--cf-surface);
+    border: 1px solid var(--cf-border);
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(18, 32, 51, .06);
+}
+
+.customer-shell .search-bar .field-icon {
+    position: relative;
+}
+
+.customer-shell .search-bar .field-icon i {
+    position: absolute;
+    left: 13px;
+    top: 34px;
+    color: var(--cf-ink-dim);
+    font-size: 11px;
+    pointer-events: none;
+}
+
+.customer-shell .search-bar .field-icon input {
+    padding-left: 32px;
+}
+
+.customer-shell .result-count {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 4px 2px 16px;
+    color: var(--cf-ink-dim);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.customer-shell .result-count strong {
+    color: var(--cf-ink);
+}
+
+/* ---------- Empty state ---------- */
+.customer-shell .empty-state {
+    text-align: center;
+    padding: 56px 20px;
+    color: var(--cf-ink-dim);
+}
+
+.customer-shell .empty-state i {
+    display: block;
+    font-size: 30px;
+    margin-bottom: 14px;
+    color: var(--cf-green);
+    opacity: .6;
+}
+
+.customer-shell .empty-state strong {
+    display: block;
+    color: var(--cf-ink);
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+/* ---------- Safety profile hero (stall detail) ---------- */
+.customer-shell .safety-hero {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.customer-shell .grade-ring {
+    display: grid;
+    place-items: center;
+    width: 78px;
+    height: 78px;
+    flex: 0 0 78px;
+    border-radius: 50%;
+    font-size: 30px;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(150deg, var(--cf-grey), #48566a);
+    box-shadow: 0 10px 22px rgba(18, 32, 51, .18);
+}
+
+.customer-shell .grade-ring.grade-a { background: linear-gradient(150deg, #22a566, var(--cf-green-dark)); }
+.customer-shell .grade-ring.grade-b { background: linear-gradient(150deg, #2a9d8f, #14655b); }
+.customer-shell .grade-ring.grade-c { background: linear-gradient(150deg, #d99a2b, var(--cf-amber)); }
+.customer-shell .grade-ring.grade-d { background: linear-gradient(150deg, #d9534f, var(--cf-red)); }
+
+/* ---------- Menu grid ---------- */
+.customer-shell .menu-grid > div {
+    position: relative;
+    transition: box-shadow .15s ease, border-color .15s ease;
+}
+
+.customer-shell .menu-grid > div:hover {
+    border-color: var(--cf-green);
+    box-shadow: 0 8px 18px rgba(18, 32, 51, .08);
+}
+
+.customer-shell .menu-grid i {
+    color: var(--cf-green);
+    margin-right: 6px;
+}
+
+/* ---------- Reviews ---------- */
+.customer-shell .review-row {
+    display: flex;
+    gap: 12px;
+}
+
+.customer-shell .review-avatar {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    border-radius: 50%;
+    background: var(--cf-green-soft);
+    color: var(--cf-green-dark);
+    font-weight: 800;
+    font-size: 12px;
+}
+
+.customer-shell .review-row .review-body {
+    display: block;
+    flex: 1;
+    min-width: 0;
+}
+
+/* ---------- Complaint timeline ---------- */
+.customer-shell .complaint-timeline {
+    position: relative;
+}
+
+.customer-shell .complaint-timeline article {
+    position: relative;
+    margin-left: 24px;
+}
+
+.customer-shell .complaint-timeline article::before {
+    content: "";
+    position: absolute;
+    top: 22px;
+    left: -24px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--cf-green);
+    box-shadow: 0 0 0 4px var(--cf-green-soft);
+}
+
+.customer-shell .complaint-timeline article::after {
+    content: "";
+    position: absolute;
+    top: 34px;
+    bottom: -12px;
+    left: -20px;
+    width: 1px;
+    background: var(--cf-border);
+}
+
+.customer-shell .complaint-timeline article:last-child::after {
+    display: none;
+}
+
+/* ---------- Form panels ---------- */
+.customer-shell .panel-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.customer-shell .panel-heading i {
+    color: var(--cf-green);
+}
+
+@media (max-width: 575.98px) {
+    .customer-shell .portal-titlebar {
+        padding: 22px;
+    }
+
+    .customer-shell .grade-ring {
+        width: 62px;
+        height: 62px;
+        flex: 0 0 62px;
+        font-size: 24px;
+    }
+}
