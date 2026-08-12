@@ -82,6 +82,7 @@
 }
 
 .customer-shell .customer-stall {
+    position: relative;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -121,6 +122,12 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: transform .35s ease;
+}
+
+.customer-shell .customer-stall:hover .stall-photo img,
+.customer-shell .customer-stall:focus-within .stall-photo img {
+    transform: scale(1.08);
 }
 
 .customer-shell .stall-photo.photo-error img {
@@ -135,6 +142,91 @@
     color: var(--cf-green);
     font-size: 24px;
     opacity: .55;
+}
+
+/* ---------- Hover quick-preview (photo scrim revealing a summary) ---------- */
+.customer-shell .stall-preview {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    padding: 14px;
+    background: linear-gradient(180deg, rgba(15, 23, 32, 0) 42%, rgba(11, 20, 28, .88) 100%);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .22s ease, transform .22s ease;
+    pointer-events: none;
+}
+
+.customer-shell .customer-stall:hover .stall-preview,
+.customer-shell .customer-stall:focus-within .stall-preview {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.customer-shell .stall-preview-inner {
+    width: 100%;
+    color: #fff;
+}
+
+.customer-shell .preview-vendor {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: #bdf0d2;
+}
+
+.customer-shell .preview-menu {
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: 12px;
+}
+
+.customer-shell .preview-menu li {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .16);
+}
+
+.customer-shell .preview-menu li:last-child {
+    border-bottom: none;
+}
+
+.customer-shell .preview-menu b {
+    white-space: nowrap;
+    font-weight: 700;
+    color: #eafff4;
+}
+
+.customer-shell .preview-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    opacity: .9;
+}
+
+@media (hover: none) {
+    /* Touch devices have no hover: keep the zoom/scrim off so the photo
+       stays readable and the card behaves like a normal tap target. */
+    .customer-shell .customer-stall:hover .stall-photo img {
+        transform: none;
+    }
+
+    .customer-shell .stall-preview {
+        display: none;
+    }
 }
 
 .customer-shell .stall-banner {
