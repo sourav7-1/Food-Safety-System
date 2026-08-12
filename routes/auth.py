@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from urllib.parse import urljoin, urlparse
 
 from authlib.integrations.base_client.errors import OAuthError
@@ -14,8 +15,15 @@ from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
-from extensions import db, oauth
+from extensions import db, limiter, oauth
 from models import Role, User
+from services.email_verification import (
+    VerificationTokenExpired,
+    VerificationTokenInvalid,
+    send_verification_email,
+    verify_verification_token,
+)
+from services.turnstile import verify_turnstile
 
 
 auth_bp = Blueprint("auth", __name__)
@@ -67,6 +75,7 @@ def _default_customer_role():
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute", methods=["POST"])
 def login():
     if current_user.is_authenticated:
         return redirect(_dashboard_url(current_user))
@@ -88,6 +97,15 @@ def login():
             flash(
                 "Your account is disabled. Please contact an administrator.",
                 "danger",
+            )
+            return render_template("auth/login.html"), 403
+
+        if user.auth_provider == "local" and not user.is_email_verified:
+            flash(
+                "Please verify your email address before logging in. "
+                "Check your inbox for the verification link, or request "
+                "a new one below.",
+                "warning",
             )
             return render_template("auth/login.html"), 403
 
@@ -148,6 +166,9 @@ def google_callback():
         if user is not None:
             # Existing local (or previously-linked) account: link, never duplicate.
             user.google_id = google_id
+            if user.email_verified_at is None:
+                # Google already confirmed ownership of this inbox above.
+                user.email_verified_at = datetime.now(timezone.utc)
         else:
             customer_role = _default_customer_role()
             if customer_role is None:
@@ -161,6 +182,7 @@ def google_callback():
                 google_id=google_id,
                 auth_provider="google",
                 status="active",
+                email_verified_at=datetime.now(timezone.utc),
             )
             db.session.add(user)
 
@@ -184,6 +206,7 @@ def google_callback():
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
 def register():
     if current_user.is_authenticated:
         return redirect(_dashboard_url(current_user))
@@ -208,6 +231,11 @@ def register():
             errors.append("An account with that email already exists.")
         if phone and User.query.filter_by(phone=phone).first():
             errors.append("An account with that phone number already exists.")
+        if not verify_turnstile(
+            request.form.get("cf-turnstile-response"),
+            remote_ip=request.remote_addr,
+        ):
+            errors.append("Bot verification failed. Please try again.")
 
         customer_role = _default_customer_role()
         if customer_role is None:
@@ -240,10 +268,97 @@ def register():
             )
             return render_template("auth/register.html"), 409
 
-        flash("Registration successful. You can now log in.", "success")
+        result = send_verification_email(user)
+        if result.sent:
+            flash(
+                "Registration successful. Check your email for a link to "
+                "verify your account before logging in.",
+                "success",
+            )
+        elif result.dev_link:
+            # DEBUG-only fallback so localhost testing works without real
+            # SMTP credentials configured yet. Never logged; shown only in
+            # this response, to the person who just typed this address in.
+            flash(
+                "Registration successful. Email sending isn't configured "
+                "yet, so here is your verification link for local testing: "
+                + result.dev_link,
+                "warning",
+            )
+        else:
+            flash(
+                "Registration successful, but we could not send a "
+                "verification email right now. Use \"Resend verification "
+                "email\" on the login page once you're ready to try again.",
+                "warning",
+            )
         return redirect(url_for("auth.login"))
 
     return render_template("auth/register.html")
+
+
+@auth_bp.route("/verify-email/<token>")
+def verify_email(token):
+    if current_user.is_authenticated:
+        return redirect(_dashboard_url(current_user))
+
+    try:
+        user_id = verify_verification_token(token)
+    except VerificationTokenExpired:
+        flash("This verification link has expired.", "danger")
+        return redirect(url_for("auth.resend_verification"))
+    except VerificationTokenInvalid:
+        flash(
+            "This verification link is invalid or has already been used.",
+            "danger",
+        )
+        return redirect(url_for("auth.resend_verification"))
+
+    user = db.session.get(User, user_id)
+
+    # A signature can verify successfully yet still be "used up": once
+    # email_verified_at is set, the same link must not work a second time.
+    if user is None or user.email_verified_at is not None:
+        flash(
+            "This verification link is invalid or has already been used.",
+            "danger",
+        )
+        return redirect(url_for("auth.login"))
+
+    user.email_verified_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    flash("Your email has been verified. You can now log in.", "success")
+    return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/resend-verification", methods=["GET", "POST"])
+@limiter.limit("3 per hour", methods=["POST"])
+def resend_verification():
+    if current_user.is_authenticated:
+        return redirect(_dashboard_url(current_user))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        user = User.query.filter(func.lower(User.email) == email).first()
+
+        if (
+            user is not None
+            and user.auth_provider == "local"
+            and user.email_verified_at is None
+        ):
+            send_verification_email(user)
+
+        # Same message regardless of outcome, so this endpoint can't be
+        # used to check which email addresses are registered.
+        flash(
+            "If that email address is registered and not yet verified, "
+            "a new verification link has been sent.",
+            "info",
+        )
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/resend_verification.html")
 
 
 @auth_bp.route("/logout", methods=["POST"])

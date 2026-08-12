@@ -36,6 +36,11 @@
                 <input class="form-control" id="confirm_password" name="confirm_password"
                        type="password" autocomplete="new-password" minlength="8" required>
             </div>
+            {% if config.TURNSTILE_SITE_KEY %}
+            <div class="mb-4">
+                <div class="cf-turnstile" data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"></div>
+            </div>
+            {% endif %}
             <button class="btn btn-success w-100" type="submit">Create account</button>
         </form>
 
@@ -47,4 +52,10 @@
         </p>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if config.TURNSTILE_SITE_KEY %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
 {% endblock %}

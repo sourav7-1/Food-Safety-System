@@ -45,6 +45,7 @@ class User(UserMixin, db.Model):
         default="active",
         server_default="active",
     )
+    email_verified_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(
         db.DateTime,
         nullable=False,
@@ -71,6 +72,10 @@ class User(UserMixin, db.Model):
     @property
     def is_active(self):
         return self.status == "active"
+
+    @property
+    def is_email_verified(self):
+        return self.email_verified_at is not None
 
     @property
     def role_name(self):

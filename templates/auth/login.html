@@ -84,6 +84,10 @@
             New customer?
             <a href="{{ url_for('auth.register') }}">Create a customer account</a>
         </p>
+        <p class="text-center text-secondary mt-2 mb-0">
+            Didn't get a verification email?
+            <a href="{{ url_for('auth.resend_verification') }}">Resend it</a>
+        </p>
     </section>
 </div>
 {% endblock %}

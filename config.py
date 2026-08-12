@@ -33,6 +33,28 @@ class Config:
     MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
     MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "smart_street_food_safety")
 
+    # Outgoing mail (used to send email-verification links).
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "")
+    MAIL_PORT = int(os.getenv("MAIL_PORT") or "587")
+    MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() == "true"
+    MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() == "true"
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME", "")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
+    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER") or MAIL_USERNAME
+
+    # How long an email-verification link stays valid, in seconds.
+    EMAIL_VERIFICATION_MAX_AGE = int(
+        os.getenv("EMAIL_VERIFICATION_MAX_AGE_SECONDS") or str(24 * 60 * 60)
+    )
+
+    # Cloudflare Turnstile (registration bot protection). Left blank,
+    # verification is skipped so local development keeps working.
+    TURNSTILE_SITE_KEY = os.getenv("TURNSTILE_SITE_KEY", "")
+    TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY", "")
+
+    # Flask-Limiter storage backend for register/login rate limits.
+    RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
+
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL") or URL.create(
         drivername="mysql+pymysql",
         username=MYSQL_USER,

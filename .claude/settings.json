@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./venv/Scripts/python.exe \"C:\\\\Users\\\\SOURAV\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Food-safety-system\\\\308a40c6-bee2-4ddd-83ed-248ad03157f8\\\\scratchpad\\\\smoke_turnstile.py\")"
+    ]
+  }
+}

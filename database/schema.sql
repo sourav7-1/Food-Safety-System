@@ -45,6 +45,7 @@ create table users (
   google_id varchar(255) null,
   auth_provider enum('local', 'google') not null default 'local',
   status enum('active', 'inactive', 'suspended') not null default 'active',
+  email_verified_at datetime null,
   created_at timestamp not null default current_timestamp,
   updated_at timestamp not null default current_timestamp on update current_timestamp,
   primary key (user_id),

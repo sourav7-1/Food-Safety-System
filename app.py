@@ -15,7 +15,7 @@ from flask import (
 from flask_login import current_user, logout_user
 
 from config import Config
-from extensions import db, login_manager, oauth
+from extensions import db, limiter, login_manager, mail, oauth
 
 
 def create_app(config_class=Config):
@@ -27,6 +27,9 @@ def create_app(config_class=Config):
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Please log in to access that page."
     login_manager.login_message_category = "warning"
+
+    mail.init_app(app)
+    limiter.init_app(app)
 
     oauth.init_app(app)
     if app.config.get("GOOGLE_CLIENT_ID") and app.config.get("GOOGLE_CLIENT_SECRET"):
@@ -128,6 +131,8 @@ def create_app(config_class=Config):
     )
     def create_admin(name, email, password):
         """Create the first active administrator account."""
+        from datetime import datetime, timezone
+
         from models import Role, User
 
         normalized_email = email.strip().lower()
@@ -152,6 +157,9 @@ def create_app(config_class=Config):
             full_name=name.strip(),
             email=normalized_email,
             status="active",
+            # Created via trusted CLI access, not public registration, so
+            # it does not need to go through email verification.
+            email_verified_at=datetime.now(timezone.utc),
         )
         user.set_password(password)
         db.session.add(user)
