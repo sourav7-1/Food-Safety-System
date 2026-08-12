@@ -141,17 +141,19 @@ SELECT
   a.area_id,
   a.area_name,
   COUNT(c.complaint_id) AS total_complaints,
-  SUM(CASE WHEN c.status = 'open' THEN 1 ELSE 0 END)
-    AS open_complaints,
-  SUM(CASE WHEN c.status = 'under_review' THEN 1 ELSE 0 END)
+  SUM(CASE WHEN c.status = 'submitted' THEN 1 ELSE 0 END)
+    AS submitted_complaints,
+  SUM(CASE WHEN c.status IN ('under_review', 'investigation', 'action_required') THEN 1 ELSE 0 END)
     AS complaints_under_review,
   SUM(CASE WHEN c.status = 'resolved' THEN 1 ELSE 0 END)
     AS resolved_complaints,
   SUM(CASE WHEN c.status = 'rejected' THEN 1 ELSE 0 END)
     AS rejected_complaints,
+  SUM(CASE WHEN c.status = 'closed' THEN 1 ELSE 0 END)
+    AS closed_complaints,
   SUM(
     CASE
-      WHEN c.status IN ('open', 'under_review')
+      WHEN c.status IN ('submitted', 'under_review', 'investigation', 'action_required')
        AND ct.severity_level IN ('high', 'critical')
       THEN 1 ELSE 0
     END

@@ -55,7 +55,7 @@ complaint_totals AS (
   SELECT
     c.stall_id,
     COUNT(*) AS total_complaints,
-    SUM(c.status IN ('open', 'under_review')) AS unresolved_complaints,
+    SUM(c.status IN ('submitted', 'under_review', 'investigation', 'action_required')) AS unresolved_complaints,
     SUM(ct.severity_level IN ('high', 'critical')) AS severe_complaints
   FROM complaints AS c
   INNER JOIN complaint_types AS ct

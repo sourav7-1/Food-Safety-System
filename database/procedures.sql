@@ -57,7 +57,7 @@ BEGIN
     INNER JOIN complaint_types AS ct
       ON ct.complaint_type_id = c.complaint_type_id
    WHERE c.stall_id = p_stall_id
-     AND c.status IN ('open', 'under_review');
+     AND c.status IN ('submitted', 'under_review', 'investigation', 'action_required');
 
   -- No eligible inspection is treated as unverified and therefore critical.
   SET p_risk_score = GREATEST(

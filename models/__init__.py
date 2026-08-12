@@ -352,10 +352,18 @@ class Complaint(db.Model):
     title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=False)
     status = db.Column(
-        db.Enum("open", "under_review", "resolved", "rejected"),
+        db.Enum(
+            "submitted",
+            "under_review",
+            "investigation",
+            "action_required",
+            "resolved",
+            "rejected",
+            "closed",
+        ),
         nullable=False,
-        default="open",
-        server_default="open",
+        default="submitted",
+        server_default="submitted",
     )
     submitted_at = db.Column(
         db.DateTime,
@@ -370,6 +378,107 @@ class Complaint(db.Model):
     corrective_actions = db.relationship(
         "CorrectiveAction", back_populates="complaint"
     )
+    evidence = db.relationship(
+        "ComplaintEvidence",
+        back_populates="complaint",
+        cascade="all, delete-orphan",
+        order_by="ComplaintEvidence.uploaded_at",
+    )
+
+
+class ComplaintEvidence(db.Model):
+    __tablename__ = "complaint_evidence"
+
+    evidence_id = db.Column(db.Integer, primary_key=True)
+    complaint_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "complaints.complaint_id", onupdate="CASCADE", ondelete="CASCADE"
+        ),
+        nullable=False,
+    )
+    uploaded_by = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
+    file_name = db.Column(db.String(255), nullable=False)
+    stored_file_name = db.Column(db.String(255), nullable=False)
+    file_type = db.Column(
+        db.Enum("image", "video", "audio", "document"), nullable=False
+    )
+    mime_type = db.Column(db.String(150), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False)
+    storage_path = db.Column(db.String(500), nullable=False)
+    file_hash = db.Column(db.String(64), nullable=False)
+    evidence_description = db.Column(db.String(500))
+    uploaded_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.current_timestamp(),
+    )
+    verification_status = db.Column(
+        db.Enum("pending", "under_review", "verified", "rejected"),
+        nullable=False,
+        default="pending",
+        server_default="pending",
+    )
+    verified_by = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
+    verified_at = db.Column(db.DateTime)
+    rejection_reason = db.Column(db.String(500))
+
+    complaint = db.relationship("Complaint", back_populates="evidence")
+    uploader = db.relationship("User", foreign_keys=[uploaded_by])
+    verifier = db.relationship("User", foreign_keys=[verified_by])
+    audit_logs = db.relationship(
+        "EvidenceAuditLog",
+        back_populates="evidence",
+        cascade="all, delete-orphan",
+        order_by="EvidenceAuditLog.action_time",
+    )
+
+
+class EvidenceAuditLog(db.Model):
+    __tablename__ = "evidence_audit_logs"
+
+    audit_id = db.Column(db.Integer, primary_key=True)
+    evidence_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "complaint_evidence.evidence_id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
+    action = db.Column(
+        db.Enum(
+            "uploaded",
+            "viewed",
+            "downloaded",
+            "marked_under_review",
+            "verified",
+            "rejected",
+        ),
+        nullable=False,
+    )
+    action_time = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.current_timestamp(),
+    )
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.String(255))
+    details = db.Column(db.String(255))
+
+    evidence = db.relationship("ComplaintEvidence", back_populates="audit_logs")
+    user = db.relationship("User")
 
 
 class FoodCategory(db.Model):

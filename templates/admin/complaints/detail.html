@@ -1,7 +1,65 @@
 {% extends "admin/base.html" %}{% block content %}
 <div class="form-heading"><a href="{{ url_for('admin.complaints') }}"><i class="fa-solid fa-arrow-left"></i></a><div><p class="eyebrow mb-1">COMPLAINT #{{ complaint.complaint_id }}</p><h2>{{ complaint.title }}</h2><p>{{ complaint.stall.stall_name }} · {{ complaint.complaint_type.type_name }}</p></div></div>
 <div class="row g-4"><div class="col-lg-7"><section class="panel-card"><h3 class="h6 fw-bold">Customer report</h3><p class="text-secondary">{{ complaint.description }}</p><dl class="row small mb-0"><dt class="col-4">Submitted by</dt><dd class="col-8">{{ complaint.submitted_by.full_name if complaint.submitted_by else 'Anonymous' }}</dd><dt class="col-4">Submitted</dt><dd class="col-8">{{ complaint.submitted_at.strftime('%d %b %Y, %I:%M %p') }}</dd><dt class="col-4">Severity</dt><dd class="col-8">{{ complaint.complaint_type.severity_level|title }}</dd></dl></section></div>
-<div class="col-lg-5"><form method="post" class="panel-card entity-form"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><h3>Resolution</h3><label>Status</label><select class="form-select mb-3" name="status">{% for value in ['open','under_review','resolved','rejected'] %}<option value="{{ value }}" {{ 'selected' if complaint.status == value }}>{{ value|replace('_',' ')|title }}</option>{% endfor %}</select><hr><h3>Optional corrective action</h3><label>Required action</label><textarea class="form-control mb-3" name="action_description" rows="3" placeholder="Leave blank if no new action is needed"></textarea><label>Due date</label><input class="form-control mb-3" type="date" name="due_date"><button class="btn btn-primary w-100">Save complaint</button></form></div></div>
+<div class="col-lg-5"><form method="post" class="panel-card entity-form"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><h3>Resolution</h3><label>Status</label><select class="form-select mb-3" name="status">{% for value in ['submitted','under_review','investigation','action_required','resolved','rejected','closed'] %}<option value="{{ value }}" {{ 'selected' if complaint.status == value }}>{{ value|replace('_',' ')|title }}</option>{% endfor %}</select><p class="text-secondary small mb-3">Evidence verification below is independent of this status &mdash; verifying or rejecting a file never changes the complaint's own status.</p><hr><h3>Optional corrective action</h3><label>Required action</label><textarea class="form-control mb-3" name="action_description" rows="3" placeholder="Leave blank if no new action is needed"></textarea><label>Due date</label><input class="form-control mb-3" type="date" name="due_date"><button class="btn btn-primary w-100">Save complaint</button></form></div></div>
+
+<div class="row g-4 mt-1"><div class="col-12"><section class="panel-card">
+<h3 class="h6 fw-bold mb-2">Evidence</h3>
+<div class="evidence-summary-counts">
+    <span><strong>{{ complaint.evidence|length }}</strong> total</span>
+    <span><strong>{{ complaint.evidence|selectattr('verification_status','equalto','pending')|list|length }}</strong> pending</span>
+    <span><strong>{{ complaint.evidence|selectattr('verification_status','equalto','under_review')|list|length }}</strong> under review</span>
+    <span><strong>{{ complaint.evidence|selectattr('verification_status','equalto','verified')|list|length }}</strong> verified</span>
+    <span><strong>{{ complaint.evidence|selectattr('verification_status','equalto','rejected')|list|length }}</strong> rejected</span>
+</div>
+{% if complaint.evidence %}
+<div class="evidence-grid">
+{% for item in complaint.evidence %}
+<div class="evidence-card">
+    {% if item.file_type == 'image' %}
+    <img src="{{ url_for('admin.evidence_download', evidence_id=item.evidence_id) }}" alt="{{ item.file_name }}" loading="lazy">
+    {% elif item.file_type == 'video' %}
+    <video controls preload="metadata" src="{{ url_for('admin.evidence_download', evidence_id=item.evidence_id) }}"></video>
+    {% elif item.file_type == 'audio' %}
+    <audio controls preload="metadata" src="{{ url_for('admin.evidence_download', evidence_id=item.evidence_id) }}"></audio>
+    {% else %}
+    <a class="btn btn-sm btn-outline-secondary w-100 mb-2" href="{{ url_for('admin.evidence_download', evidence_id=item.evidence_id) }}"><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>
+    {% endif %}
+    <span class="evidence-name">{{ item.file_name }}</span>
+    <span class="evidence-meta">{{ (item.file_size / 1024)|round(0, 'floor')|int }} KB &middot; uploaded {{ item.uploaded_at.strftime('%d %b %Y') }}{% if item.uploader %} by {{ item.uploader.full_name }}{% endif %}</span>
+    <span class="status-pill status-{{ item.verification_status }}">{{ item.verification_status|replace('_',' ')|title }}</span>
+    {% if item.verification_status == 'rejected' and item.rejection_reason %}<span class="evidence-rejection-note"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ item.rejection_reason }}</span>{% endif %}
+
+    {% if item.verification_status != 'verified' %}
+    <form method="post" action="{{ url_for('admin.evidence_status', evidence_id=item.evidence_id) }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="verification_status" value="verified">
+        <button class="btn btn-sm btn-success" type="submit">Verify</button>
+    </form>
+    {% endif %}
+    {% if item.verification_status not in ('under_review', 'verified') %}
+    <form method="post" action="{{ url_for('admin.evidence_status', evidence_id=item.evidence_id) }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="verification_status" value="under_review">
+        <button class="btn btn-sm btn-soft" type="submit">Mark under review</button>
+    </form>
+    {% endif %}
+    {% if item.verification_status != 'rejected' %}
+    <form method="post" action="{{ url_for('admin.evidence_status', evidence_id=item.evidence_id) }}" class="evidence-rejection-form">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="verification_status" value="rejected">
+        <input class="form-control form-control-sm mb-1" type="text" name="rejection_reason" placeholder="Reason for rejection" required>
+        <button class="btn btn-sm btn-outline-danger w-100" type="submit">Reject</button>
+    </form>
+    {% endif %}
+</div>
+{% endfor %}
+</div>
+{% else %}
+<p class="text-secondary mb-0">No evidence was attached to this complaint.</p>
+{% endif %}
+</section></div></div>
+
 {% if complaint.corrective_actions %}
 <div class="row g-4 mt-1"><div class="col-12"><section class="panel-card"><h3 class="h6 fw-bold">Corrective actions on this complaint</h3><ul class="list-unstyled mb-0">{% for action in complaint.corrective_actions %}<li class="mb-2 pb-2 border-bottom"><strong>{{ action.status|replace('_',' ')|title }}</strong> &mdash; {{ action.action_description }} <span class="text-secondary">(due {{ action.due_date.strftime('%d %b %Y') }})</span></li>{% endfor %}</ul></section></div></div>
 {% endif %}

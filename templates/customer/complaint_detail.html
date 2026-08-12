@@ -1,0 +1,48 @@
+{% extends "customer/base.html" %}
+{% block title %}Complaint #{{ complaint.complaint_id }} · Street Food Safety{% endblock %}
+{% block portal_title %}Complaint #{{ complaint.complaint_id }}{% endblock %}
+{% block portal_subtitle %}{{ complaint.stall.stall_name }} &middot; {{ complaint.complaint_type.type_name }}{% endblock %}
+{% block portal_content %}
+<div class="portal-card mb-4">
+    <div class="d-flex justify-content-between align-items-start gap-3">
+        <div>
+            <h2 class="h4 mb-1">{{ complaint.title }}</h2>
+            <p class="text-secondary mb-0">Submitted {{ complaint.submitted_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+        </div>
+        <span class="risk-badge status-{{ complaint.status }}">{{ complaint.status|replace('_',' ')|title }}</span>
+    </div>
+    <p class="complaint-description mt-3 mb-0">{{ complaint.description }}</p>
+    {% if complaint.resolved_at %}
+    <small class="text-secondary d-block mt-2">Closed {{ complaint.resolved_at.strftime('%d %b %Y, %I:%M %p') }}</small>
+    {% endif %}
+</div>
+
+<div class="portal-card">
+    <h3 class="panel-heading mb-3"><i class="fa-solid fa-paperclip"></i> Evidence</h3>
+    <p class="text-secondary small mb-3">Evidence supports an investigation &mdash; it does not verify your complaint by itself. Each file is reviewed independently by an administrator.</p>
+    {% if complaint.evidence %}
+    <div class="evidence-grid">
+        {% for item in complaint.evidence %}
+        <div class="evidence-card">
+            {% if item.file_type == 'image' %}
+            <img src="{{ url_for('customer_portal.evidence_download', evidence_id=item.evidence_id) }}" alt="{{ item.file_name }}" loading="lazy">
+            {% elif item.file_type == 'video' %}
+            <video controls preload="metadata" src="{{ url_for('customer_portal.evidence_download', evidence_id=item.evidence_id) }}"></video>
+            {% elif item.file_type == 'audio' %}
+            <audio controls preload="metadata" src="{{ url_for('customer_portal.evidence_download', evidence_id=item.evidence_id) }}"></audio>
+            {% else %}
+            <a class="btn btn-sm btn-outline-secondary w-100 mb-2" href="{{ url_for('customer_portal.evidence_download', evidence_id=item.evidence_id) }}"><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>
+            {% endif %}
+            <span class="evidence-name">{{ item.file_name }}</span>
+            <span class="risk-badge status-{{ item.verification_status }}">{{ item.verification_status|replace('_',' ')|title }}</span>
+            {% if item.verification_status == 'rejected' and item.rejection_reason %}
+            <span class="evidence-rejection"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ item.rejection_reason }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-secondary mb-0">No evidence was attached to this complaint.</p>
+    {% endif %}
+</div>
+{% endblock %}

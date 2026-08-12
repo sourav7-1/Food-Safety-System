@@ -145,9 +145,20 @@ Every report dataset is queried from MySQL through SQLAlchemy.
 
 ## Evidence uploads
 
-Corrective evidence accepts PNG, JPG, JPEG, and PDF files up to 8 MB. Files
-default to `static/uploads/evidence`; the location can be changed with
-`UPLOAD_FOLDER`. Downloads enforce vendor ownership or administrator access.
+Corrective-action evidence and complaint evidence are stored outside the
+public `static/` directory, under `EVIDENCE_STORAGE_PATH` (defaults to
+`instance/evidence`), and are only reachable through authenticated,
+authorization-checked download routes — there is no public URL that serves
+them directly. Downloads enforce vendor/customer ownership or administrator
+access. Complaint evidence accepts images (JPG/JPEG/PNG/WEBP, 10 MB),
+videos (MP4/WEBM/MOV, 100 MB), audio (MP3/WAV/M4A/WEBM, 25 MB), and PDFs
+(10 MB); corrective-action evidence still accepts PNG/JPG/JPEG/PDF. Every
+file is validated by extension, MIME type, and a magic-byte signature
+check, and its SHA-256 hash is recorded. Uploaded evidence starts
+`PENDING` and is never auto-verified — an administrator must explicitly
+verify or reject each file, independently of the complaint's own status.
+All per-type size limits, the max files per complaint, and the storage
+location are configurable via environment variables (see `.env.example`).
 
 Do not commit uploaded evidence or production credentials to source control.
 

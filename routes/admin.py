@@ -17,6 +17,7 @@ from extensions import db
 from models import (
     Area,
     Complaint,
+    ComplaintEvidence,
     ComplaintType,
     CorrectiveAction,
     FoodCategory,
@@ -30,6 +31,7 @@ from models import (
     Vendor,
 )
 from routes import role_required
+from services.evidence import record_audit, serve_complaint_evidence
 from services.registration_import import cache_photo
 
 
@@ -37,12 +39,35 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 USER_STATUSES = {"active", "inactive", "suspended"}
 STALL_STATUSES = {"active", "closed", "suspended"}
-COMPLAINT_STATUSES = {"open", "under_review", "resolved", "rejected"}
+COMPLAINT_STATUSES = {
+    "submitted",
+    "under_review",
+    "investigation",
+    "action_required",
+    "resolved",
+    "rejected",
+    "closed",
+}
 COMPLAINT_TRANSITIONS = {
-    "open": {"open", "under_review"},
-    "under_review": {"under_review", "resolved", "rejected", "open"},
-    "resolved": {"resolved", "under_review"},
-    "rejected": {"rejected", "under_review"},
+    "submitted": {"submitted", "under_review", "rejected"},
+    "under_review": {
+        "under_review", "investigation", "action_required", "resolved", "rejected",
+    },
+    "investigation": {
+        "investigation", "action_required", "resolved", "rejected", "under_review",
+    },
+    "action_required": {
+        "action_required", "resolved", "rejected", "under_review",
+    },
+    "resolved": {"resolved", "closed", "under_review"},
+    "rejected": {"rejected", "closed", "under_review"},
+    "closed": {"closed", "under_review"},
+}
+EVIDENCE_VERIFICATION_STATUSES = {"under_review", "verified", "rejected"}
+EVIDENCE_ACTION_BY_STATUS = {
+    "under_review": "marked_under_review",
+    "verified": "verified",
+    "rejected": "rejected",
 }
 
 
@@ -670,7 +695,7 @@ def inspector_delete(inspector_id):
 def complaints():
     status = request.args.get("status", "").strip()
     query = Complaint.query.join(Complaint.stall)
-    if status in {"open", "under_review", "resolved", "rejected"}:
+    if status in COMPLAINT_STATUSES:
         query = query.filter(Complaint.status == status)
     records = query.order_by(Complaint.submitted_at.desc()).all()
     return render_template(
@@ -711,7 +736,9 @@ def complaint_manage(complaint_id):
             )
         complaint.status = status
         complaint.resolved_at = (
-            datetime.now() if status in {"resolved", "rejected"} else None
+            datetime.now()
+            if status in {"resolved", "rejected", "closed"}
+            else None
         )
 
         action_description = request.form.get(
@@ -764,7 +791,7 @@ def complaint_manage(complaint_id):
                         status="pending",
                     )
                 )
-                if status == "open":
+                if status == "submitted":
                     complaint.status = "under_review"
 
         if _commit(
@@ -784,6 +811,68 @@ def complaint_manage(complaint_id):
         "admin/complaints/detail.html",
         page_title="Manage Complaint",
         complaint=complaint,
+    )
+
+
+@admin_bp.route("/evidence/<int:evidence_id>")
+@login_required
+@role_required("admin")
+def evidence_download(evidence_id):
+    evidence = db.get_or_404(ComplaintEvidence, evidence_id)
+    record_audit(evidence, current_user, "viewed")
+    return serve_complaint_evidence(evidence)
+
+
+@admin_bp.route("/evidence/<int:evidence_id>/status", methods=["POST"])
+@login_required
+@role_required("admin")
+def evidence_status(evidence_id):
+    evidence = db.get_or_404(ComplaintEvidence, evidence_id)
+    status = request.form.get("verification_status", "")
+    if status not in EVIDENCE_VERIFICATION_STATUSES:
+        flash("Select a valid evidence verification status.", "danger")
+        return redirect(
+            url_for(
+                "admin.complaint_manage",
+                complaint_id=evidence.complaint_id,
+            )
+        )
+
+    rejection_reason = request.form.get("rejection_reason", "").strip()
+    if status == "rejected" and not rejection_reason:
+        flash("A rejection reason is required to reject evidence.", "danger")
+        return redirect(
+            url_for(
+                "admin.complaint_manage",
+                complaint_id=evidence.complaint_id,
+            )
+        )
+
+    # Evidence verification is a decision about the FILE, not about the
+    # complaint -- complaint.status is never touched here. See
+    # complaint_manage() for the separate, independent complaint decision.
+    evidence.verification_status = status
+    evidence.rejection_reason = rejection_reason if status == "rejected" else None
+    if status in {"verified", "rejected"}:
+        evidence.verified_by = current_user.user_id
+        evidence.verified_at = datetime.now()
+    else:
+        evidence.verified_by = None
+        evidence.verified_at = None
+
+    if _commit(
+        "Evidence status updated.",
+        "Evidence status could not be updated.",
+    ):
+        record_audit(
+            evidence,
+            current_user,
+            EVIDENCE_ACTION_BY_STATUS[status],
+            details=rejection_reason if status == "rejected" else None,
+        )
+
+    return redirect(
+        url_for("admin.complaint_manage", complaint_id=evidence.complaint_id)
     )
 
 

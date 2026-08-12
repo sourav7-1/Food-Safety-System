@@ -1,5 +1,7 @@
 from flask import (
     Blueprint,
+    abort,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -10,10 +12,11 @@ from flask_login import current_user, login_required
 from sqlalchemy import func, or_, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from extensions import db
+from extensions import db, limiter
 from models import (
     Area,
     Complaint,
+    ComplaintEvidence,
     ComplaintType,
     FoodCategory,
     FoodItem,
@@ -22,6 +25,13 @@ from models import (
     Stall,
 )
 from routes import role_required
+from services.evidence import (
+    EvidenceValidationError,
+    delete_stored_complaint_files,
+    record_audit,
+    serve_complaint_evidence,
+    validate_and_store_complaint_evidence,
+)
 
 
 customer_bp = Blueprint(
@@ -219,6 +229,7 @@ def submit_review(stall_id):
 @customer_bp.route("/stalls/<int:stall_id>/complaint", methods=["POST"])
 @login_required
 @role_required("customer", "consumer")
+@limiter.limit("10 per hour")
 def submit_complaint(stall_id):
     Stall.query.filter_by(stall_id=stall_id, status="active").first_or_404()
     complaint_type = db.session.get(
@@ -232,23 +243,80 @@ def submit_complaint(stall_id):
         return redirect(
             url_for("customer_portal.stall_detail", stall_id=stall_id)
         )
+
+    evidence_files = [
+        item for item in request.files.getlist("evidence") if item and item.filename
+    ]
+    max_files = current_app.config.get("EVIDENCE_MAX_FILES_PER_COMPLAINT", 5)
+    if len(evidence_files) > max_files:
+        flash(
+            f"You can attach at most {max_files} evidence files per "
+            "complaint.",
+            "danger",
+        )
+        return redirect(
+            url_for("customer_portal.stall_detail", stall_id=stall_id)
+        )
+
     complaint = Complaint(
         stall_id=stall_id,
         complaint_type_id=complaint_type.complaint_type_id,
         submitted_by_user_id=current_user.user_id,
         title=title,
         description=description,
-        status="open",
+        status="submitted",
     )
     db.session.add(complaint)
+
+    # Evidence is optional supporting information, not proof: every file
+    # is stored PENDING and only an admin can move it to verified/rejected
+    # (see routes/admin.py:evidence_status). This never touches
+    # complaint.status.
+    saved_relative_paths = []
     try:
+        db.session.flush()  # assigns complaint.complaint_id for storage_path
+        for uploaded_file in evidence_files:
+            metadata = validate_and_store_complaint_evidence(
+                uploaded_file, complaint.complaint_id
+            )
+            saved_relative_paths.append(metadata["storage_path"])
+            db.session.add(
+                ComplaintEvidence(
+                    complaint_id=complaint.complaint_id,
+                    uploaded_by=current_user.user_id,
+                    verification_status="pending",
+                    **metadata,
+                )
+            )
         db.session.commit()
+    except EvidenceValidationError as error:
+        db.session.rollback()
+        delete_stored_complaint_files(saved_relative_paths)
+        flash(str(error), "danger")
+        return redirect(
+            url_for("customer_portal.stall_detail", stall_id=stall_id)
+        )
     except SQLAlchemyError:
         db.session.rollback()
+        delete_stored_complaint_files(saved_relative_paths)
+        current_app.logger.exception("Complaint submission failed")
         flash("Complaint could not be submitted. Please try again.", "danger")
         return redirect(
             url_for("customer_portal.stall_detail", stall_id=stall_id)
         )
+
+    try:
+        for evidence in complaint.evidence:
+            record_audit(evidence, current_user, "uploaded")
+    except SQLAlchemyError:
+        # The complaint and its evidence already committed successfully;
+        # a failure logging that fact shouldn't turn into a 500 for the
+        # user, so this is swallowed after being logged.
+        current_app.logger.exception(
+            "Failed to write upload audit log for complaint %s",
+            complaint.complaint_id,
+        )
+
     flash("Complaint submitted. You can track it from your account.", "success")
     return redirect(url_for("customer_portal.my_complaints"))
 
@@ -264,3 +332,28 @@ def my_complaints():
         "customer/complaints.html",
         complaints=records,
     )
+
+
+@customer_bp.route("/complaints/<int:complaint_id>")
+@login_required
+@role_required("customer", "consumer")
+def complaint_detail(complaint_id):
+    complaint = Complaint.query.filter_by(
+        complaint_id=complaint_id,
+        submitted_by_user_id=current_user.user_id,
+    ).first_or_404()
+    return render_template(
+        "customer/complaint_detail.html",
+        complaint=complaint,
+    )
+
+
+@customer_bp.route("/evidence/<int:evidence_id>")
+@login_required
+@role_required("customer", "consumer")
+def evidence_download(evidence_id):
+    evidence = db.get_or_404(ComplaintEvidence, evidence_id)
+    if evidence.complaint.submitted_by_user_id != current_user.user_id:
+        abort(403)
+    record_audit(evidence, current_user, "viewed")
+    return serve_complaint_evidence(evidence)

@@ -16,8 +16,8 @@ class TestConfig:
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SAMESITE = "Lax"
     REMEMBER_COOKIE_SECURE = False
-    MAX_CONTENT_LENGTH = 8 * 1024 * 1024
-    UPLOAD_FOLDER = "test-uploads"
+    MAX_CONTENT_LENGTH = 150 * 1024 * 1024
+    EVIDENCE_STORAGE_PATH = "test-evidence"
 
 
 class AuthenticationSamples(unittest.TestCase):

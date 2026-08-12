@@ -1,5 +1,3 @@
-import os
-import uuid
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
@@ -11,13 +9,11 @@ from flask import (
     redirect,
     render_template,
     request,
-    send_from_directory,
     url_for,
 )
 from flask_login import current_user, login_required
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
-from werkzeug.utils import secure_filename
 
 from extensions import db
 from models import (
@@ -30,10 +26,15 @@ from models import (
     Vendor,
 )
 from routes import role_required
+from services.evidence import (
+    EvidenceValidationError,
+    delete_corrective_evidence_file,
+    serve_corrective_evidence,
+    validate_and_store_corrective_evidence,
+)
 
 
 vendor_bp = Blueprint("vendor_portal", __name__, url_prefix="/vendor")
-ALLOWED_EVIDENCE_EXTENSIONS = {"png", "jpg", "jpeg", "pdf"}
 
 
 def _vendor():
@@ -96,7 +97,9 @@ def dashboard():
         Complaint.query.join(Stall)
         .filter(
             Stall.vendor_id == vendor.vendor_id,
-            Complaint.status.in_(("open", "under_review")),
+            Complaint.status.in_(
+                ("submitted", "under_review", "investigation", "action_required")
+            ),
         )
         .count()
     )
@@ -145,7 +148,8 @@ def stall_profile(stall_id):
             )
     for complaint in stall.complaints:
         if (
-            complaint.status in {"open", "under_review"}
+            complaint.status
+            in {"submitted", "under_review", "investigation", "action_required"}
             and complaint.complaint_type.severity_level
             in {"high", "critical"}
         ):
@@ -340,35 +344,22 @@ def submit_corrective_action(action_id):
     if not notes:
         flash("Completion notes are required.", "danger")
         return redirect(request.referrer or url_for("vendor_portal.dashboard"))
-    if not evidence or not evidence.filename:
-        flash("Evidence file is required.", "danger")
-        return redirect(request.referrer or url_for("vendor_portal.dashboard"))
 
-    original_name = secure_filename(evidence.filename)
-    extension = (
-        original_name.rsplit(".", 1)[1].lower()
-        if "." in original_name
-        else ""
-    )
-    if extension not in ALLOWED_EVIDENCE_EXTENSIONS:
-        flash("Evidence must be PNG, JPG, JPEG, or PDF.", "danger")
-        return redirect(request.referrer or url_for("vendor_portal.dashboard"))
-
-    stored_name = f"{uuid.uuid4().hex}_{original_name}"
-    upload_folder = current_app.config["UPLOAD_FOLDER"]
-    os.makedirs(upload_folder, exist_ok=True)
-    destination = os.path.join(upload_folder, stored_name)
     try:
-        evidence.save(destination)
-        action.completion_notes = notes
-        action.evidence_path = stored_name
-        action.status = "completed"
-        action.completed_at = datetime.now()
+        stored_name = validate_and_store_corrective_evidence(evidence)
+    except EvidenceValidationError as error:
+        flash(str(error), "danger")
+        return redirect(request.referrer or url_for("vendor_portal.dashboard"))
+
+    action.completion_notes = notes
+    action.evidence_path = stored_name
+    action.status = "completed"
+    action.completed_at = datetime.now()
+    try:
         db.session.commit()
     except Exception:
         db.session.rollback()
-        if os.path.exists(destination):
-            os.remove(destination)
+        delete_corrective_evidence_file(stored_name)
         current_app.logger.exception("Corrective evidence submission failed")
         flash("Corrective action submission failed.", "danger")
         return redirect(request.referrer or url_for("vendor_portal.dashboard"))
@@ -388,8 +379,4 @@ def corrective_evidence(action_id):
             abort(403)
     if not action.evidence_path:
         abort(404)
-    return send_from_directory(
-        current_app.config["UPLOAD_FOLDER"],
-        action.evidence_path,
-        as_attachment=True,
-    )
+    return serve_corrective_evidence(action.evidence_path)

@@ -293,7 +293,7 @@ create table complaints (
   submitted_by_user_id int null,
   title varchar(150) not null,
   description text not null,
-  status enum('open', 'under_review', 'resolved', 'rejected') not null default 'open',
+  status enum('submitted', 'under_review', 'investigation', 'action_required', 'resolved', 'rejected', 'closed') not null default 'submitted',
   submitted_at timestamp not null default current_timestamp,
   resolved_at timestamp null,
   primary key (complaint_id),
@@ -318,6 +318,68 @@ create index idx_complaints_submitted_by_user_id on complaints (submitted_by_use
 create index idx_complaints_status on complaints (status);
 create index idx_complaints_submitted_at on complaints (submitted_at);
 create index idx_complaints_resolved_at on complaints (resolved_at);
+
+create table complaint_evidence (
+  evidence_id int not null auto_increment,
+  complaint_id int not null,
+  uploaded_by int null,
+  file_name varchar(255) not null,
+  stored_file_name varchar(255) not null,
+  file_type enum('image', 'video', 'audio', 'document') not null,
+  mime_type varchar(150) not null,
+  file_size int unsigned not null,
+  storage_path varchar(500) not null,
+  file_hash char(64) not null,
+  evidence_description varchar(500) null,
+  uploaded_at timestamp not null default current_timestamp,
+  verification_status enum('pending', 'under_review', 'verified', 'rejected') not null default 'pending',
+  verified_by int null,
+  verified_at timestamp null,
+  rejection_reason varchar(500) null,
+  primary key (evidence_id),
+  constraint chk_complaint_evidence_file_name_not_blank check (char_length(trim(file_name)) > 0),
+  constraint chk_complaint_evidence_file_size_positive check (file_size > 0),
+  constraint chk_complaint_evidence_file_hash_length check (char_length(file_hash) = 64),
+  constraint fk_complaint_evidence_complaint_id
+    foreign key (complaint_id) references complaints (complaint_id)
+    on update cascade
+    on delete cascade,
+  constraint fk_complaint_evidence_uploaded_by
+    foreign key (uploaded_by) references users (user_id)
+    on update cascade
+    on delete set null,
+  constraint fk_complaint_evidence_verified_by
+    foreign key (verified_by) references users (user_id)
+    on update cascade
+    on delete set null
+) engine=innodb;
+
+create index idx_complaint_evidence_complaint_id on complaint_evidence (complaint_id);
+create index idx_complaint_evidence_uploaded_by on complaint_evidence (uploaded_by);
+create index idx_complaint_evidence_verification_status on complaint_evidence (verification_status);
+
+create table evidence_audit_logs (
+  audit_id int not null auto_increment,
+  evidence_id int not null,
+  user_id int null,
+  action enum('uploaded', 'viewed', 'downloaded', 'marked_under_review', 'verified', 'rejected') not null,
+  action_time timestamp not null default current_timestamp,
+  ip_address varchar(45) null,
+  user_agent varchar(255) null,
+  details varchar(255) null,
+  primary key (audit_id),
+  constraint fk_evidence_audit_logs_evidence_id
+    foreign key (evidence_id) references complaint_evidence (evidence_id)
+    on update cascade
+    on delete cascade,
+  constraint fk_evidence_audit_logs_user_id
+    foreign key (user_id) references users (user_id)
+    on update cascade
+    on delete set null
+) engine=innodb;
+
+create index idx_evidence_audit_logs_evidence_id on evidence_audit_logs (evidence_id);
+create index idx_evidence_audit_logs_action_time on evidence_audit_logs (action_time);
 
 create table reviews (
   review_id int not null auto_increment,

@@ -64,7 +64,7 @@ MYSQL_PASSWORD=your_mysql_password
 MYSQL_DATABASE=smart_street_food_safety
 
 SESSION_COOKIE_SECURE=false
-UPLOAD_FOLDER=static/uploads/evidence
+EVIDENCE_STORAGE_PATH=instance/evidence
 ```
 
 Generate a secure development secret:

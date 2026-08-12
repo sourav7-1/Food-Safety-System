@@ -118,10 +118,10 @@ MYSQL_PASSWORD=your_password
 MYSQL_DATABASE=smart_street_food_safety
 SESSION_COOKIE_SECURE=false
 # DATABASE_URL=mysql+pymysql://user:password@localhost:3306/smart_street_food_safety
-# UPLOAD_FOLDER=C:/secure/path/evidence
+# EVIDENCE_STORAGE_PATH=C:/secure/path/evidence
 ```
 
-`DATABASE_URL`, when present, overrides the individual MySQL settings. Maximum upload size is 8 MB. In HTTPS production, set `SESSION_COOKIE_SECURE=true`.
+`DATABASE_URL`, when present, overrides the individual MySQL settings. Evidence uploads are capped per-file-type (images 10 MB, audio 25 MB, video 100 MB, PDFs 10 MB by default; see `EVIDENCE_MAX_*` in `.env.example`), with a 150 MB request ceiling. In HTTPS production, set `SESSION_COOKIE_SECURE=true`.
 
 ## 8. Installation and Run
 

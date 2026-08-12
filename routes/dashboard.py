@@ -61,7 +61,9 @@ def admin():
         latest_inspections.c.risk_level.in_(("high", "critical"))
     ).scalar() or 0
     pending_complaints = Complaint.query.filter(
-        Complaint.status.in_(("open", "under_review"))
+        Complaint.status.in_(
+            ("submitted", "under_review", "investigation", "action_required")
+        )
     ).count()
     average_hygiene_score = db.session.query(
         func.avg(latest_inspections.c.overall_score)

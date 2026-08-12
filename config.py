@@ -18,10 +18,29 @@ class Config:
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SAMESITE = "Lax"
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
-    MAX_CONTENT_LENGTH = 8 * 1024 * 1024
-    UPLOAD_FOLDER = os.getenv(
-        "UPLOAD_FOLDER",
-        str(Path(__file__).resolve().parent / "static" / "uploads" / "evidence"),
+    # Raised well past the old flat 8 MB so a multi-file complaint
+    # submission isn't rejected by Werkzeug before per-file validation in
+    # services/evidence.py even runs; that per-file/per-type validation is
+    # what actually enforces the real limits below.
+    MAX_CONTENT_LENGTH = int(
+        os.getenv("EVIDENCE_MAX_REQUEST_MB") or "150"
+    ) * 1024 * 1024
+
+    # Private, non-static root for uploaded evidence (corrective-action
+    # proof and complaint evidence). Flask's instance path is never served
+    # automatically, unlike anything under static/.
+    EVIDENCE_STORAGE_PATH = os.getenv(
+        "EVIDENCE_STORAGE_PATH",
+        str(Path(__file__).resolve().parent / "instance" / "evidence"),
+    )
+    EVIDENCE_MAX_FILES_PER_COMPLAINT = int(
+        os.getenv("EVIDENCE_MAX_FILES_PER_COMPLAINT") or "5"
+    )
+    EVIDENCE_MAX_IMAGE_MB = int(os.getenv("EVIDENCE_MAX_IMAGE_MB") or "10")
+    EVIDENCE_MAX_AUDIO_MB = int(os.getenv("EVIDENCE_MAX_AUDIO_MB") or "25")
+    EVIDENCE_MAX_VIDEO_MB = int(os.getenv("EVIDENCE_MAX_VIDEO_MB") or "100")
+    EVIDENCE_MAX_DOCUMENT_MB = int(
+        os.getenv("EVIDENCE_MAX_DOCUMENT_MB") or "10"
     )
 
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(./venv/Scripts/python.exe \"C:\\\\Users\\\\SOURAV\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Food-safety-system\\\\308a40c6-bee2-4ddd-83ed-248ad03157f8\\\\scratchpad\\\\smoke_turnstile.py\")",
       "Bash(./venv/Scripts/python.exe -c ' *)",
-      "Bash(rm -rf __pycache__ services/__pycache__ routes/__pycache__ models/__pycache__ tests/__pycache__ test-uploads)"
+      "Bash(rm -rf __pycache__ services/__pycache__ routes/__pycache__ models/__pycache__ tests/__pycache__ test-uploads)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }
