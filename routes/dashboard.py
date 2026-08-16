@@ -6,7 +6,7 @@ from sqlalchemy import func
 
 from extensions import db
 from models import Complaint, Inspection, Stall, Vendor
-from routes import role_required
+from routes import admin_tier_required, role_required
 
 
 dashboard_bp = Blueprint("dashboard", __name__, url_prefix="/dashboard")
@@ -23,7 +23,7 @@ def _render_dashboard(role, title, description):
 
 @dashboard_bp.route("/admin")
 @login_required
-@role_required("admin")
+@admin_tier_required
 def admin():
     ranked_inspections = (
         db.session.query(

@@ -29,10 +29,35 @@ create table roles (
   role_id int not null auto_increment,
   role_name varchar(50) not null,
   description varchar(255) null,
+  is_system tinyint(1) not null default 0,
+  is_admin_tier tinyint(1) not null default 0,
   created_at timestamp not null default current_timestamp,
   primary key (role_id),
   constraint uq_roles_role_name unique (role_name),
   constraint chk_roles_role_name_not_blank check (char_length(trim(role_name)) > 0)
+) engine=innodb;
+
+create table permissions (
+  permission_id int not null auto_increment,
+  code varchar(100) not null,
+  description varchar(255) null,
+  primary key (permission_id),
+  constraint uq_permissions_code unique (code),
+  constraint chk_permissions_code_not_blank check (char_length(trim(code)) > 0)
+) engine=innodb;
+
+create table role_permissions (
+  role_id int not null,
+  permission_id int not null,
+  primary key (role_id, permission_id),
+  constraint fk_role_permissions_role_id
+    foreign key (role_id) references roles (role_id)
+    on update cascade
+    on delete cascade,
+  constraint fk_role_permissions_permission_id
+    foreign key (permission_id) references permissions (permission_id)
+    on update cascade
+    on delete cascade
 ) engine=innodb;
 
 create table users (
@@ -51,6 +76,7 @@ create table users (
   address varchar(255) null,
   date_of_birth date null,
   preferred_area_id int null,
+  is_super_admin tinyint(1) not null default 0,
   created_at timestamp not null default current_timestamp,
   updated_at timestamp not null default current_timestamp on update current_timestamp,
   primary key (user_id),

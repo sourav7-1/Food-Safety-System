@@ -46,7 +46,7 @@
                         {% endif %}
                         <div class="d-none d-md-block">
                             <div class="small fw-semibold">{{ current_user.full_name }}</div>
-                            <div class="profile-role">Administrator</div>
+                            <div class="profile-role">{{ 'Super Admin' if current_user.is_super_admin else (current_user.role.role_name|title if current_user.role else 'Administrator') }}</div>
                         </div>
                     </a>
                 </div>

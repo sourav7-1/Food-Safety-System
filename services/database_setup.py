@@ -7,6 +7,7 @@ from models import (
     ComplaintType,
     FoodCategory,
     InspectionCriterion,
+    Permission,
     Role,
 )
 
@@ -18,6 +19,41 @@ DEFAULT_ROLES = {
     "vendor": "Registered street-food stall operators",
     "inspector": "Authorised food-safety inspectors",
     "customer": "Public users of the food-safety platform",
+}
+
+# All 4 built-in roles are is_system (can't be renamed/deleted from the
+# Roles UI); only "admin" is is_admin_tier (can enter the admin panel).
+DEFAULT_ADMIN_TIER_ROLES = {"admin"}
+
+# CRUD-level breakdown per admin resource area, rather than one coarse
+# "can touch this page at all" flag -- lets a super admin build roles as
+# narrow as "can view vendors but never delete one."
+DEFAULT_PERMISSIONS = {
+    "vendors.view": "View vendor accounts",
+    "vendors.create": "Create vendor accounts",
+    "vendors.edit": "Edit vendor accounts",
+    "vendors.delete": "Delete vendor accounts",
+    "stalls.view": "View stalls",
+    "stalls.create": "Create stalls",
+    "stalls.edit": "Edit stalls",
+    "stalls.delete": "Delete stalls",
+    "users.view": "View user accounts",
+    "users.create": "Create user accounts",
+    "users.edit": "Edit user accounts",
+    "users.status": "Activate, suspend, or disable user accounts",
+    "users.inspectors": "Create and edit inspector accounts specifically",
+    "complaints.view": "View complaints",
+    "complaints.respond": "Change a complaint's status or add a response",
+    "complaints.evidence": "Verify or reject complaint evidence",
+    "inspections.view": "View submitted inspections",
+    "inspections.approve": "Approve submitted inspections",
+    "inspections.reject": "Reject submitted inspections",
+    "reviews.view": "View customer reviews",
+    "reviews.moderate": "Hide, flag, or restore customer reviews",
+    "risk_engine.view": "View the risk engine dashboard",
+    "reports.view": "View analytics and reports",
+    "settings.view": "View system settings and reference data",
+    "roles.manage": "Manage roles and permissions (super admin only)",
 }
 
 DEFAULT_FOOD_CATEGORIES = (
@@ -57,7 +93,23 @@ def _seed_reference_data():
     }
     for name, description in DEFAULT_ROLES.items():
         if name not in existing_roles:
-            db.session.add(Role(role_name=name, description=description))
+            db.session.add(
+                Role(
+                    role_name=name,
+                    description=description,
+                    is_system=True,
+                    is_admin_tier=name in DEFAULT_ADMIN_TIER_ROLES,
+                )
+            )
+    db.session.flush()
+
+    # Self-healing backfill: a database that already had these 4 roles
+    # before is_system/is_admin_tier existed (e.g. db.create_all() ran
+    # once, long before migration 008) would otherwise leave them
+    # unflagged even after this function runs again.
+    for role in Role.query.filter(Role.role_name.in_(DEFAULT_ROLES)).all():
+        role.is_system = True
+        role.is_admin_tier = role.role_name in DEFAULT_ADMIN_TIER_ROLES
 
     existing_categories = {
         name.lower()
@@ -108,6 +160,23 @@ def _seed_reference_data():
                     is_active=True,
                 )
             )
+
+    existing_permissions = {
+        code for code in db.session.scalars(select(Permission.code)).all()
+    }
+    for code, description in DEFAULT_PERMISSIONS.items():
+        if code not in existing_permissions:
+            db.session.add(Permission(code=code, description=description))
+    db.session.flush()
+
+    # The built-in 'admin' role keeps every permission, matching its
+    # previous all-or-nothing access exactly.
+    admin_role = Role.query.filter_by(role_name="admin").first()
+    if admin_role is not None:
+        granted_codes = {permission.code for permission in admin_role.permissions}
+        for permission in Permission.query.all():
+            if permission.code not in granted_codes:
+                admin_role.permissions.append(permission)
 
     db.session.commit()
 

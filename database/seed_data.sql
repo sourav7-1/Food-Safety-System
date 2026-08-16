@@ -23,16 +23,24 @@ DELETE FROM stalls;
 DELETE FROM areas;
 DELETE FROM vendors;
 DELETE FROM users;
+DELETE FROM role_permissions;
 DELETE FROM roles;
 DELETE FROM street_food_stall_registrations;
 
 -- Required authorization lookup values. Public registration uses customer;
--- privileged accounts must be provisioned by an administrator.
-INSERT INTO roles (role_id, role_name, description) VALUES
-  (1, 'admin', 'System administrators'),
-  (2, 'vendor', 'Registered street-food stall operators'),
-  (3, 'inspector', 'Authorised food-safety inspectors'),
-  (4, 'customer', 'Public users of the food-safety platform');
+-- privileged accounts must be provisioned by an administrator. `admin` is
+-- the only built-in role that enters the admin panel (is_admin_tier); all
+-- four are `is_system` so they can't be renamed/deleted from the Roles UI
+-- -- the rest of the codebase still references these exact role names.
+-- The permission catalog itself and the admin role's permission grants
+-- are seeded non-destructively by services.database_setup on `flask
+-- init-db`, the same place food_categories/complaint_types/
+-- inspection_criteria are seeded -- not duplicated here.
+INSERT INTO roles (role_id, role_name, description, is_system, is_admin_tier) VALUES
+  (1, 'admin', 'System administrators', 1, 1),
+  (2, 'vendor', 'Registered street-food stall operators', 1, 0),
+  (3, 'inspector', 'Authorised food-safety inspectors', 1, 0),
+  (4, 'customer', 'Public users of the food-safety platform', 1, 0);
 
 INSERT INTO street_food_stall_registrations (
   registration_id, submitted_at, vendor_name, phone_number, stall_name, area,

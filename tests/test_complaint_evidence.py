@@ -50,7 +50,10 @@ class ComplaintEvidenceTests(unittest.TestCase):
         with self.app.app_context():
             db.create_all()
             db.session.add_all(
-                [Role(role_name="admin"), Role(role_name="customer")]
+                [
+                    Role(role_name="admin", is_admin_tier=True),
+                    Role(role_name="customer"),
+                ]
             )
             db.session.commit()
 
@@ -76,6 +79,7 @@ class ComplaintEvidenceTests(unittest.TestCase):
                 full_name="Admin",
                 email="admin@example.test",
                 status="active",
+                is_super_admin=True,
             )
             self.admin.set_password("SecurePass123")
             db.session.add_all([self.customer, self.other_customer, self.admin])

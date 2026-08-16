@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from flask import (
     Blueprint,
+    abort,
     current_app,
     flash,
     redirect,
@@ -26,13 +27,14 @@ from models import (
     InspectionCriterion,
     Inspector,
     Notification,
+    Permission,
     Review,
     Role,
     Stall,
     User,
     Vendor,
 )
-from routes import role_required
+from routes import permission_required, super_admin_required
 from services.evidence import record_audit, serve_complaint_evidence
 from services.registration_import import cache_photo
 
@@ -189,7 +191,7 @@ def _refresh_stall_risk(stall_id):
 
 @admin_bp.route("/vendors")
 @login_required
-@role_required("admin")
+@permission_required("vendors.view")
 def vendors():
     search = request.args.get("q", "").strip()
     query = Vendor.query.join(Vendor.user)
@@ -214,7 +216,7 @@ def vendors():
 
 @admin_bp.route("/vendors/new", methods=["GET", "POST"])
 @login_required
-@role_required("admin")
+@permission_required("vendors.create")
 def vendor_create():
     if request.method == "POST":
         vendor_role = _role("vendor")
@@ -293,7 +295,7 @@ def vendor_create():
 
 @admin_bp.route("/vendors/<int:vendor_id>/edit", methods=["GET", "POST"])
 @login_required
-@role_required("admin")
+@permission_required("vendors.edit")
 def vendor_edit(vendor_id):
     vendor = db.get_or_404(Vendor, vendor_id)
     if request.method == "POST":
@@ -358,7 +360,7 @@ def vendor_edit(vendor_id):
 
 @admin_bp.route("/vendors/<int:vendor_id>/delete", methods=["POST"])
 @login_required
-@role_required("admin")
+@permission_required("vendors.delete")
 def vendor_delete(vendor_id):
     vendor = db.get_or_404(Vendor, vendor_id)
     user = vendor.user
@@ -374,7 +376,7 @@ def vendor_delete(vendor_id):
 
 @admin_bp.route("/stalls")
 @login_required
-@role_required("admin")
+@permission_required("stalls.view")
 def stalls():
     search = request.args.get("q", "").strip()
     query = Stall.query.join(Stall.vendor).join(Stall.area)
@@ -399,7 +401,7 @@ def stalls():
 
 @admin_bp.route("/stalls/new", methods=["GET", "POST"])
 @login_required
-@role_required("admin")
+@permission_required("stalls.create")
 def stall_create():
     vendors = Vendor.query.order_by(Vendor.business_name).all()
     areas = Area.query.order_by(Area.area_name).all()
@@ -454,7 +456,7 @@ def stall_create():
 
 @admin_bp.route("/stalls/<int:stall_id>/edit", methods=["GET", "POST"])
 @login_required
-@role_required("admin")
+@permission_required("stalls.edit")
 def stall_edit(stall_id):
     stall = db.get_or_404(Stall, stall_id)
     vendors = Vendor.query.order_by(Vendor.business_name).all()
@@ -510,7 +512,7 @@ def stall_edit(stall_id):
 
 @admin_bp.route("/stalls/<int:stall_id>/delete", methods=["POST"])
 @login_required
-@role_required("admin")
+@permission_required("stalls.delete")
 def stall_delete(stall_id):
     stall = db.get_or_404(Stall, stall_id)
     db.session.delete(stall)
@@ -521,214 +523,9 @@ def stall_delete(stall_id):
     return redirect(url_for("admin.stalls"))
 
 
-@admin_bp.route("/inspectors")
-@login_required
-@role_required("admin")
-def inspectors():
-    search = request.args.get("q", "").strip()
-    query = Inspector.query.join(Inspector.user).outerjoin(
-        Inspector.assigned_area
-    )
-    if search:
-        term = f"%{search}%"
-        query = query.filter(
-            or_(
-                Inspector.employee_code.ilike(term),
-                User.full_name.ilike(term),
-                User.email.ilike(term),
-                Area.area_name.ilike(term),
-            )
-        )
-    records = query.order_by(Inspector.created_at.desc()).all()
-    return render_template(
-        "admin/inspectors/list.html",
-        page_title="Inspectors",
-        inspectors=records,
-        search=search,
-    )
-
-
-@admin_bp.route("/inspectors/new", methods=["GET", "POST"])
-@login_required
-@role_required("admin")
-def inspector_create():
-    areas = Area.query.order_by(Area.area_name).all()
-    if request.method == "POST":
-        inspector_role = _role("inspector")
-        if inspector_role is None:
-            flash(
-                "The inspector role is missing from the roles table.",
-                "danger",
-            )
-            return render_template(
-                "admin/inspectors/form.html",
-                page_title="Add Inspector",
-                inspector=None,
-                areas=areas,
-            ), 409
-
-        password = request.form.get("password", "")
-        if len(password) < 8:
-            flash("Password must contain at least 8 characters.", "danger")
-            return render_template(
-                "admin/inspectors/form.html",
-                page_title="Add Inspector",
-                inspector=None,
-                areas=areas,
-            ), 400
-
-        status = request.form.get("status", "active").strip() or "active"
-        if status not in USER_STATUSES:
-            flash("Select a valid account status.", "danger")
-            return render_template(
-                "admin/inspectors/form.html",
-                page_title="Add Inspector",
-                inspector=None,
-                areas=areas,
-            ), 400
-
-        user = User(
-            role_id=inspector_role.role_id,
-            full_name=request.form.get("full_name", "").strip(),
-            email=request.form.get("email", "").strip().lower(),
-            phone=request.form.get("phone", "").strip() or None,
-            status=status,
-        )
-        user.set_password(password)
-        try:
-            assigned_area_id = (
-                int(request.form["assigned_area_id"])
-                if request.form.get("assigned_area_id")
-                else None
-            )
-        except ValueError:
-            flash("Select a valid assigned area.", "danger")
-            return render_template(
-                "admin/inspectors/form.html",
-                page_title="Add Inspector",
-                inspector=None,
-                areas=areas,
-            ), 400
-        inspector = Inspector(
-            user=user,
-            employee_code=request.form.get(
-                "employee_code", ""
-            ).strip(),
-            designation=request.form.get("designation", "").strip()
-            or None,
-            assigned_area_id=assigned_area_id,
-        )
-        db.session.add(inspector)
-        if _commit(
-            "Inspector created successfully.",
-            "Could not create inspector. Email, phone, or employee code may already exist.",
-        ):
-            return redirect(url_for("admin.inspectors"))
-
-    return render_template(
-        "admin/inspectors/form.html",
-        page_title="Add Inspector",
-        inspector=None,
-        areas=areas,
-    )
-
-
-@admin_bp.route(
-    "/inspectors/<int:inspector_id>/edit", methods=["GET", "POST"]
-)
-@login_required
-@role_required("admin")
-def inspector_edit(inspector_id):
-    inspector = db.get_or_404(Inspector, inspector_id)
-    areas = Area.query.order_by(Area.area_name).all()
-    if request.method == "POST":
-        inspector.user.full_name = request.form.get(
-            "full_name", ""
-        ).strip()
-        inspector.user.email = request.form.get(
-            "email", ""
-        ).strip().lower()
-        inspector.user.phone = (
-            request.form.get("phone", "").strip() or None
-        )
-        status = request.form.get("status", "active").strip() or "active"
-        if status not in USER_STATUSES:
-            flash("Select a valid account status.", "danger")
-            return render_template(
-                "admin/inspectors/form.html",
-                page_title="Edit Inspector",
-                inspector=inspector,
-                areas=areas,
-            ), 400
-        inspector.user.status = status
-        password = request.form.get("password", "")
-        if password:
-            if len(password) < 8:
-                flash(
-                    "Password must contain at least 8 characters.", "danger"
-                )
-                return render_template(
-                    "admin/inspectors/form.html",
-                    page_title="Edit Inspector",
-                    inspector=inspector,
-                    areas=areas,
-                ), 400
-            inspector.user.set_password(password)
-        inspector.employee_code = request.form.get(
-            "employee_code", ""
-        ).strip()
-        inspector.designation = (
-            request.form.get("designation", "").strip() or None
-        )
-        try:
-            inspector.assigned_area_id = (
-                int(request.form["assigned_area_id"])
-                if request.form.get("assigned_area_id")
-                else None
-            )
-        except ValueError:
-            db.session.rollback()
-            flash("Select a valid assigned area.", "danger")
-            return render_template(
-                "admin/inspectors/form.html",
-                page_title="Edit Inspector",
-                inspector=inspector,
-                areas=areas,
-            ), 400
-        if _commit(
-            "Inspector updated successfully.",
-            "Could not update inspector. A unique field may already be in use.",
-        ):
-            return redirect(url_for("admin.inspectors"))
-
-    return render_template(
-        "admin/inspectors/form.html",
-        page_title="Edit Inspector",
-        inspector=inspector,
-        areas=areas,
-    )
-
-
-@admin_bp.route(
-    "/inspectors/<int:inspector_id>/delete", methods=["POST"]
-)
-@login_required
-@role_required("admin")
-def inspector_delete(inspector_id):
-    inspector = db.get_or_404(Inspector, inspector_id)
-    user = inspector.user
-    db.session.delete(inspector)
-    db.session.delete(user)
-    _commit(
-        "Inspector deleted successfully.",
-        "Inspector cannot be deleted while related inspections exist.",
-    )
-    return redirect(url_for("admin.inspectors"))
-
-
 @admin_bp.route("/complaints")
 @login_required
-@role_required("admin")
+@permission_required("complaints.view")
 def complaints():
     status = request.args.get("status", "").strip()
     query = Complaint.query.join(Complaint.stall)
@@ -745,10 +542,15 @@ def complaints():
 
 @admin_bp.route("/complaints/<int:complaint_id>", methods=["GET", "POST"])
 @login_required
-@role_required("admin")
+@permission_required("complaints.view")
 def complaint_manage(complaint_id):
     complaint = db.get_or_404(Complaint, complaint_id)
     if request.method == "POST":
+        # Viewing a complaint and deciding its outcome are separate
+        # capabilities -- complaints.view gets you the page, changing
+        # anything on it requires complaints.respond.
+        if not current_user.has_permission("complaints.respond"):
+            abort(403)
         status = request.form.get("status", "")
         if status not in COMPLAINT_STATUSES:
             flash("Select a valid complaint status.", "danger")
@@ -860,7 +662,7 @@ def complaint_manage(complaint_id):
 
 @admin_bp.route("/evidence/<int:evidence_id>")
 @login_required
-@role_required("admin")
+@permission_required("complaints.view", "complaints.evidence")
 def evidence_download(evidence_id):
     evidence = db.get_or_404(ComplaintEvidence, evidence_id)
     record_audit(evidence, current_user, "viewed")
@@ -869,7 +671,7 @@ def evidence_download(evidence_id):
 
 @admin_bp.route("/evidence/<int:evidence_id>/status", methods=["POST"])
 @login_required
-@role_required("admin")
+@permission_required("complaints.evidence")
 def evidence_status(evidence_id):
     evidence = db.get_or_404(ComplaintEvidence, evidence_id)
     status = request.form.get("verification_status", "")
@@ -922,7 +724,7 @@ def evidence_status(evidence_id):
 
 @admin_bp.route("/inspections")
 @login_required
-@role_required("admin")
+@permission_required("inspections.view")
 def inspections():
     status = request.args.get("status", "").strip()
     risk = request.args.get("risk", "").strip()
@@ -948,7 +750,7 @@ def inspections():
 
 @admin_bp.route("/inspections/<int:inspection_id>/approve", methods=["POST"])
 @login_required
-@role_required("admin")
+@permission_required("inspections.approve")
 def inspection_approve(inspection_id):
     inspection = db.get_or_404(Inspection, inspection_id)
     if inspection.status != "submitted":
@@ -964,7 +766,7 @@ def inspection_approve(inspection_id):
 
 @admin_bp.route("/inspections/<int:inspection_id>/reject", methods=["POST"])
 @login_required
-@role_required("admin")
+@permission_required("inspections.reject")
 def inspection_reject(inspection_id):
     inspection = db.get_or_404(Inspection, inspection_id)
     if inspection.status != "submitted":
@@ -980,7 +782,7 @@ def inspection_reject(inspection_id):
 
 @admin_bp.route("/reviews")
 @login_required
-@role_required("admin")
+@permission_required("reviews.view")
 def reviews():
     status = request.args.get("status", "").strip()
     query = Review.query.join(Review.stall).join(Review.user)
@@ -997,7 +799,7 @@ def reviews():
 
 @admin_bp.route("/reviews/<int:review_id>/status", methods=["POST"])
 @login_required
-@role_required("admin")
+@permission_required("reviews.moderate")
 def review_status(review_id):
     review = db.get_or_404(Review, review_id)
     status = request.form.get("status", "")
@@ -1011,7 +813,7 @@ def review_status(review_id):
 
 @admin_bp.route("/risk-engine")
 @login_required
-@role_required("admin")
+@permission_required("risk_engine.view")
 def risk_engine():
     ranked = (
         db.session.query(
@@ -1064,14 +866,31 @@ def risk_engine():
     )
 
 
+def _assignable_roles():
+    """Roles selectable from the Users page. Vendor is excluded -- vendor
+    accounts require business_name/license_number and already have a
+    dedicated admin/vendors/new flow. A non-super-admin only sees
+    non-admin-tier roles, closing the privilege-escalation path where a
+    limited admin could otherwise create/promote their way to full
+    access. A user without users.inspectors doesn't see Inspector as an
+    option either, matching what user_create/user_edit would actually
+    let them do."""
+    query = Role.query.filter(Role.role_name != "vendor")
+    if not current_user.is_super_admin:
+        query = query.filter(Role.is_admin_tier.is_(False))
+    if not current_user.has_permission("users.inspectors"):
+        query = query.filter(Role.role_name != "inspector")
+    return query.order_by(Role.role_name).all()
+
+
 @admin_bp.route("/users")
 @login_required
-@role_required("admin")
+@permission_required("users.view")
 def users():
     role_name = request.args.get("role", "").strip()
     status = request.args.get("status", "").strip()
     query = User.query.join(User.role)
-    if role_name in {"admin", "vendor", "inspector", "customer"}:
+    if role_name:
         query = query.filter(Role.role_name == role_name)
     if status in {"active", "inactive", "suspended"}:
         query = query.filter(User.status == status)
@@ -1080,6 +899,9 @@ def users():
         "admin/users/list.html",
         page_title="Users",
         users=records,
+        all_roles=Role.query.order_by(Role.role_name).all(),
+        assignable_roles=_assignable_roles(),
+        areas=Area.query.order_by(Area.area_name).all(),
         selected_role=role_name,
         selected_status=status,
     )
@@ -1087,7 +909,7 @@ def users():
 
 @admin_bp.route("/users/<int:user_id>/status", methods=["POST"])
 @login_required
-@role_required("admin")
+@permission_required("users.status")
 def user_status(user_id):
     user = db.get_or_404(User, user_id)
     status = request.form.get("status", "")
@@ -1102,9 +924,311 @@ def user_status(user_id):
     return redirect(url_for("admin.users"))
 
 
+def _apply_inspector_transition(user, role, form):
+    """Create, update, or remove the linked Inspector row to match the
+    user's (possibly new) role. Returns an error message, or None on
+    success. Mirrors the validation the old dedicated inspector routes
+    used to do."""
+    was_inspector = user.inspector_profile is not None
+    becomes_inspector = role.role_name == "inspector"
+
+    if (was_inspector or becomes_inspector) and not current_user.has_permission(
+        "users.inspectors"
+    ):
+        return "You do not have permission to manage inspector accounts."
+
+    if was_inspector and not becomes_inspector:
+        if user.inspector_profile.inspections:
+            return (
+                "Cannot change this user's role while they have existing "
+                "inspections on record."
+            )
+        db.session.delete(user.inspector_profile)
+        return None
+
+    if not becomes_inspector:
+        return None
+
+    employee_code = form.get("employee_code", "").strip()
+    if not employee_code:
+        return "Employee code is required for an inspector account."
+    try:
+        assigned_area_id = (
+            int(form["assigned_area_id"])
+            if form.get("assigned_area_id")
+            else None
+        )
+    except ValueError:
+        return "Select a valid assigned area."
+    designation = form.get("designation", "").strip() or None
+
+    if was_inspector:
+        user.inspector_profile.employee_code = employee_code
+        user.inspector_profile.designation = designation
+        user.inspector_profile.assigned_area_id = assigned_area_id
+    else:
+        db.session.add(
+            Inspector(
+                user=user,
+                employee_code=employee_code,
+                designation=designation,
+                assigned_area_id=assigned_area_id,
+            )
+        )
+    return None
+
+
+@admin_bp.route("/users", methods=["POST"])
+@login_required
+@permission_required("users.create")
+def user_create():
+    role = db.session.get(Role, request.form.get("role_id", type=int))
+    if role is None or role.role_name == "vendor":
+        flash("Select a valid role.", "danger")
+        return redirect(url_for("admin.users"))
+    if role.is_admin_tier and not current_user.is_super_admin:
+        flash(
+            "Only a super admin can create an admin-tier account.", "danger"
+        )
+        return redirect(url_for("admin.users"))
+
+    full_name = request.form.get("full_name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    phone = request.form.get("phone", "").strip() or None
+    status = request.form.get("status", "active").strip() or "active"
+    password = request.form.get("password", "")
+
+    if not full_name or not email:
+        flash("Full name and email are required.", "danger")
+        return redirect(url_for("admin.users"))
+    if status not in USER_STATUSES:
+        flash("Select a valid account status.", "danger")
+        return redirect(url_for("admin.users"))
+    if len(password) < 8:
+        flash("Password must contain at least 8 characters.", "danger")
+        return redirect(url_for("admin.users"))
+
+    user = User(
+        role_id=role.role_id,
+        full_name=full_name,
+        email=email,
+        phone=phone,
+        status=status,
+    )
+    user.set_password(password)
+    if role.is_admin_tier:
+        user.is_super_admin = request.form.get("is_super_admin") == "on"
+
+    if role.role_name == "inspector":
+        error = _apply_inspector_transition(user, role, request.form)
+        if error:
+            flash(error, "danger")
+            return redirect(url_for("admin.users"))
+    else:
+        db.session.add(user)
+
+    if _commit(
+        "User created successfully.",
+        "Could not create user. Email, phone, or employee code may "
+        "already exist.",
+    ):
+        pass
+    return redirect(url_for("admin.users"))
+
+
+@admin_bp.route("/users/<int:user_id>", methods=["POST"])
+@login_required
+@permission_required("users.edit")
+def user_edit(user_id):
+    user = db.get_or_404(User, user_id)
+    target_was_admin_tier = bool(user.role and user.role.is_admin_tier)
+
+    role = db.session.get(Role, request.form.get("role_id", type=int))
+    if role is None or role.role_name == "vendor":
+        flash("Select a valid role.", "danger")
+        return redirect(url_for("admin.users"))
+    if (
+        (target_was_admin_tier or role.is_admin_tier)
+        and not current_user.is_super_admin
+    ):
+        flash(
+            "Only a super admin can manage admin-tier accounts.", "danger"
+        )
+        return redirect(url_for("admin.users"))
+
+    full_name = request.form.get("full_name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    phone = request.form.get("phone", "").strip() or None
+    status = request.form.get("status", "active").strip() or "active"
+    is_super_admin_field = request.form.get("is_super_admin") == "on"
+
+    if not full_name or not email:
+        flash("Full name and email are required.", "danger")
+        return redirect(url_for("admin.users"))
+    if status not in USER_STATUSES:
+        flash("Select a valid account status.", "danger")
+        return redirect(url_for("admin.users"))
+
+    if user.user_id == current_user.user_id:
+        if status != "active":
+            flash("You cannot disable your own signed-in account.", "danger")
+            return redirect(url_for("admin.users"))
+        if not role.is_admin_tier:
+            flash(
+                "You cannot change your own role away from an admin-tier "
+                "role.",
+                "danger",
+            )
+            return redirect(url_for("admin.users"))
+        if current_user.is_super_admin and not is_super_admin_field:
+            flash("You cannot remove your own super admin access.", "danger")
+            return redirect(url_for("admin.users"))
+
+    password = request.form.get("password", "")
+    if password:
+        if len(password) < 8:
+            flash("Password must contain at least 8 characters.", "danger")
+            return redirect(url_for("admin.users"))
+        user.set_password(password)
+
+    error = _apply_inspector_transition(user, role, request.form)
+    if error:
+        flash(error, "danger")
+        return redirect(url_for("admin.users"))
+
+    user.full_name = full_name
+    user.email = email
+    user.phone = phone
+    user.status = status
+    user.role_id = role.role_id
+    user.is_super_admin = role.is_admin_tier and is_super_admin_field
+
+    if _commit(
+        "User updated successfully.",
+        "Could not update user. A unique field may already be in use.",
+    ):
+        pass
+    return redirect(url_for("admin.users"))
+
+
+PERMISSION_GROUP_LABELS = (
+    ("vendors", "Vendors"),
+    ("stalls", "Stalls"),
+    ("users", "Users"),
+    ("complaints", "Complaints"),
+    ("inspections", "Inspections"),
+    ("reviews", "Reviews"),
+    ("risk_engine", "Risk Engine"),
+    ("reports", "Reports"),
+    ("settings", "Settings"),
+    ("roles", "Roles & Permissions"),
+)
+
+
+def _grouped_permissions():
+    all_permissions = Permission.query.order_by(Permission.code).all()
+    groups = []
+    for prefix, label in PERMISSION_GROUP_LABELS:
+        items = [p for p in all_permissions if p.code.startswith(prefix + ".")]
+        if items:
+            groups.append({"label": label, "permissions": items})
+    return groups
+
+
+@admin_bp.route("/roles")
+@login_required
+@super_admin_required
+def roles():
+    return render_template(
+        "admin/roles/list.html",
+        page_title="Roles & Permissions",
+        roles=Role.query.order_by(Role.role_name).all(),
+        permission_groups=_grouped_permissions(),
+    )
+
+
+@admin_bp.route("/roles", methods=["POST"])
+@login_required
+@super_admin_required
+def role_create():
+    role_name = request.form.get("role_name", "").strip().lower()
+    description = request.form.get("description", "").strip() or None
+    if not role_name:
+        flash("Role name is required.", "danger")
+        return redirect(url_for("admin.roles"))
+    db.session.add(
+        Role(
+            role_name=role_name,
+            description=description,
+            is_system=False,
+            is_admin_tier=False,
+        )
+    )
+    _commit(
+        "Role created successfully.",
+        "Could not create role. That name may already be in use.",
+    )
+    return redirect(url_for("admin.roles"))
+
+
+@admin_bp.route("/roles/<int:role_id>", methods=["POST"])
+@login_required
+@super_admin_required
+def role_edit(role_id):
+    role = db.get_or_404(Role, role_id)
+    new_is_admin_tier = request.form.get("is_admin_tier") == "on"
+    if role.role_id == current_user.role_id and not new_is_admin_tier:
+        flash(
+            "You cannot remove admin-panel access from your own role.",
+            "danger",
+        )
+        return redirect(url_for("admin.roles"))
+
+    if not role.is_system:
+        new_name = request.form.get("role_name", "").strip().lower()
+        if not new_name:
+            flash("Role name is required.", "danger")
+            return redirect(url_for("admin.roles"))
+        role.role_name = new_name
+
+    role.description = request.form.get("description", "").strip() or None
+    role.is_admin_tier = new_is_admin_tier
+
+    selected_codes = set(request.form.getlist("permissions"))
+    role.permissions = (
+        Permission.query.filter(Permission.code.in_(selected_codes)).all()
+        if selected_codes
+        else []
+    )
+
+    _commit(
+        "Role updated successfully.",
+        "Could not update role. That name may already be in use.",
+    )
+    return redirect(url_for("admin.roles"))
+
+
+@admin_bp.route("/roles/<int:role_id>/delete", methods=["POST"])
+@login_required
+@super_admin_required
+def role_delete(role_id):
+    role = db.get_or_404(Role, role_id)
+    if role.is_system:
+        flash("Built-in roles cannot be deleted.", "danger")
+        return redirect(url_for("admin.roles"))
+    if role.users.count() > 0:
+        flash(
+            "Cannot delete a role while users are assigned to it.", "danger"
+        )
+        return redirect(url_for("admin.roles"))
+    db.session.delete(role)
+    _commit("Role deleted successfully.", "Role could not be deleted.")
+    return redirect(url_for("admin.roles"))
+
+
 @admin_bp.route("/settings")
 @login_required
-@role_required("admin")
+@permission_required("settings.view")
 def settings():
     return render_template(
         "admin/settings.html",

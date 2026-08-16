@@ -12,7 +12,7 @@ from models import (
     Inspection,
     Stall,
 )
-from routes import role_required
+from routes import permission_required
 
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/admin/reports")
@@ -49,7 +49,7 @@ def _latest_inspections():
 
 @reports_bp.route("/")
 @login_required
-@role_required("admin")
+@permission_required("reports.view")
 def dashboard():
     today = date.today()
     latest = _latest_inspections()

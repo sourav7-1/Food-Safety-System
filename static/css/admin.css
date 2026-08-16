@@ -52,3 +52,6 @@ body.admin-body { margin: 0; background: var(--page); color: var(--ink); font-fa
 .evidence-card .evidence-rejection-note { display: block; margin-top: 6px; font-size: 11px; color: #d8424a; }
 .evidence-summary-counts { display: flex; gap: 16px; flex-wrap: wrap; margin: 6px 0 16px; font-size: 12px; color: var(--muted); }
 .evidence-summary-counts strong { color: var(--ink); }
+
+/* ---------- Roles & Permissions ---------- */
+.permission-group-label { color: #8390a3; font-size: 9px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; margin: 10px 0 6px; }

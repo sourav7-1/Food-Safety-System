@@ -1,7 +1,259 @@
 {% extends "admin/base.html" %}
 {% block content %}
-<div class="list-heading"><div><p class="eyebrow mb-1">ACCESS CONTROL</p><h2>Users</h2><p>Manage account availability across all roles.</p></div><form class="search-form" method="get"><select class="form-select" name="role"><option value="">All roles</option>{% for value in ['admin','vendor','inspector','customer'] %}<option value="{{ value }}" {{ 'selected' if selected_role == value }}>{{ value|title }}</option>{% endfor %}</select><select class="form-select" name="status"><option value="">All statuses</option>{% for value in ['active','inactive','suspended'] %}<option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|title }}</option>{% endfor %}</select><button class="btn btn-primary">Filter</button></form></div>
-<div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>User</th><th>Role</th><th>Phone</th><th>Created</th><th>Status</th><th>Access</th></tr></thead><tbody>
-{% for user in users %}<tr><td><strong>{{ user.full_name }}</strong><small>{{ user.email }}</small></td><td>{{ user.role_name|title }}</td><td>{{ user.phone or '—' }}</td><td>{{ user.created_at.strftime('%d %b %Y') }}</td><td><span class="status-pill status-{{ user.status }}">{{ user.status }}</span></td><td><form class="d-flex gap-2" method="post" action="{{ url_for('admin.user_status', user_id=user.user_id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><select class="form-select form-select-sm" name="status" {{ 'disabled' if user.user_id == current_user.user_id }}>{% for value in ['active','inactive','suspended'] %}<option value="{{ value }}" {{ 'selected' if user.status == value }}>{{ value|title }}</option>{% endfor %}</select><button class="btn btn-sm btn-soft" {{ 'disabled' if user.user_id == current_user.user_id }}>Save</button></form></td></tr>{% else %}<tr><td colspan="6" class="empty-state">No users found.</td></tr>{% endfor %}
-</tbody></table></div></div>
+<div class="page-actionbar">
+    <div>
+        <p class="eyebrow mb-1">ACCESS CONTROL</p>
+        <h2 class="h3 fw-bold mb-1">Users</h2>
+        <p class="text-secondary mb-0">Manage accounts across every role, including inspectors.</p>
+    </div>
+    <div class="d-flex gap-2 align-items-start flex-wrap">
+        <form class="d-flex gap-2 flex-wrap" method="get">
+            <select class="form-select" name="role">
+                <option value="">All roles</option>
+                {% for role in all_roles %}
+                <option value="{{ role.role_name }}" {{ 'selected' if selected_role == role.role_name }}>{{ role.role_name|title }}</option>
+                {% endfor %}
+            </select>
+            <select class="form-select" name="status">
+                <option value="">All statuses</option>
+                {% for value in ['active','inactive','suspended'] %}
+                <option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|title }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-light">Filter</button>
+        </form>
+        {% if current_user.has_permission('users.create') %}
+        <button type="button" class="btn btn-primary action-button" data-user-modal-create>
+            <i class="fa-solid fa-plus me-2"></i>New User
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead><tr><th>User</th><th>Role</th><th>Phone</th><th>Created</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td><strong>{{ user.full_name }}</strong><small>{{ user.email }}</small></td>
+                    <td>{{ user.role_name|title }}{% if user.is_super_admin %} <span class="code-chip">Super Admin</span>{% endif %}</td>
+                    <td>{{ user.phone or '—' }}</td>
+                    <td>{{ user.created_at.strftime('%d %b %Y') }}</td>
+                    <td><span class="status-pill status-{{ user.status }}">{{ user.status }}</span></td>
+                    <td class="text-end table-actions">
+                        {% if current_user.has_permission('users.status') %}
+                        <form class="d-inline-flex gap-1 align-items-center me-2" method="post" action="{{ url_for('admin.user_status', user_id=user.user_id) }}">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <select class="form-select form-select-sm" name="status" style="width:auto" {{ 'disabled' if user.user_id == current_user.user_id }}>
+                                {% for value in ['active','inactive','suspended'] %}
+                                <option value="{{ value }}" {{ 'selected' if user.status == value }}>{{ value|title }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-sm btn-soft" {{ 'disabled' if user.user_id == current_user.user_id }}>Save</button>
+                        </form>
+                        {% endif %}
+                        {% if current_user.has_permission('users.edit') %}
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-soft"
+                            data-user-modal-edit
+                            data-action="{{ url_for('admin.user_edit', user_id=user.user_id) }}"
+                            data-full-name="{{ user.full_name }}"
+                            data-email="{{ user.email }}"
+                            data-phone="{{ user.phone or '' }}"
+                            data-role-id="{{ user.role_id }}"
+                            data-status="{{ user.status }}"
+                            data-is-super-admin="{{ '1' if user.is_super_admin else '0' }}"
+                            data-employee-code="{{ user.inspector_profile.employee_code if user.inspector_profile else '' }}"
+                            data-designation="{{ user.inspector_profile.designation if user.inspector_profile and user.inspector_profile.designation else '' }}"
+                            data-assigned-area-id="{{ user.inspector_profile.assigned_area_id if user.inspector_profile and user.inspector_profile.assigned_area_id else '' }}"
+                        ><i class="fa-solid fa-pen"></i></button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="empty-state">No users found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" id="userModalForm" action="{{ url_for('admin.user_create') }}" class="entity-form">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="userModalLabel">New User</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="userFullName">Full name</label>
+                            <input class="form-control" id="userFullName" name="full_name" required maxlength="120">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="userEmail">Email</label>
+                            <input class="form-control" type="email" id="userEmail" name="email" required maxlength="150">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="userPhone">Phone</label>
+                            <input class="form-control" id="userPhone" name="phone" maxlength="30">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="userStatus">Status</label>
+                            <select class="form-select" id="userStatus" name="status">
+                                {% for value in ['active','inactive','suspended'] %}
+                                <option value="{{ value }}">{{ value|title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="userRole">Role</label>
+                            <select class="form-select" id="userRole" name="role_id" required>
+                                {% for role in assignable_roles %}
+                                <option value="{{ role.role_id }}" data-role-name="{{ role.role_name }}" data-admin-tier="{{ '1' if role.is_admin_tier else '0' }}">{{ role.role_name|title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="userPassword"><span id="userPasswordLabel">Password</span></label>
+                            <input class="form-control" type="password" id="userPassword" name="password" minlength="8">
+                            <div class="form-text" id="userPasswordHint">At least 8 characters.</div>
+                        </div>
+                        {% if current_user.is_super_admin %}
+                        <div class="col-12" id="userSuperAdminField" hidden>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="userIsSuperAdmin" name="is_super_admin">
+                                <label class="form-check-label" for="userIsSuperAdmin">Super admin (can manage roles &amp; permissions)</label>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-12" id="userInspectorFields" hidden>
+                            <hr>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="userEmployeeCode">Employee code</label>
+                                    <input class="form-control" id="userEmployeeCode" name="employee_code" maxlength="80">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="userDesignation">Designation</label>
+                                    <input class="form-control" id="userDesignation" name="designation" maxlength="100">
+                                </div>
+                                <div class="col-12">
+                                    <label for="userAssignedArea">Assigned area</label>
+                                    <select class="form-select" id="userAssignedArea" name="assigned_area_id">
+                                        <option value="">Unassigned</option>
+                                        {% for area in areas %}
+                                        <option value="{{ area.area_id }}">{{ area.area_name }} — {{ area.city }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+    var modalEl = document.getElementById("userModal");
+    if (!modalEl) { return; }
+    var modal = new bootstrap.Modal(modalEl);
+    var form = document.getElementById("userModalForm");
+    var roleSelect = document.getElementById("userRole");
+    var inspectorFields = document.getElementById("userInspectorFields");
+    var superAdminField = document.getElementById("userSuperAdminField");
+    var passwordInput = document.getElementById("userPassword");
+    var passwordLabel = document.getElementById("userPasswordLabel");
+    var passwordHint = document.getElementById("userPasswordHint");
+    var titleEl = document.getElementById("userModalLabel");
+    var createUrl = "{{ url_for('admin.user_create') }}";
+
+    function selectedRoleOption() {
+        return roleSelect.options[roleSelect.selectedIndex];
+    }
+
+    function syncConditionalFields() {
+        var option = selectedRoleOption();
+        if (!option) { return; }
+        var isInspector = option.getAttribute("data-role-name") === "inspector";
+        var isAdminTier = option.getAttribute("data-admin-tier") === "1";
+        inspectorFields.hidden = !isInspector;
+        document.querySelectorAll("#userInspectorFields [required]").forEach(function (el) {
+            el.required = false;
+        });
+        if (isInspector) {
+            document.getElementById("userEmployeeCode").required = true;
+        }
+        if (superAdminField) {
+            superAdminField.hidden = !isAdminTier;
+            if (!isAdminTier) {
+                document.getElementById("userIsSuperAdmin").checked = false;
+            }
+        }
+    }
+
+    roleSelect.addEventListener("change", syncConditionalFields);
+
+    function resetForm() {
+        form.reset();
+        form.action = createUrl;
+        titleEl.textContent = "New User";
+        passwordLabel.textContent = "Password";
+        passwordInput.required = true;
+        passwordHint.textContent = "At least 8 characters.";
+        syncConditionalFields();
+    }
+
+    document.querySelectorAll("[data-user-modal-create]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            resetForm();
+            modal.show();
+        });
+    });
+
+    document.querySelectorAll("[data-user-modal-edit]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            resetForm();
+            form.action = button.getAttribute("data-action");
+            titleEl.textContent = "Edit User";
+            passwordLabel.textContent = "New password";
+            passwordInput.required = false;
+            passwordHint.textContent = "Leave blank to keep the current password.";
+
+            document.getElementById("userFullName").value = button.getAttribute("data-full-name") || "";
+            document.getElementById("userEmail").value = button.getAttribute("data-email") || "";
+            document.getElementById("userPhone").value = button.getAttribute("data-phone") || "";
+            document.getElementById("userStatus").value = button.getAttribute("data-status") || "active";
+            roleSelect.value = button.getAttribute("data-role-id") || "";
+            document.getElementById("userEmployeeCode").value = button.getAttribute("data-employee-code") || "";
+            document.getElementById("userDesignation").value = button.getAttribute("data-designation") || "";
+            document.getElementById("userAssignedArea").value = button.getAttribute("data-assigned-area-id") || "";
+            syncConditionalFields();
+            if (document.getElementById("userIsSuperAdmin")) {
+                document.getElementById("userIsSuperAdmin").checked = button.getAttribute("data-is-super-admin") === "1";
+            }
+
+            modal.show();
+        });
+    });
+
+    syncConditionalFields();
+})();
+</script>
 {% endblock %}

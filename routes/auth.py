@@ -46,8 +46,11 @@ def _is_safe_redirect(target):
 
 
 def _dashboard_url(user):
+    # Any admin-tier role (not just the literal "admin" role_name) lands
+    # on the admin dashboard -- see routes/__init__.py:admin_tier_required.
+    if user.role and user.role.is_admin_tier:
+        return url_for("dashboard.admin")
     endpoint_by_role = {
-        "admin": "dashboard.admin",
         "inspector": "dashboard.inspector",
         "vendor": "dashboard.vendor",
         "customer": "dashboard.customer",

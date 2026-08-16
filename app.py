@@ -150,6 +150,8 @@ def create_app(config_class=Config):
             admin_role = Role(
                 role_name="admin",
                 description="System administrators",
+                is_system=True,
+                is_admin_tier=True,
             )
             db.session.add(admin_role)
             db.session.flush()
@@ -162,6 +164,10 @@ def create_app(config_class=Config):
             # Created via trusted CLI access, not public registration, so
             # it does not need to go through email verification.
             email_verified_at=datetime.now(timezone.utc),
+            # The CLI-created bootstrap admin is always a super admin, so
+            # a fresh install has one usable account that can configure
+            # roles and permissions from the start.
+            is_super_admin=True,
         )
         user.set_password(password)
         db.session.add(user)

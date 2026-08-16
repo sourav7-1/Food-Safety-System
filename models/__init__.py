@@ -4,12 +4,53 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from extensions import db
 
 
+# Pure junction table (no extra columns), used as SQLAlchemy's
+# `secondary=` for the Role<->Permission many-to-many relationship.
+role_permissions = db.Table(
+    "role_permissions",
+    db.Column(
+        "role_id",
+        db.Integer,
+        db.ForeignKey("roles.role_id", onupdate="CASCADE", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    db.Column(
+        "permission_id",
+        db.Integer,
+        db.ForeignKey(
+            "permissions.permission_id", onupdate="CASCADE", ondelete="CASCADE"
+        ),
+        primary_key=True,
+    ),
+)
+
+
+class Permission(db.Model):
+    __tablename__ = "permissions"
+
+    permission_id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(100), nullable=False, unique=True)
+    description = db.Column(db.String(255))
+
+    roles = db.relationship(
+        "Role", secondary=role_permissions, back_populates="permissions"
+    )
+
+
 class Role(db.Model):
     __tablename__ = "roles"
 
     role_id = db.Column(db.Integer, primary_key=True)
     role_name = db.Column(db.String(50), nullable=False, unique=True)
     description = db.Column(db.String(255))
+    # The 4 built-in roles (admin/vendor/inspector/customer) are
+    # is_system=True and can't be renamed/deleted from the Roles UI --
+    # many call sites outside the admin panel still reference these exact
+    # role_name strings. is_admin_tier controls whether this role can
+    # enter the admin panel at all, independent of which permissions it
+    # holds (see routes/__init__.py:admin_tier_required).
+    is_system = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    is_admin_tier = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     created_at = db.Column(
         db.DateTime,
         nullable=False,
@@ -17,6 +58,9 @@ class Role(db.Model):
     )
 
     users = db.relationship("User", back_populates="role", lazy="dynamic")
+    permissions = db.relationship(
+        "Permission", secondary=role_permissions, back_populates="roles"
+    )
 
 
 class User(UserMixin, db.Model):
@@ -54,6 +98,9 @@ class User(UserMixin, db.Model):
         db.Integer,
         db.ForeignKey("areas.area_id", onupdate="CASCADE", ondelete="SET NULL"),
     )
+    is_super_admin = db.Column(
+        db.Boolean, nullable=False, default=False, server_default=db.false()
+    )
     created_at = db.Column(
         db.DateTime,
         nullable=False,
@@ -89,6 +136,16 @@ class User(UserMixin, db.Model):
     @property
     def role_name(self):
         return self.role.role_name.lower() if self.role else ""
+
+    def has_permission(self, code):
+        """True if this user can perform the given admin action -- a
+        super admin always can; otherwise it depends on what their role
+        has been granted via the Roles & Permissions page."""
+        if self.is_super_admin:
+            return True
+        if not self.role:
+            return False
+        return any(permission.code == code for permission in self.role.permissions)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
