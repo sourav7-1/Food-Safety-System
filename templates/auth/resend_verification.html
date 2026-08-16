@@ -11,7 +11,7 @@
             verification link if it's still unverified.
         </p>
 
-        <form method="post">
+        <form method="post" data-no-ajax>
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="mb-4">
                 <label class="form-label" for="email">Email address</label>

@@ -14,6 +14,7 @@
     {% block head %}{% endblock %}
 </head>
 <body>
+    <div class="site-progress-bar" id="siteProgressBar" aria-hidden="true"></div>
     <a class="visually-hidden-focusable skip-link" href="#main-content">Skip to main content</a>
     <nav class="navbar navbar-expand-lg navbar-dark bg-success sticky-top" aria-label="Primary navigation">
         <div class="container">
@@ -109,6 +110,212 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (function () {
+        "use strict";
+        // Same in-place AJAX pattern as the admin panel (templates/admin/base.html):
+        // POST forms inside #main-content submit via fetch and the response's
+        // #main-content is swapped in, instead of a real page navigation, so
+        // simple actions (save, delete, mark read, add item...) don't flash a
+        // full page reload. Forms whose success takes the user somewhere that
+        // changes the page chrome (login, register, logout -- anything that
+        // changes current_user/the navbar outside #main-content) opt out with
+        // data-no-ajax and navigate normally.
+        var CONTENT_SELECTOR = "#main-content";
+        var progressBar = document.getElementById("siteProgressBar");
+        var progressRequests = 0;
+
+        function showProgress() {
+            progressRequests += 1;
+            progressBar.classList.add("active");
+        }
+
+        function hideProgress() {
+            progressRequests = Math.max(0, progressRequests - 1);
+            if (progressRequests === 0) {
+                progressBar.classList.remove("active");
+            }
+        }
+
+        function setButtonLoading(button) {
+            if (!button || button.classList.contains("btn-loading")) {
+                return;
+            }
+            button.style.minWidth = button.offsetWidth + "px";
+            button.style.minHeight = button.offsetHeight + "px";
+            button.classList.add("btn-loading");
+            button.disabled = true;
+            button.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
+        }
+
+        // Anchor tags styled as buttons (nav CTAs like Login/Register/
+        // Dashboard) trigger a real navigation, not a form submit, so the
+        // handler above never sees them. Give them the same spinner for
+        // the moment before the browser actually navigates away.
+        function setLinkLoading(link) {
+            if (!link || link.classList.contains("btn-loading")) {
+                return;
+            }
+            link.dataset.originalContent = link.innerHTML;
+            link.style.minWidth = link.offsetWidth + "px";
+            link.style.minHeight = link.offsetHeight + "px";
+            link.classList.add("btn-loading");
+            link.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
+        }
+
+        document.addEventListener("click", function (event) {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+            }
+            var link = event.target.closest("a.btn");
+            if (!link) {
+                return;
+            }
+            var href = link.getAttribute("href") || "";
+            if (
+                link.classList.contains("btn-loading") ||
+                link.hasAttribute("data-no-loading") ||
+                link.hasAttribute("data-bs-toggle") ||
+                link.hasAttribute("download") ||
+                link.target ||
+                !href ||
+                href.charAt(0) === "#" ||
+                href.indexOf("mailto:") === 0 ||
+                href.indexOf("tel:") === 0 ||
+                href.indexOf("javascript:") === 0
+            ) {
+                return;
+            }
+            setLinkLoading(link);
+        });
+
+        // A back/forward navigation can restore this page from the
+        // browser's bfcache with a button still stuck mid-spinner from
+        // before the user left -- put every such button back the way it
+        // was rather than leaving it permanently disabled.
+        window.addEventListener("pageshow", function (event) {
+            if (!event.persisted) {
+                return;
+            }
+            document.querySelectorAll("a.btn-loading").forEach(function (link) {
+                link.classList.remove("btn-loading");
+                if (link.dataset.originalContent !== undefined) {
+                    link.innerHTML = link.dataset.originalContent;
+                    delete link.dataset.originalContent;
+                }
+                link.style.removeProperty("min-width");
+                link.style.removeProperty("min-height");
+            });
+        });
+
+        function cleanupModalArtifacts() {
+            document.body.classList.remove("modal-open");
+            document.body.style.removeProperty("padding-right");
+            document.body.style.removeProperty("overflow");
+            document.querySelectorAll(".modal-backdrop").forEach(function (el) {
+                el.remove();
+            });
+        }
+
+        function swapContent(html) {
+            var doc = new DOMParser().parseFromString(html, "text/html");
+            var next = doc.querySelector(CONTENT_SELECTOR);
+            var current = document.querySelector(CONTENT_SELECTOR);
+            if (!next || !current) {
+                window.location.reload();
+                return;
+            }
+            // Pages like the profile tabs re-render with their default tab
+            // active every time, since tab state isn't tracked server-side --
+            // remember which pane was open and restore it after the swap so
+            // e.g. changing a password from the Security tab doesn't bounce
+            // the user back to the Info tab.
+            var activeTabTarget = null;
+            var activeTabButton = current.querySelector(".nav-tabs .nav-link.active[data-bs-target]");
+            if (activeTabButton) {
+                activeTabTarget = activeTabButton.getAttribute("data-bs-target");
+            }
+
+            cleanupModalArtifacts();
+            current.innerHTML = next.innerHTML;
+            current.classList.remove("is-loading");
+            var title = doc.querySelector("title");
+            if (title) {
+                document.title = title.textContent;
+            }
+
+            if (activeTabTarget && window.bootstrap) {
+                var restoredTabButton = current.querySelector('.nav-tabs .nav-link[data-bs-target="' + activeTabTarget + '"]');
+                if (restoredTabButton && !restoredTabButton.classList.contains("active")) {
+                    bootstrap.Tab.getOrCreateInstance(restoredTabButton).show();
+                }
+            }
+
+            document.dispatchEvent(new CustomEvent("site:content-updated"));
+        }
+
+        window.SiteAjax = {
+            swapContent: swapContent,
+            showProgress: showProgress,
+            hideProgress: hideProgress,
+            setButtonLoading: setButtonLoading,
+            refresh: function (url) {
+                showProgress();
+                return fetch(url || window.location.href, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                })
+                    .then(function (response) { return response.text(); })
+                    .then(swapContent)
+                    .finally(hideProgress);
+            },
+        };
+
+        document.addEventListener("submit", function (event) {
+            if (event.defaultPrevented) {
+                return;
+            }
+            var form = event.target;
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+            if (!form.closest(CONTENT_SELECTOR) || form.hasAttribute("data-no-ajax")) {
+                return;
+            }
+
+            var confirmMessage = form.getAttribute("data-confirm");
+            if (confirmMessage && !window.confirm(confirmMessage)) {
+                event.preventDefault();
+                return;
+            }
+
+            setButtonLoading(event.submitter);
+
+            if (form.method.toUpperCase() === "GET") {
+                showProgress();
+                return;
+            }
+
+            event.preventDefault();
+            var contentEl = document.querySelector(CONTENT_SELECTOR);
+            if (contentEl) {
+                contentEl.classList.add("is-loading");
+            }
+            showProgress();
+
+            fetch(form.getAttribute("action"), {
+                method: "POST",
+                body: new FormData(form),
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+            })
+                .then(function (response) { return response.text(); })
+                .then(swapContent)
+                .catch(function () {
+                    window.location.reload();
+                })
+                .finally(hideProgress);
+        });
+    })();
+    </script>
     {% block scripts %}{% endblock %}
     <script>
         (function () {

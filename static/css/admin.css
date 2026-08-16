@@ -55,3 +55,181 @@ body.admin-body { margin: 0; background: var(--page); color: var(--ink); font-fa
 
 /* ---------- Roles & Permissions ---------- */
 .permission-group-label { color: #8390a3; font-size: 9px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; margin: 10px 0 6px; }
+
+/* ---------- Loading animation (admin-wide AJAX layer) ---------- */
+.admin-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 2000;
+    pointer-events: none;
+    opacity: 0;
+    overflow: hidden;
+    transition: opacity .18s ease;
+}
+.admin-progress-bar.active { opacity: 1; }
+.admin-progress-bar::before {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 40%;
+    background: linear-gradient(90deg, var(--primary), #8b5cf6);
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 8px rgba(79, 70, 229, .5);
+    animation: admin-progress-slide 1.1s ease-in-out infinite;
+}
+@keyframes admin-progress-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+}
+
+.admin-content { transition: opacity .18s ease, filter .18s ease; }
+.admin-content.is-loading { opacity: .55; filter: saturate(65%); pointer-events: none; }
+
+.btn-loading {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: wait;
+}
+/* Anchor tags styled as buttons can't be `disabled` -- block further
+   clicks the same way while the navigation they triggered is pending. */
+.btn-loading[href] { pointer-events: none; }
+.btn-loading .btn-spinner {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 2px solid rgba(255, 255, 255, .45);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: admin-btn-spin .6s linear infinite;
+}
+/* Buttons with a light/white background need a dark spinner instead of
+   the default white one, or it's invisible against them. */
+.btn-light.btn-loading .btn-spinner,
+.btn-soft.btn-loading .btn-spinner,
+.btn-outline-success.btn-loading .btn-spinner,
+.search-bar button.btn-loading .btn-spinner {
+    border-color: rgba(79, 70, 229, .3);
+    border-top-color: var(--primary);
+}
+.btn-outline-danger.btn-loading .btn-spinner,
+.danger.btn-loading .btn-spinner {
+    border-color: rgba(216, 66, 74, .3);
+    border-top-color: #d8424a;
+}
+@keyframes admin-btn-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Panel-load spinner used inside AJAX-fetched content (e.g. the
+   complaints modal) before the fetched HTML replaces it. */
+.admin-panel-spinner { display: flex; align-items: center; justify-content: center; padding: 60px 0; color: var(--muted); font-size: 26px; }
+
+/* ============================================================
+   Micro-interactions & motion layer
+   Purely additive: entrance animation, hover/press feedback, and
+   result-state polish on top of the existing AJAX/loading system
+   above. No layout, color palette, or component structure changes.
+   ============================================================ */
+@keyframes adminFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes adminFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes adminRowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes adminPopIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes adminPulseDot { 0%, 100% { box-shadow: 0 0 0 0 rgba(20, 164, 108, .45); } 70% { box-shadow: 0 0 0 5px rgba(20, 164, 108, 0); } }
+@keyframes adminShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+/* Page-load entrance: actionbar text/controls, then the panel below. */
+.page-actionbar > div:first-child .eyebrow { animation: adminFadeUp .38s ease both; }
+.page-actionbar > div:first-child h2 { animation: adminFadeUp .4s ease .04s both; }
+.page-actionbar > div:first-child > p.text-secondary { animation: adminFadeUp .4s ease .08s both; }
+.page-actionbar > div:last-child { animation: adminFadeUp .4s ease .12s both; }
+.panel-card { animation: adminFadeIn .35s ease .1s both; }
+
+/* Table rows: staggered entrance, capped so long lists don't crawl in. */
+.admin-table tbody tr { animation: adminRowIn .32s ease both; }
+.admin-table tbody tr:nth-child(1) { animation-delay: 0ms; }
+.admin-table tbody tr:nth-child(2) { animation-delay: 40ms; }
+.admin-table tbody tr:nth-child(3) { animation-delay: 80ms; }
+.admin-table tbody tr:nth-child(4) { animation-delay: 120ms; }
+.admin-table tbody tr:nth-child(5) { animation-delay: 160ms; }
+.admin-table tbody tr:nth-child(6) { animation-delay: 200ms; }
+.admin-table tbody tr:nth-child(7) { animation-delay: 240ms; }
+.admin-table tbody tr:nth-child(n+8) { animation-delay: 280ms; }
+.admin-table tbody tr:hover { background: #fafbff; }
+
+/* Buttons: hover lift/press feedback, layered on the existing
+   .btn-loading/.btn-spinner states above rather than replacing them. */
+.action-button { transition: transform .18s ease, box-shadow .18s ease; }
+.action-button:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(79, 70, 229, .28); }
+.action-button:active { transform: translateY(0) scale(.97); }
+.action-button i { transition: transform .18s ease; }
+.action-button:hover i { transform: translateX(1px) rotate(12deg); }
+
+.table-actions a, .table-actions button { transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease; }
+.table-actions a:hover, .table-actions button:hover { transform: scale(1.08); box-shadow: 0 4px 10px rgba(79, 70, 229, .18); }
+.table-actions a:active, .table-actions button:active { transform: scale(.94); }
+.table-actions button i, .table-actions a i { transition: transform .18s ease; }
+.table-actions button:not(.danger):hover i { transform: rotate(8deg); }
+.table-actions button.danger:hover { background: #ffe3e5; box-shadow: 0 4px 10px rgba(216, 66, 74, .22); }
+.table-actions button.danger:hover i { transform: translateY(-1px) rotate(-6deg); }
+
+.search-bar { transition: box-shadow .18s ease; }
+.search-bar:focus-within { box-shadow: 0 0 0 3px rgba(79, 70, 229, .09); }
+.search-bar button { transition: background-color .18s ease, transform .18s ease; }
+.search-bar button:hover { background: #e2e6ff; transform: translateY(-1px); }
+.search-bar button:active { transform: translateY(0) scale(.97); }
+.search-bar > i { transition: transform .18s ease, color .18s ease; }
+.search-bar:focus-within > i { transform: scale(1.08); color: #6b74e0; }
+
+.admin-content .btn:active:not(.btn-loading) { transform: scale(.97); }
+.admin-content .btn { transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease, border-color .15s ease; }
+
+/* Loading/result states on opted-in submit buttons (data-done-label). */
+.btn-result-ok i, .btn-result-error i { animation: adminPopIn .22s ease both; }
+.btn.btn-primary.btn-result-ok { background: #14a46c; border-color: #14a46c; }
+.btn.btn-primary.btn-result-error { background: #d8424a; border-color: #d8424a; }
+.table-actions button.danger.btn-result-ok { background: #e5f8ef; color: #14a46c; }
+.table-actions button.danger.btn-result-error { background: #fee9eb; color: #d8424a; }
+
+/* Sidebar: icon nudge on hover, on top of the existing background transition. */
+.sidebar-link i { transition: transform .18s ease; }
+.sidebar-link:hover i { transform: translateX(2px); }
+
+/* Status pill: subtle pulse dot on active only; no change to inactive/other states. */
+.status-pill.status-active { gap: 5px; }
+.status-pill.status-active::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #14a46c; flex: 0 0 auto; animation: adminPulseDot 2s ease-in-out infinite; }
+
+/* Modal open/close: gentle scale + fade instead of Bootstrap's default slide-down. */
+.modal.fade .modal-dialog { transition: transform .22s cubic-bezier(.22, 1, .36, 1), opacity .22s ease; transform: scale(.96) translateY(-8px); opacity: 0; }
+.modal.show .modal-dialog { transform: scale(1) translateY(0); opacity: 1; }
+
+/* Flashed alerts: treat as the app's toast equivalent -- fade/slide in. */
+.admin-content .alert.fade.show { animation: adminFadeUp .3s ease both; }
+
+/* Empty-state row: icon + gentle fade (rides the row entrance animation above). */
+.empty-state i { display: block; font-size: 22px; margin-bottom: 8px; color: #c3cce0; }
+
+/* Loading shimmer sweep across dimmed content -- lightweight stand-in for a
+   skeleton screen, given content re-renders as one server-provided block. */
+.admin-content.is-loading { position: relative; overflow: hidden; }
+.admin-content.is-loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .35) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: adminShimmer 1.1s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

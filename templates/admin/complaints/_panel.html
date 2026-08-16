@@ -34,7 +34,7 @@
     {% elif item.file_type == 'audio' %}
     <audio controls preload="metadata" src="{{ url_for('admin.evidence_download', evidence_id=item.evidence_id) }}"></audio>
     {% else %}
-    <a class="btn btn-sm btn-outline-secondary w-100 mb-2" href="{{ url_for('admin.evidence_download', evidence_id=item.evidence_id) }}"><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>
+    <a class="btn btn-sm btn-outline-secondary w-100 mb-2" href="{{ url_for('admin.evidence_download', evidence_id=item.evidence_id) }}" data-no-loading><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>
     {% endif %}
     <span class="evidence-name">{{ item.file_name }}</span>
     <span class="evidence-meta">{{ (item.file_size / 1024)|round(0, 'floor')|int }} KB &middot; uploaded {{ item.uploaded_at.strftime('%d %b %Y') }}{% if item.uploader %} by {{ item.uploader.full_name }}{% endif %}</span>

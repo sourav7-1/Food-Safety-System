@@ -11,6 +11,7 @@
     {% block head %}{% endblock %}
 </head>
 <body class="admin-body">
+    <div class="admin-progress-bar" id="adminProgressBar" aria-hidden="true"></div>
     <div class="admin-shell">
         <aside class="admin-sidebar d-none d-lg-flex">
             {% include "admin/sidebar.html" %}
@@ -82,6 +83,151 @@
         // call preventDefault() before this listener sees the event, so
         // they're left alone.
         var CONTENT_SELECTOR = ".admin-content";
+        var progressBar = document.getElementById("adminProgressBar");
+        var progressRequests = 0;
+
+        function showProgress() {
+            progressRequests += 1;
+            progressBar.classList.add("active");
+        }
+
+        function hideProgress() {
+            progressRequests = Math.max(0, progressRequests - 1);
+            if (progressRequests === 0) {
+                progressBar.classList.remove("active");
+            }
+        }
+
+        function setButtonLoading(button) {
+            if (!button || button.classList.contains("btn-loading")) {
+                return;
+            }
+            // The button's content is fully replaced (not prepended)
+            // rather than kept alongside a spinner -- this button is
+            // always either about to be swapped away by the response
+            // (AJAX success/failure) or torn down by a real page
+            // navigation (GET search/filter forms), so nothing ever
+            // needs restoring, and this keeps small icon-only buttons
+            // (e.g. the 30x30 delete button) from having to fit both an
+            // icon and a spinner at once.
+            button.style.minWidth = button.offsetWidth + "px";
+            button.style.minHeight = button.offsetHeight + "px";
+            button.classList.add("btn-loading");
+            button.disabled = true;
+            // Opted-in buttons (data-busy-label) additionally show a verb
+            // next to the spinner; every other button keeps the original
+            // icon-only spinner exactly as before.
+            var busyLabel = button.getAttribute("data-busy-label");
+            button.innerHTML = busyLabel
+                ? '<span class="btn-spinner me-2" aria-hidden="true"></span>' + busyLabel
+                : '<span class="btn-spinner" aria-hidden="true"></span>';
+        }
+
+        // Anchor tags styled as buttons (e.g. dashboard "View all") trigger
+        // a real navigation, not a form submit, so the handler above never
+        // sees them. Give them the same spinner for the moment before the
+        // browser actually navigates away.
+        function setLinkLoading(link) {
+            if (!link || link.classList.contains("btn-loading")) {
+                return;
+            }
+            link.dataset.originalContent = link.innerHTML;
+            link.style.minWidth = link.offsetWidth + "px";
+            link.style.minHeight = link.offsetHeight + "px";
+            link.classList.add("btn-loading");
+            link.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
+        }
+
+        document.addEventListener("click", function (event) {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+            }
+            var link = event.target.closest("a.btn");
+            if (!link) {
+                return;
+            }
+            var href = link.getAttribute("href") || "";
+            if (
+                link.classList.contains("btn-loading") ||
+                link.hasAttribute("data-no-loading") ||
+                link.hasAttribute("data-bs-toggle") ||
+                link.hasAttribute("download") ||
+                link.target ||
+                !href ||
+                href.charAt(0) === "#" ||
+                href.indexOf("mailto:") === 0 ||
+                href.indexOf("tel:") === 0 ||
+                href.indexOf("javascript:") === 0
+            ) {
+                return;
+            }
+            setLinkLoading(link);
+        });
+
+        // A back/forward navigation can restore this page from the
+        // browser's bfcache with a button still stuck mid-spinner from
+        // before the user left -- put every such button back the way it
+        // was rather than leaving it permanently disabled.
+        window.addEventListener("pageshow", function (event) {
+            if (!event.persisted) {
+                return;
+            }
+            document.querySelectorAll("a.btn-loading").forEach(function (link) {
+                link.classList.remove("btn-loading");
+                if (link.dataset.originalContent !== undefined) {
+                    link.innerHTML = link.dataset.originalContent;
+                    delete link.dataset.originalContent;
+                }
+                link.style.removeProperty("min-width");
+                link.style.removeProperty("min-height");
+            });
+        });
+
+        // Opt-in only: a button needs a `data-done-label` attribute (an
+        // empty string is fine) to get a brief check/x flash before the
+        // content swap below happens. Every button without it keeps the
+        // exact old behavior -- spinner, then an instant swap.
+        function showButtonResult(button, ok) {
+            var label = button.getAttribute(ok ? "data-done-label" : "data-error-label");
+            var icon = ok ? "fa-check" : "fa-xmark";
+            button.classList.remove("btn-loading");
+            button.classList.add(ok ? "btn-result-ok" : "btn-result-error");
+            button.innerHTML = '<i class="fa-solid ' + icon + '" aria-hidden="true"></i>' + (label ? " " + label : "");
+        }
+
+        function finishSubmit(button, html, ok) {
+            if (!button || !button.hasAttribute("data-done-label")) {
+                swapContent(html);
+                return;
+            }
+            showButtonResult(button, ok);
+            return new Promise(function (resolve) {
+                setTimeout(function () {
+                    swapContent(html);
+                    resolve();
+                }, ok ? 500 : 650);
+            });
+        }
+
+        // Flashed alerts double as this app's toast notifications --
+        // dismiss them the same way a toast would, after giving the user
+        // a moment to read them. Bound once per element so repeated
+        // admin:content-updated swaps don't stack timers.
+        function autoDismissAlerts() {
+            document.querySelectorAll(".admin-content .alert.show").forEach(function (el) {
+                if (el.dataset.autoDismissBound) {
+                    return;
+                }
+                el.dataset.autoDismissBound = "1";
+                setTimeout(function () {
+                    if (!el.isConnected) {
+                        return;
+                    }
+                    var instance = bootstrap.Alert.getOrCreateInstance(el);
+                    instance.close();
+                }, 4500);
+            });
+        }
 
         function cleanupModalArtifacts() {
             document.body.classList.remove("modal-open");
@@ -102,6 +248,7 @@
             }
             cleanupModalArtifacts();
             current.innerHTML = next.innerHTML;
+            current.classList.remove("is-loading");
             var title = doc.querySelector("title");
             if (title) {
                 document.title = title.textContent;
@@ -111,17 +258,23 @@
 
         // Exposed so pages with their own bespoke AJAX flow (e.g. the
         // complaints modal) can refresh the underlying list in place
-        // too, instead of falling back to a real page reload.
+        // too, instead of falling back to a real page reload, and share
+        // the same loading-animation vocabulary.
         window.AdminAjax = {
             swapContent: swapContent,
+            showProgress: showProgress,
+            hideProgress: hideProgress,
+            setButtonLoading: setButtonLoading,
             refresh: function (url) {
+                showProgress();
                 return fetch(url || window.location.href, {
                     headers: { "X-Requested-With": "XMLHttpRequest" },
                 })
                     .then(function (response) {
                         return response.text();
                     })
-                    .then(swapContent);
+                    .then(swapContent)
+                    .finally(hideProgress);
             },
         };
 
@@ -131,9 +284,6 @@
             }
             var form = event.target;
             if (!(form instanceof HTMLFormElement)) {
-                return;
-            }
-            if (form.method.toUpperCase() !== "POST") {
                 return;
             }
             if (!form.closest(CONTENT_SELECTOR) || form.hasAttribute("data-no-ajax")) {
@@ -146,20 +296,52 @@
                 return;
             }
 
+            // event.submitter is the actual button/input that triggered
+            // this submission -- unlike a `button[type="submit"]`
+            // selector, it's correct even for buttons that rely on the
+            // implicit default type (most <button> elements in this
+            // codebase never bother setting type="submit" explicitly),
+            // so every button that submits a form gets the loading
+            // animation, not just the ones that happened to spell out
+            // the attribute.
+            setButtonLoading(event.submitter);
+
+            if (form.method.toUpperCase() === "GET") {
+                // Search/filter forms: let the browser navigate normally
+                // (keeps the URL bookmarkable/shareable) -- the button
+                // loading state above is enough feedback while the page
+                // loads; nothing to fetch/swap ourselves here.
+                showProgress();
+                return;
+            }
+
             event.preventDefault();
+            var contentEl = document.querySelector(CONTENT_SELECTOR);
+            if (contentEl) {
+                contentEl.classList.add("is-loading");
+            }
+            showProgress();
+
+            var submitter = event.submitter;
             fetch(form.getAttribute("action"), {
                 method: "POST",
                 body: new FormData(form),
                 headers: { "X-Requested-With": "XMLHttpRequest" },
             })
                 .then(function (response) {
-                    return response.text();
+                    var ok = response.ok;
+                    return response.text().then(function (html) {
+                        return finishSubmit(submitter, html, ok);
+                    });
                 })
-                .then(swapContent)
                 .catch(function () {
                     window.location.reload();
-                });
+                })
+                .finally(hideProgress);
         });
+
+        autoDismissAlerts();
+        document.addEventListener("admin:content-updated", autoDismissAlerts);
     })();
     </script>
     {% block scripts %}{% endblock %}

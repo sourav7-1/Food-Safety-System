@@ -8,7 +8,7 @@
         <h1 class="h3 mb-2">Create customer account</h1>
         <p class="text-secondary mb-4">Register to access public food-safety services.</p>
 
-        <form method="post">
+        <form method="post" data-no-ajax>
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
                 <label class="form-label" for="full_name">Full name</label>

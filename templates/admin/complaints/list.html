@@ -32,7 +32,8 @@
     var needsListRefresh = false;
 
     function loadPanel(url, options) {
-        body.innerHTML = '<div class="text-center py-5 text-secondary"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+        window.AdminAjax.showProgress();
+        body.innerHTML = '<div class="admin-panel-spinner"><i class="fa-solid fa-spinner fa-spin"></i></div>';
         // X-Panel-Request is the dedicated marker routes/admin.py checks
         // for (_wants_partial()) -- deliberately distinct from the
         // generic X-Requested-With the admin-wide AJAX layer also sends,
@@ -48,7 +49,8 @@
             })
             .catch(function () {
                 body.innerHTML = '<div class="alert alert-danger">Could not load this complaint. Please try again.</div>';
-            });
+            })
+            .finally(window.AdminAjax.hideProgress);
     }
 
     document.querySelectorAll("[data-complaint-modal-open]").forEach(function (button) {
@@ -68,6 +70,7 @@
         var form = event.target;
         if (!(form instanceof HTMLFormElement)) { return; }
         event.preventDefault();
+        window.AdminAjax.setButtonLoading(event.submitter);
         loadPanel(form.getAttribute("action"), {
             method: form.getAttribute("method") || "POST",
             body: new FormData(form),

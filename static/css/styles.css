@@ -992,3 +992,81 @@ html {
         display: none;
     }
 }
+
+/* ---------- Loading animation (site-wide AJAX layer, see base.html) ---------- */
+.site-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    z-index: 2000;
+    pointer-events: none;
+    opacity: 0;
+    overflow: hidden;
+    transition: opacity .18s ease;
+}
+.site-progress-bar.active { opacity: 1; }
+.site-progress-bar::before {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 40%;
+    background: linear-gradient(90deg, var(--brand-green), #2fa06a);
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 8px rgba(31, 122, 77, .5);
+    animation: site-progress-slide 1.1s ease-in-out infinite;
+}
+@keyframes site-progress-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+}
+
+#main-content { transition: opacity .18s ease, filter .18s ease; }
+#main-content.is-loading { opacity: .55; filter: saturate(65%); pointer-events: none; position: relative; overflow: hidden; }
+#main-content.is-loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .35) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: site-shimmer 1.1s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes site-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.btn-loading {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: wait;
+}
+/* Anchor tags styled as buttons can't be `disabled` -- block further
+   clicks the same way while the navigation they triggered is pending. */
+.btn-loading[href] { pointer-events: none; }
+.btn-loading .btn-spinner {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 2px solid rgba(255, 255, 255, .45);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: site-btn-spin .6s linear infinite;
+}
+/* Buttons with a light/white background need a dark spinner instead of
+   the default white one, or it's invisible against them. */
+.btn-light.btn-loading .btn-spinner,
+.btn-outline-success.btn-loading .btn-spinner {
+    border-color: rgba(31, 122, 77, .3);
+    border-top-color: var(--brand-green);
+}
+.btn-outline-danger.btn-loading .btn-spinner {
+    border-color: rgba(216, 66, 74, .3);
+    border-top-color: #d8424a;
+}
+@keyframes site-btn-spin {
+    to { transform: rotate(360deg); }
+}

@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block inspector_content %}
-<form method="post" id="inspectionForm">
+<form method="post" id="inspectionForm" data-no-ajax>
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     <section class="inspector-panel mb-4">
         <div class="section-heading"><span>1</span><div><h2>Inspection details</h2><p>Select an active stall in your assigned area.</p></div></div>
