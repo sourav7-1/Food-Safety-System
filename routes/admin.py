@@ -14,6 +14,7 @@ from flask import (
 from flask_login import current_user, login_required
 from sqlalchemy import func, or_, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import aliased
 
 from extensions import db
 from models import (
@@ -30,6 +31,7 @@ from models import (
     Permission,
     Review,
     Role,
+    RoleAuditLog,
     Stall,
     User,
     Vendor,
@@ -1302,6 +1304,60 @@ def role_delete(role_id):
     db.session.delete(role)
     _commit("Role deleted successfully.", "Role could not be deleted.")
     return redirect(url_for("admin.roles"))
+
+
+@admin_bp.route("/audit-log")
+@login_required
+@super_admin_required
+def audit_log():
+    search = request.args.get("q", "").strip()
+    TargetUser = aliased(User)
+    ActorUser = aliased(User)
+    OldRole = aliased(Role)
+    NewRole = aliased(Role)
+
+    query = (
+        db.session.query(RoleAuditLog, TargetUser, ActorUser, OldRole, NewRole)
+        .join(TargetUser, RoleAuditLog.target_user_id == TargetUser.user_id)
+        .outerjoin(ActorUser, RoleAuditLog.actor_user_id == ActorUser.user_id)
+        .outerjoin(OldRole, RoleAuditLog.old_role_id == OldRole.role_id)
+        .join(NewRole, RoleAuditLog.new_role_id == NewRole.role_id)
+    )
+    if search:
+        term = f"%{search}%"
+        query = query.filter(
+            or_(
+                TargetUser.full_name.ilike(term),
+                TargetUser.email.ilike(term),
+                ActorUser.full_name.ilike(term),
+                ActorUser.email.ilike(term),
+                NewRole.role_name.ilike(term),
+                OldRole.role_name.ilike(term),
+                RoleAuditLog.reason.ilike(term),
+            )
+        )
+
+    # An append-only audit trail has no natural upper bound, so this is
+    # capped to the most recent 300 entries rather than paginated --
+    # simplest thing that keeps the page fast; revisit with real
+    # pagination if this table grows large enough for that to matter.
+    rows = query.order_by(RoleAuditLog.created_at.desc()).limit(300).all()
+    entries = [
+        {
+            "audit": audit,
+            "target_user": target_user,
+            "actor_user": actor_user,
+            "old_role": old_role,
+            "new_role": new_role,
+        }
+        for audit, target_user, actor_user, old_role, new_role in rows
+    ]
+    return render_template(
+        "admin/audit_log/list.html",
+        page_title="Role Audit Log",
+        entries=entries,
+        search=search,
+    )
 
 
 @admin_bp.route("/settings")

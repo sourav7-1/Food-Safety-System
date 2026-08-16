@@ -1,0 +1,47 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="page-actionbar">
+    <div>
+        <p class="eyebrow mb-1">ACCESS CONTROL</p>
+        <h2 class="h3 fw-bold mb-1">Role Audit Log</h2>
+        <p class="text-secondary mb-0">Super admin only. Every role change &mdash; who changed whose role, from what to what, and why.</p>
+    </div>
+    <form class="search-bar" method="get">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input name="q" value="{{ search }}" placeholder="Search by user, role or reason..." aria-label="Search">
+        {% if search %}<a href="{{ url_for('admin.audit_log') }}" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></a>{% endif %}
+        <button type="submit">Search</button>
+    </form>
+</div>
+
+<div class="panel-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead><tr><th>When</th><th>User</th><th>Role change</th><th>Changed by</th><th>Reason</th></tr></thead>
+            <tbody>
+            {% for entry in entries %}
+                <tr>
+                    <td class="text-nowrap">{{ entry.audit.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+                    <td><strong>{{ entry.target_user.full_name }}</strong><small>{{ entry.target_user.email }}</small></td>
+                    <td>
+                        {% if entry.old_role %}<span class="code-chip">{{ entry.old_role.role_name }}</span> <i class="fa-solid fa-arrow-right mx-1 text-secondary"></i>{% endif %}
+                        <span class="status-pill {{ 'risk-critical' if entry.new_role.is_admin_tier else 'risk-low' }}">{{ entry.new_role.role_name }}</span>
+                    </td>
+                    <td>
+                        {% if entry.actor_user %}
+                        <strong>{{ entry.actor_user.full_name }}</strong><small>{{ entry.actor_user.email }}</small>
+                        {% else %}
+                        <span class="text-secondary">System</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-secondary">{{ entry.audit.reason or '—' }}</td>
+                </tr>
+            {% else %}<tr><td colspan="5" class="empty-state"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>No role changes recorded yet.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if entries|length == 300 %}
+<p class="text-secondary small mt-3">Showing the most recent 300 entries.</p>
+{% endif %}
+{% endblock %}
