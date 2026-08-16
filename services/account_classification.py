@@ -17,6 +17,7 @@ import re
 # before this ever runs).
 STUDENT_EMAIL_PATTERN = re.compile(r"^[0-9]{3}-[0-9]{2}-[0-9]{3}@diu\.edu\.bd\Z")
 
+STUDENT_DOMAIN = "diu.edu.bd"
 OFFICIAL_DIU_DOMAIN = "daffodilvariversity.edu.bd"
 
 STUDENT = "student"
@@ -47,6 +48,26 @@ def classify_email(email):
         return OFFICIAL_DIU
 
     return EXTERNAL
+
+
+def is_student_domain_email(email):
+    """True if the email's domain is exactly the DIU student domain
+    (diu.edu.bd), regardless of whether the ID part matches the strict
+    pattern. Used to REJECT signup/login outright for a diu.edu.bd
+    address that isn't in the exact ID format, instead of silently
+    letting it through as a plain external/customer account -- a
+    close-but-wrong diu.edu.bd address is far more likely a typo or a
+    spoofing attempt than a legitimate different kind of account.
+    """
+    normalized = (email or "").strip().lower()
+    if "@" not in normalized:
+        return False
+    return normalized.rsplit("@", 1)[-1] == STUDENT_DOMAIN
+
+
+def is_valid_student_email(email):
+    """True only for an exact, correctly formatted DIU student email."""
+    return classify_email(email) == STUDENT
 
 
 def resolve_signup_role_name(email):

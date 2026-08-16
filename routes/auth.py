@@ -17,7 +17,12 @@ from sqlalchemy.exc import IntegrityError
 
 from extensions import db, limiter, oauth
 from models import Role, User
-from services.account_classification import classify_email, resolve_signup_role_name
+from services.account_classification import (
+    classify_email,
+    is_student_domain_email,
+    is_valid_student_email,
+    resolve_signup_role_name,
+)
 from services.email_verification import (
     VerificationTokenExpired,
     VerificationTokenInvalid,
@@ -138,6 +143,20 @@ def login():
             )
             return render_template("auth/login.html"), 403
 
+        if user.role_name == "student" and not is_valid_student_email(user.email):
+            # Defense in depth: the student role can only ever be granted
+            # at signup when the email matched the exact DIU ID pattern
+            # (see _role_for_signup below), but the email itself can
+            # later change via the profile page -- re-check it here so a
+            # student account can never keep logging in against a
+            # since-changed, non-matching email.
+            flash(
+                "This account's email no longer matches the required "
+                "DIU student ID format. Please contact an administrator.",
+                "danger",
+            )
+            return render_template("auth/login.html"), 403
+
         login_user(user, remember=remember)
         flash(f"Welcome back, {user.full_name}.", "success")
 
@@ -205,6 +224,18 @@ def google_callback():
                 # Google already confirmed ownership of this inbox above.
                 user.email_verified_at = datetime.now(timezone.utc)
         else:
+            if is_student_domain_email(email) and not is_valid_student_email(email):
+                # Same rule as local register(): a diu.edu.bd address
+                # that doesn't match the exact ID format never creates
+                # an account at all, Google or otherwise.
+                flash(
+                    "DIU student Google accounts must use the exact ID "
+                    "email format, e.g. 222-35-456@diu.edu.bd. Please "
+                    "sign in with a different account.",
+                    "danger",
+                )
+                return redirect(url_for("auth.login"))
+
             signup_role, classification = _role_for_signup(email)
             if signup_role is None:
                 flash("Google sign-up is temporarily unavailable.", "danger")
@@ -232,6 +263,15 @@ def google_callback():
     if not user.is_active:
         flash(
             "Your account is disabled. Please contact an administrator.",
+            "danger",
+        )
+        return redirect(url_for("auth.login"))
+
+    if user.role_name == "student" and not is_valid_student_email(user.email):
+        # Same defense-in-depth re-check as the local login() route.
+        flash(
+            "This account's email no longer matches the required DIU "
+            "student ID format. Please contact an administrator.",
             "danger",
         )
         return redirect(url_for("auth.login"))
@@ -267,6 +307,15 @@ def register():
             errors.append("An account with that email already exists.")
         if phone and User.query.filter_by(phone=phone).first():
             errors.append("An account with that phone number already exists.")
+        if email and is_student_domain_email(email) and not is_valid_student_email(email):
+            # A diu.edu.bd address that doesn't match the exact ID format
+            # is rejected outright rather than silently falling back to
+            # a plain customer account -- it's far more likely a typo or
+            # a spoofing attempt than a legitimate different account.
+            errors.append(
+                "DIU student emails must use the exact ID format, e.g. "
+                "222-35-456@diu.edu.bd, to register."
+            )
         if not verify_turnstile(
             request.form.get("cf-turnstile-response"),
             remote_ip=request.remote_addr,

@@ -15,6 +15,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from extensions import db
 from models import Area, Complaint, Review, User
+from services.account_classification import is_valid_student_email
 from services.email_verification import send_verification_email
 from services.profile_photo import (
     ProfilePhotoValidationError,
@@ -109,6 +110,19 @@ def edit():
             User.user_id != current_user.user_id,
         ).first():
             errors.append("That email address is already in use.")
+        elif (
+            current_user.role_name == "student"
+            and not is_valid_student_email(new_email)
+        ):
+            # Prevents the exact drift the login-time re-check in
+            # routes/auth.py guards against: a student account's email
+            # is never allowed to move away from the exact DIU ID
+            # format while it still holds the student role.
+            errors.append(
+                "Your account has the student role, so its email must "
+                "stay in the exact DIU ID format, e.g. "
+                "222-35-456@diu.edu.bd."
+            )
 
     if phone_changed and new_phone:
         if User.query.filter(
