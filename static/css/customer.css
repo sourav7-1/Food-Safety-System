@@ -522,3 +522,96 @@
         font-size: 24px;
     }
 }
+
+/* ---------- Notifications ---------- */
+.customer-shell .notification-nav-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.customer-shell .notification-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 10px;
+    background: var(--cf-red);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.customer-shell .admin-response-note {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--cf-green-soft);
+    border: 1px solid #cdead9;
+}
+
+.customer-shell .admin-response-note strong {
+    display: block;
+    font-size: 11px;
+    color: var(--cf-green-dark);
+    margin-bottom: 4px;
+}
+
+.customer-shell .admin-response-note p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--cf-ink);
+}
+
+.customer-shell .notification-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.customer-shell .notification-row {
+    margin: 0;
+}
+
+.customer-shell .notification-row-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    border: 1px solid var(--cf-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: var(--cf-surface);
+    cursor: pointer;
+}
+
+.customer-shell .notification-row.unread .notification-row-button {
+    background: var(--cf-green-soft);
+    border-color: #cdead9;
+}
+
+.customer-shell .notification-dot {
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cf-green);
+}
+
+.customer-shell .notification-message {
+    flex: 1;
+    font-size: 12.5px;
+    color: var(--cf-ink);
+}
+
+.customer-shell .notification-time {
+    flex: 0 0 auto;
+    font-size: 10.5px;
+    color: var(--cf-ink-dim);
+    white-space: nowrap;
+}

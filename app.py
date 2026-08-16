@@ -55,6 +55,7 @@ def create_app(config_class=Config):
     from routes.dashboard import dashboard_bp
     from routes.inspector import inspector_bp
     from routes.customer import customer_bp
+    from routes.profile import profile_bp
     from routes.reports import reports_bp
     from routes.vendor import vendor_bp
 
@@ -63,6 +64,7 @@ def create_app(config_class=Config):
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(inspector_bp)
     app.register_blueprint(customer_bp)
+    app.register_blueprint(profile_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(vendor_bp)
 

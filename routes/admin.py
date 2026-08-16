@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from flask import (
     Blueprint,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -24,6 +25,7 @@ from models import (
     Inspection,
     InspectionCriterion,
     Inspector,
+    Notification,
     Review,
     Role,
     Stall,
@@ -99,6 +101,41 @@ def _commit(success_message, failure_message):
         return False
     flash(success_message, "success")
     return True
+
+
+def _notify_complaint_update(complaint, status_changed, response_text):
+    """Best-effort in-app notification for the customer who submitted this
+    complaint. Never fails the request that just successfully updated the
+    complaint -- a notification write failure is logged, not surfaced."""
+    if not complaint.submitted_by_user_id:
+        return  # nothing to notify (no logged-in submitter on record)
+
+    status_label = complaint.status.replace("_", " ").title()
+    if status_changed and response_text:
+        message = (
+            f'Your complaint "{complaint.title}" is now {status_label}. '
+            f"Admin note: {response_text[:180]}"
+        )
+    elif status_changed:
+        message = f'Your complaint "{complaint.title}" is now {status_label}.'
+    else:
+        message = f'New update on your complaint "{complaint.title}": {response_text[:180]}'
+
+    try:
+        db.session.add(
+            Notification(
+                user_id=complaint.submitted_by_user_id,
+                complaint_id=complaint.complaint_id,
+                message=message[:255],
+            )
+        )
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Failed to create notification for complaint %s",
+            complaint.complaint_id,
+        )
 
 
 def _refresh_stall_risk(stall_id):
@@ -734,7 +771,12 @@ def complaint_manage(complaint_id):
                     complaint_id=complaint.complaint_id,
                 )
             )
+        status_changed = status != current_status
+        response_text = request.form.get("admin_response", "").strip()
+        response_changed = response_text != (complaint.admin_response or "")
+
         complaint.status = status
+        complaint.admin_response = response_text or None
         complaint.resolved_at = (
             datetime.now()
             if status in {"resolved", "rejected", "closed"}
@@ -798,8 +840,10 @@ def complaint_manage(complaint_id):
             "Complaint updated successfully.",
             "Complaint could not be updated.",
         ):
-            if status != current_status:
+            if status_changed:
                 _refresh_stall_risk(complaint.stall_id)
+            if status_changed or response_changed:
+                _notify_complaint_update(complaint, status_changed, response_text)
             return redirect(
                 url_for(
                     "admin.complaint_manage",

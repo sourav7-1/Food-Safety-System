@@ -21,6 +21,7 @@ limits==5.8.0
 MarkupSafe==3.0.3
 ordered-set==4.1.0
 packaging==26.3
+Pillow==12.3.0
 pycparser==3.0
 PyMySQL==1.2.0
 python-dotenv==1.2.2

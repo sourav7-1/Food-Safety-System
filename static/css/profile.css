@@ -1,0 +1,104 @@
+/* "My Profile" page — shared by every role, built on top of the root
+   site shell (templates/base.html) plus portal.css's card/table/badge
+   components. Scoped to .profile-page so it never leaks elsewhere. */
+
+.profile-page {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.profile-header .eyebrow {
+    color: #198754;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.profile-header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -.6px;
+    margin: 4px 0 3px;
+    color: #122033;
+}
+
+.profile-avatar-lg {
+    flex: 0 0 84px;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #198754, #146c44);
+    color: #fff;
+    font-size: 32px;
+    font-weight: 800;
+    box-shadow: 0 10px 26px rgba(15, 81, 50, .18);
+}
+
+.profile-avatar-lg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-tabs {
+    border-bottom-color: #e4eaf1;
+    margin-bottom: 22px;
+}
+
+.profile-tabs .nav-link {
+    color: #64748b;
+    font-size: 12.5px;
+    font-weight: 700;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    padding: 10px 16px;
+}
+
+.profile-tabs .nav-link i {
+    margin-right: 6px;
+}
+
+.profile-tabs .nav-link.active {
+    color: #147b52;
+    border-bottom-color: #198754;
+    background: transparent;
+}
+
+.profile-tab-content .portal-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 800;
+    margin-bottom: 14px;
+}
+
+.profile-tab-content .portal-card h3 i {
+    color: #198754;
+}
+
+.profile-tab-content label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #59687c;
+    margin-bottom: 5px;
+}
+
+@media (max-width: 575.98px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+}

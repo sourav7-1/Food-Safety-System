@@ -36,6 +36,7 @@
                 <div class="d-flex align-items-center gap-2">
                     {% if current_user.is_authenticated %}
                         <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.dashboard_redirect') }}">Dashboard</a>
+                        <a class="btn btn-outline-light btn-sm" href="{{ url_for('profile.view') }}">Profile</a>
                         <span class="text-white small d-none d-md-inline">{{ current_user.full_name }}</span>
                         <form action="{{ url_for('auth.logout') }}" method="post" class="m-0">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

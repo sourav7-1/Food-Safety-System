@@ -46,6 +46,11 @@ create table users (
   auth_provider enum('local', 'google') not null default 'local',
   status enum('active', 'inactive', 'suspended') not null default 'active',
   email_verified_at datetime null,
+  profile_photo_url varchar(255) null,
+  bio text null,
+  address varchar(255) null,
+  date_of_birth date null,
+  preferred_area_id int null,
   created_at timestamp not null default current_timestamp,
   updated_at timestamp not null default current_timestamp on update current_timestamp,
   primary key (user_id),
@@ -65,6 +70,7 @@ create table users (
 create index idx_users_role_id on users (role_id);
 create index idx_users_status on users (status);
 create index idx_users_created_at on users (created_at);
+create index idx_users_preferred_area_id on users (preferred_area_id);
 
 create table vendors (
   vendor_id int not null auto_increment,
@@ -107,6 +113,14 @@ create table areas (
 
 create index idx_areas_city_zone on areas (city, zone);
 create index idx_areas_created_at on areas (created_at);
+
+-- users.preferred_area_id references this table, defined above, so the
+-- foreign key is attached here rather than inline in `create table users`.
+alter table users
+  add constraint fk_users_preferred_area_id
+  foreign key (preferred_area_id) references areas (area_id)
+  on update cascade
+  on delete set null;
 
 create table inspectors (
   inspector_id int not null auto_increment,
@@ -296,6 +310,7 @@ create table complaints (
   status enum('submitted', 'under_review', 'investigation', 'action_required', 'resolved', 'rejected', 'closed') not null default 'submitted',
   submitted_at timestamp not null default current_timestamp,
   resolved_at timestamp null,
+  admin_response text null,
   primary key (complaint_id),
   constraint chk_complaints_title_not_blank check (char_length(trim(title)) > 0),
   constraint fk_complaints_stall_id
@@ -380,6 +395,28 @@ create table evidence_audit_logs (
 
 create index idx_evidence_audit_logs_evidence_id on evidence_audit_logs (evidence_id);
 create index idx_evidence_audit_logs_action_time on evidence_audit_logs (action_time);
+
+create table notifications (
+  notification_id int not null auto_increment,
+  user_id int not null,
+  complaint_id int null,
+  message varchar(255) not null,
+  is_read tinyint(1) not null default 0,
+  created_at timestamp not null default current_timestamp,
+  primary key (notification_id),
+  constraint chk_notifications_message_not_blank check (char_length(trim(message)) > 0),
+  constraint fk_notifications_user_id
+    foreign key (user_id) references users (user_id)
+    on update cascade
+    on delete cascade,
+  constraint fk_notifications_complaint_id
+    foreign key (complaint_id) references complaints (complaint_id)
+    on update cascade
+    on delete cascade
+) engine=innodb;
+
+create index idx_notifications_user_id_is_read on notifications (user_id, is_read);
+create index idx_notifications_created_at on notifications (created_at);
 
 create table reviews (
   review_id int not null auto_increment,

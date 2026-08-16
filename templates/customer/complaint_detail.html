@@ -15,6 +15,12 @@
     {% if complaint.resolved_at %}
     <small class="text-secondary d-block mt-2">Closed {{ complaint.resolved_at.strftime('%d %b %Y, %I:%M %p') }}</small>
     {% endif %}
+    {% if complaint.admin_response %}
+    <div class="admin-response-note">
+        <strong><i class="fa-solid fa-reply me-1"></i> Response from the safety team</strong>
+        <p>{{ complaint.admin_response }}</p>
+    </div>
+    {% endif %}
 </div>
 
 <div class="portal-card">

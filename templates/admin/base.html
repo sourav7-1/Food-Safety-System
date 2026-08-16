@@ -38,13 +38,17 @@
                         <i class="fa-regular fa-bell"></i>
                         <span></span>
                     </button>
-                    <div class="admin-profile">
+                    <a class="admin-profile" href="{{ url_for('profile.view') }}">
+                        {% if current_user.profile_photo_url %}
+                        <div class="profile-avatar profile-avatar-photo"><img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}"></div>
+                        {% else %}
                         <div class="profile-avatar">{{ current_user.full_name[:1] | upper }}</div>
+                        {% endif %}
                         <div class="d-none d-md-block">
                             <div class="small fw-semibold">{{ current_user.full_name }}</div>
                             <div class="profile-role">Administrator</div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </header>
 

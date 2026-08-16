@@ -21,6 +21,7 @@ from models import (
     FoodCategory,
     FoodItem,
     Inspection,
+    Notification,
     Review,
     Stall,
 )
@@ -39,6 +40,16 @@ customer_bp = Blueprint(
     __name__,
     url_prefix="/customer",
 )
+
+
+@customer_bp.context_processor
+def _inject_unread_notification_count():
+    if not current_user.is_authenticated:
+        return {"unread_notification_count": 0}
+    count = Notification.query.filter_by(
+        user_id=current_user.user_id, is_read=False
+    ).count()
+    return {"unread_notification_count": count}
 
 
 def _latest_inspection(stall_id):
@@ -357,3 +368,45 @@ def evidence_download(evidence_id):
         abort(403)
     record_audit(evidence, current_user, "viewed")
     return serve_complaint_evidence(evidence)
+
+
+@customer_bp.route("/notifications")
+@login_required
+@role_required("customer", "consumer")
+def notifications():
+    records = (
+        Notification.query.filter_by(user_id=current_user.user_id)
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+    return render_template("customer/notifications.html", notifications=records)
+
+
+@customer_bp.route("/notifications/read-all", methods=["POST"])
+@login_required
+@role_required("customer", "consumer")
+def mark_all_notifications_read():
+    Notification.query.filter_by(
+        user_id=current_user.user_id, is_read=False
+    ).update({"is_read": True})
+    db.session.commit()
+    return redirect(url_for("customer_portal.notifications"))
+
+
+@customer_bp.route("/notifications/<int:notification_id>/read", methods=["POST"])
+@login_required
+@role_required("customer", "consumer")
+def read_notification(notification_id):
+    notification = Notification.query.filter_by(
+        notification_id=notification_id, user_id=current_user.user_id
+    ).first_or_404()
+    notification.is_read = True
+    db.session.commit()
+    if notification.complaint_id:
+        return redirect(
+            url_for(
+                "customer_portal.complaint_detail",
+                complaint_id=notification.complaint_id,
+            )
+        )
+    return redirect(url_for("customer_portal.notifications"))

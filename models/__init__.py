@@ -46,6 +46,14 @@ class User(UserMixin, db.Model):
         server_default="active",
     )
     email_verified_at = db.Column(db.DateTime, nullable=True)
+    profile_photo_url = db.Column(db.String(255))
+    bio = db.Column(db.Text)
+    address = db.Column(db.String(255))
+    date_of_birth = db.Column(db.Date)
+    preferred_area_id = db.Column(
+        db.Integer,
+        db.ForeignKey("areas.area_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
     created_at = db.Column(
         db.DateTime,
         nullable=False,
@@ -65,6 +73,7 @@ class User(UserMixin, db.Model):
     inspector_profile = db.relationship(
         "Inspector", back_populates="user", uselist=False
     )
+    preferred_area = db.relationship("Area", foreign_keys=[preferred_area_id])
 
     def get_id(self):
         return str(self.user_id)
@@ -371,6 +380,7 @@ class Complaint(db.Model):
         server_default=db.func.current_timestamp(),
     )
     resolved_at = db.Column(db.DateTime)
+    admin_response = db.Column(db.Text)
 
     stall = db.relationship("Stall", back_populates="complaints")
     complaint_type = db.relationship("ComplaintType")
@@ -479,6 +489,31 @@ class EvidenceAuditLog(db.Model):
 
     evidence = db.relationship("ComplaintEvidence", back_populates="audit_logs")
     user = db.relationship("User")
+
+
+class Notification(db.Model):
+    __tablename__ = "notifications"
+
+    notification_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    complaint_id = db.Column(
+        db.Integer,
+        db.ForeignKey("complaints.complaint_id", onupdate="CASCADE", ondelete="CASCADE"),
+    )
+    message = db.Column(db.String(255), nullable=False)
+    is_read = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.current_timestamp(),
+    )
+
+    user = db.relationship("User")
+    complaint = db.relationship("Complaint")
 
 
 class FoodCategory(db.Model):

@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile · Street Food Safety{% endblock %}
+
+{% block head %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="profile-header">
+        <div class="profile-avatar-lg">
+            {% if current_user.profile_photo_url %}
+            <img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}">
+            {% else %}
+            <span>{{ current_user.full_name[:1] | upper }}</span>
+            {% endif %}
+        </div>
+        <div>
+            <p class="eyebrow mb-1"><i class="fa-solid fa-user"></i> MY PROFILE</p>
+            <h1>{{ current_user.full_name }}</h1>
+            <p class="text-secondary mb-0">{{ current_user.email }} &middot; {{ current_user.role_name | title }}</p>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-pane" type="button" role="tab" aria-controls="info-pane" aria-selected="true">
+                <i class="fa-solid fa-id-card"></i> Profile Info
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity-pane" type="button" role="tab" aria-controls="activity-pane" aria-selected="false">
+                <i class="fa-solid fa-clock-rotate-left"></i> Activity
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security-pane" type="button" role="tab" aria-controls="security-pane" aria-selected="false">
+                <i class="fa-solid fa-shield-halved"></i> Security
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content profile-tab-content">
+        <div class="tab-pane fade show active" id="info-pane" role="tabpanel" aria-labelledby="info-tab">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <section class="portal-card">
+                        <h3><i class="fa-solid fa-camera"></i> Profile photo</h3>
+                        <p class="text-secondary small">JPG, JPEG, PNG, or WEBP. Max {{ config.PROFILE_PHOTO_MAX_MB }} MB. Resized automatically.</p>
+                        <form method="post" action="{{ url_for('profile.upload_photo') }}" enctype="multipart/form-data" class="mb-2">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <input class="form-control form-control-sm mb-2" type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" required>
+                            <button class="btn btn-success btn-sm w-100" type="submit"><i class="fa-solid fa-upload"></i> Upload photo</button>
+                        </form>
+                        {% if current_user.profile_photo_url %}
+                        <form method="post" action="{{ url_for('profile.remove_photo') }}">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-outline-danger btn-sm w-100" type="submit"><i class="fa-solid fa-trash"></i> Remove photo</button>
+                        </form>
+                        {% endif %}
+                    </section>
+                </div>
+                <div class="col-lg-8">
+                    <section class="portal-card">
+                        <h3><i class="fa-solid fa-pen"></i> Edit details</h3>
+                        <form method="post" action="{{ url_for('profile.edit') }}">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="full_name">Full name</label>
+                                    <input class="form-control" id="full_name" name="full_name" type="text" value="{{ current_user.full_name }}" maxlength="120" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="date_of_birth">Date of birth</label>
+                                    <input class="form-control" id="date_of_birth" name="date_of_birth" type="date" value="{{ current_user.date_of_birth.isoformat() if current_user.date_of_birth else '' }}" max="{{ today.isoformat() }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="email">Email address</label>
+                                    <input class="form-control" id="email" name="email" type="email" value="{{ current_user.email }}" maxlength="150" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="phone">Phone number</label>
+                                    <input class="form-control" id="phone" name="phone" type="tel" value="{{ current_user.phone or '' }}" maxlength="30">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="preferred_area_id">Preferred area</label>
+                                    <select class="form-select" id="preferred_area_id" name="preferred_area_id">
+                                        <option value="">Not set</option>
+                                        {% for area in areas %}
+                                        <option value="{{ area.area_id }}" {{ 'selected' if current_user.preferred_area_id == area.area_id }}>{{ area.area_name }}, {{ area.city }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label for="address">Address</label>
+                                    <input class="form-control" id="address" name="address" type="text" value="{{ current_user.address or '' }}" maxlength="255">
+                                </div>
+                                <div class="col-12">
+                                    <label for="bio">Bio</label>
+                                    <textarea class="form-control" id="bio" name="bio" rows="3" maxlength="2000">{{ current_user.bio or '' }}</textarea>
+                                </div>
+                                <div class="col-12">
+                                    <hr>
+                                    <label for="current_password">Current password</label>
+                                    <input class="form-control" id="current_password" name="current_password" type="password" autocomplete="current-password">
+                                    <div class="form-text">Only required if you change your email address or phone number above.</div>
+                                </div>
+                            </div>
+                            <button class="btn btn-success mt-4" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save changes</button>
+                        </form>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="activity-pane" role="tabpanel" aria-labelledby="activity-tab">
+            {% if reviews is none %}
+            <section class="portal-card">
+                <p class="text-secondary mb-0"><i class="fa-solid fa-circle-info"></i> Activity tracking (reviews and complaints) is available for customer accounts.</p>
+            </section>
+            {% else %}
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <section class="portal-card">
+                        <h3><i class="fa-solid fa-star"></i> My reviews</h3>
+                        {% if reviews %}
+                        <table class="table portal-table">
+                            <thead><tr><th>Stall</th><th>Rating</th><th>Date</th></tr></thead>
+                            <tbody>
+                                {% for review in reviews %}
+                                <tr>
+                                    <td>{{ review.stall.stall_name }}</td>
+                                    <td>{{ review.rating }} / 5</td>
+                                    <td>{{ review.created_at.strftime('%d %b %Y') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p class="empty text-secondary mb-0">You haven't written any reviews yet.</p>
+                        {% endif %}
+                    </section>
+                </div>
+                <div class="col-lg-6">
+                    <section class="portal-card">
+                        <h3><i class="fa-regular fa-message"></i> My complaints</h3>
+                        {% if complaints %}
+                        <table class="table portal-table">
+                            <thead><tr><th>Title</th><th>Status</th><th>Date</th></tr></thead>
+                            <tbody>
+                                {% for complaint in complaints %}
+                                <tr>
+                                    <td>{{ complaint.title }}</td>
+                                    <td><span class="risk-badge status-{{ complaint.status }}">{{ complaint.status | replace('_', ' ') | title }}</span></td>
+                                    <td>{{ complaint.submitted_at.strftime('%d %b %Y') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p class="empty text-secondary mb-0">You haven't submitted any complaints yet.</p>
+                        {% endif %}
+                    </section>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="security-pane" role="tabpanel" aria-labelledby="security-tab">
+            <section class="portal-card" style="max-width: 480px;">
+                <h3><i class="fa-solid fa-key"></i> Change password</h3>
+                {% if not current_user.password_hash %}
+                <p class="text-secondary mb-0"><i class="fa-solid fa-circle-info"></i> Your account signs in with Google and has no password to change.</p>
+                {% else %}
+                <form method="post" action="{{ url_for('profile.change_password') }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="current_password_sec">Current password</label>
+                        <input class="form-control" id="current_password_sec" name="current_password" type="password" autocomplete="current-password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password">New password</label>
+                        <input class="form-control" id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="8" required>
+                        <div class="form-text">Use at least 8 characters.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password">Confirm new password</label>
+                        <input class="form-control" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required>
+                    </div>
+                    <button class="btn btn-success w-100" type="submit"><i class="fa-solid fa-key"></i> Change password</button>
+                </form>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

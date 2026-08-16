@@ -43,6 +43,18 @@ class Config:
         os.getenv("EVIDENCE_MAX_DOCUMENT_MB") or "10"
     )
 
+    # Profile photos are public (like stall photos), so they live under
+    # static/uploads/ rather than the private EVIDENCE_STORAGE_PATH, and
+    # are served at the matching /static/uploads/profile_photos/ URL.
+    PROFILE_PHOTO_STORAGE_PATH = os.getenv(
+        "PROFILE_PHOTO_STORAGE_PATH",
+        str(Path(__file__).resolve().parent / "static" / "uploads" / "profile_photos"),
+    )
+    PROFILE_PHOTO_MAX_MB = int(os.getenv("PROFILE_PHOTO_MAX_MB") or "5")
+    PROFILE_PHOTO_MAX_DIMENSION = int(
+        os.getenv("PROFILE_PHOTO_MAX_DIMENSION") or "512"
+    )
+
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 

@@ -21,6 +21,7 @@ The system has four user roles:
 | Authentication | Flask-Login, Werkzeug password hashing |
 | ORM | Flask-SQLAlchemy / SQLAlchemy 2 |
 | Database | MySQL 8.0+, PyMySQL |
+| Media processing | Pillow (profile photo resize/compress) |
 | Frontend | Jinja2, Bootstrap 5, Font Awesome, Chart.js |
 | Configuration | `.env`, `python-dotenv` |
 | Testing | Python `unittest` |
@@ -55,9 +56,11 @@ Food safety system/
 │   ├── inspector.py               # Inspection workflow
 │   ├── vendor.py                  # Vendor portal
 │   ├── customer.py                # Customer portal
+│   ├── profile.py                 # Shared "My Profile" dashboard (every role)
 │   └── reports.py                 # Administrative reports
 ├── services/
 │   ├── database_setup.py          # Non-destructive DB initialization
+│   ├── profile_photo.py           # Profile photo validation, resize, storage
 │   └── registration_import.py     # Google Forms CSV ZIP import
 ├── database/
 │   ├── schema.sql                 # Destructive full schema creation
@@ -99,6 +102,7 @@ MySQL tables, functions, triggers, procedure, and views
 |---|---|
 | Public/auth | `/`, `/login`, `/register`, `/logout`, `/dashboard` |
 | Dashboards | `/dashboard/admin`, `/dashboard/inspector`, `/dashboard/vendor`, `/dashboard/customer` |
+| Profile (all roles) | `/profile`, `/profile/edit`, `/profile/photo`, `/profile/photo/remove`, `/profile/password` |
 | Admin | `/admin/vendors`, `/admin/stalls`, `/admin/inspectors`, `/admin/complaints`, `/admin/inspections`, `/admin/inspections/<id>/approve`, `/admin/inspections/<id>/reject`, `/admin/reviews`, `/admin/risk-engine`, `/admin/users`, `/admin/settings` |
 | Reports | `/admin/reports/` |
 | Inspector | `/inspector/`, `/inspector/new`, `/inspector/<inspection_id>` |
@@ -207,7 +211,7 @@ Role lookup. Columns: `role_id` PK, `role_name` unique, `description`, `created_
 
 ### 11.2 `users`
 
-Authentication identity shared by every role. Columns: `user_id` PK, `role_id` FK, `full_name`, unique `email`, unique nullable `phone`, `password_hash`, `status`, timestamps. Status: `active`, `inactive`, or `suspended`.
+Authentication identity shared by every role. Columns: `user_id` PK, `role_id` FK, `full_name`, unique `email`, unique nullable `phone`, `password_hash`, `status`, `email_verified_at`, `profile_photo_url`, `bio`, `address`, `date_of_birth`, nullable `preferred_area_id` FK, timestamps. Status: `active`, `inactive`, or `suspended`. Every role gets a shared "My Profile" page (`/profile`) to edit these fields, upload/remove a profile photo, and change their password; a customer's profile also lists their own reviews and complaints. `profile_photo_url` follows the same "resize and store locally, never hotlink" approach as `stalls.photo_url`, saved under `static/uploads/profile_photos/` (see `PROFILE_PHOTO_*` settings in `.env.example`); changing your email re-triggers the same email-verification requirement enforced at registration.
 
 ### 11.3 `vendors`
 

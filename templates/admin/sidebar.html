@@ -27,6 +27,7 @@
         <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('reports.') }}" href="{{ url_for('reports.dashboard') }}"><i class="fa-solid fa-chart-line"></i><span>Reports & Analytics</span></a>
 
         <p class="sidebar-label mt-4">SYSTEM</p>
+        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('profile.') }}" href="{{ url_for('profile.view') }}"><i class="fa-solid fa-id-card"></i><span>My Profile</span></a>
         <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.user') }}" href="{{ url_for('admin.users') }}"><i class="fa-solid fa-users"></i><span>Users</span></a>
         <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.settings' }}" href="{{ url_for('admin.settings') }}"><i class="fa-solid fa-gear"></i><span>Settings</span></a>
     </nav>
