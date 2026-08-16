@@ -37,6 +37,7 @@ from models import (
 from routes import permission_required, super_admin_required
 from services.evidence import record_audit, serve_complaint_evidence
 from services.registration_import import cache_photo
+from services.role_audit import record_role_change
 
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -273,6 +274,13 @@ def vendor_create():
                 request.form.get("license_expiry_date")
             ),
             national_id=request.form.get("national_id", "").strip() or None,
+            # An admin creating a vendor directly here has already vetted
+            # it -- unlike the self-service application flow
+            # (routes/customer.py:vendor_application), which always
+            # starts 'pending'.
+            status="approved",
+            reviewed_by_user_id=current_user.user_id,
+            reviewed_at=datetime.now(),
         )
         db.session.add(vendor)
     except ValueError as error:
@@ -329,6 +337,72 @@ def vendor_edit(vendor_id):
         "Could not update vendor. A unique field may already be in use.",
     ):
         return _render_vendors_list(reopen_modal=reopen, status_code=409)
+    return redirect(url_for("admin.vendors"))
+
+
+@admin_bp.route("/vendors/<int:vendor_id>/approve", methods=["POST"])
+@login_required
+@permission_required("vendors.edit")
+def vendor_approve(vendor_id):
+    vendor = db.get_or_404(Vendor, vendor_id)
+    if vendor.status == "approved":
+        flash("This application has already been approved.", "warning")
+        return redirect(url_for("admin.vendors"))
+
+    vendor_role = _role("vendor")
+    if vendor_role is None:
+        flash("The vendor role is missing from the roles table.", "danger")
+        return redirect(url_for("admin.vendors"))
+
+    user = vendor.user
+    old_role_id = user.role_id
+    # This is the one and only place a user's role_id ever becomes the
+    # vendor role -- self-service application (routes/customer.py:
+    # vendor_application) only ever creates a 'pending' Vendor row and
+    # never touches role_id.
+    user.role_id = vendor_role.role_id
+    record_role_change(
+        current_user, user, old_role_id, vendor_role.role_id,
+        f"Vendor application #{vendor.vendor_id} approved",
+    )
+
+    vendor.status = "approved"
+    vendor.reviewed_by_user_id = current_user.user_id
+    vendor.reviewed_at = datetime.now()
+    vendor.rejection_reason = None
+
+    _commit(
+        "Vendor application approved. The applicant now has vendor access.",
+        "Could not approve this application.",
+    )
+    return redirect(url_for("admin.vendors"))
+
+
+@admin_bp.route("/vendors/<int:vendor_id>/reject", methods=["POST"])
+@login_required
+@permission_required("vendors.edit")
+def vendor_reject(vendor_id):
+    vendor = db.get_or_404(Vendor, vendor_id)
+    if vendor.status == "approved":
+        flash(
+            "This vendor is already approved; suspend or edit the "
+            "account instead of rejecting it.",
+            "danger",
+        )
+        return redirect(url_for("admin.vendors"))
+
+    reason = request.form.get("rejection_reason", "").strip() or None
+    vendor.status = "rejected"
+    vendor.rejection_reason = reason
+    vendor.reviewed_by_user_id = current_user.user_id
+    vendor.reviewed_at = datetime.now()
+    # role_id is never touched -- the applicant was never anything but
+    # their existing role (customer/student) and stays that way.
+
+    _commit(
+        "Vendor application rejected.",
+        "Could not reject this application.",
+    )
     return redirect(url_for("admin.vendors"))
 
 
@@ -1013,6 +1087,16 @@ def user_create():
     else:
         db.session.add(user)
 
+    if role.is_admin_tier:
+        # Admin-tier account creation is the security-sensitive case rule
+        # 4 cares about; ordinary customer/vendor/inspector creation
+        # isn't logged here to keep this trail focused on escalations.
+        db.session.flush()
+        record_role_change(
+            current_user, user, None, role.role_id,
+            "Admin-tier account created via admin Users management",
+        )
+
     if not _commit(
         "User created successfully.",
         "Could not create user. Email, phone, or employee code may "
@@ -1085,12 +1169,17 @@ def user_edit(user_id):
         flash(error, "danger")
         return _render_users_list(reopen_modal=reopen, status_code=400)
 
+    old_role_id = user.role_id
     user.full_name = full_name
     user.email = email
     user.phone = phone
     user.status = status
     user.role_id = role.role_id
     user.is_super_admin = role.is_admin_tier and is_super_admin_field
+    record_role_change(
+        current_user, user, old_role_id, role.role_id,
+        "Changed via admin Users management",
+    )
 
     if not _commit(
         "User updated successfully.",

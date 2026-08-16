@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 
 from extensions import db, limiter, oauth
 from models import Role, User
+from services.account_classification import classify_email, resolve_signup_role_name
 from services.email_verification import (
     VerificationTokenExpired,
     VerificationTokenInvalid,
@@ -55,6 +56,9 @@ def _dashboard_url(user):
         "vendor": "dashboard.vendor",
         "customer": "dashboard.customer",
         "consumer": "dashboard.customer",
+        # "student" is a classification of public user, not a separate
+        # portal -- it shares the customer dashboard/routes.
+        "student": "dashboard.customer",
     }
     endpoint = endpoint_by_role.get(user.role_name)
     if not endpoint:
@@ -75,6 +79,28 @@ def _default_customer_role():
         .order_by((func.lower(Role.role_name) == "customer").desc())
         .first()
     )
+
+
+def _role_for_signup(email):
+    """The only role a self-service signup (local register or Google
+    OAuth) may ever receive, resolved purely from the email address --
+    see services/account_classification.py. Never returns an admin,
+    super-admin, or vendor role; vendor access is only ever activated
+    later by an admin approving a dedicated application
+    (routes/customer.py:vendor_application + routes/admin.py:
+    vendor_approve), and admin/super-admin can only be granted through
+    routes/admin.py's role management, never here.
+
+    Falls back to the plain customer role if the resolved role_name
+    (e.g. "student") doesn't exist in this database yet -- e.g. a
+    database that hasn't had migration 011 applied -- so signup never
+    hard-fails just because that role row is missing.
+    """
+    role_name, classification = resolve_signup_role_name(email)
+    role = Role.query.filter(func.lower(Role.role_name) == role_name).first()
+    if role is None:
+        role = _default_customer_role()
+    return role, classification
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -167,25 +193,32 @@ def google_callback():
         user = User.query.filter(func.lower(User.email) == email).first()
 
         if user is not None:
-            # Existing local (or previously-linked) account: link, never duplicate.
+            # Existing local (or previously-linked) account: link, never
+            # duplicate, and never touch role_id here -- Google only
+            # confirms identity, it can't move an existing account
+            # between roles (that would let a plain user silently become
+            # a vendor/admin just by re-authenticating with a different
+            # inbox pattern). Only the classification tag is refreshed.
             user.google_id = google_id
+            user.email_classification = classify_email(email)
             if user.email_verified_at is None:
                 # Google already confirmed ownership of this inbox above.
                 user.email_verified_at = datetime.now(timezone.utc)
         else:
-            customer_role = _default_customer_role()
-            if customer_role is None:
+            signup_role, classification = _role_for_signup(email)
+            if signup_role is None:
                 flash("Google sign-up is temporarily unavailable.", "danger")
                 return redirect(url_for("auth.login"))
 
             user = User(
-                role_id=customer_role.role_id,
+                role_id=signup_role.role_id,
                 full_name=full_name or email,
                 email=email,
                 google_id=google_id,
                 auth_provider="google",
                 status="active",
                 email_verified_at=datetime.now(timezone.utc),
+                email_classification=classification,
             )
             db.session.add(user)
 
@@ -240,10 +273,10 @@ def register():
         ):
             errors.append("Bot verification failed. Please try again.")
 
-        customer_role = _default_customer_role()
-        if customer_role is None:
+        signup_role, classification = _role_for_signup(email)
+        if signup_role is None:
             errors.append(
-                "Customer registration is temporarily unavailable."
+                "Registration is temporarily unavailable."
             )
 
         if errors:
@@ -252,11 +285,12 @@ def register():
             return render_template("auth/register.html"), 400
 
         user = User(
-            role_id=customer_role.role_id,
+            role_id=signup_role.role_id,
             full_name=full_name,
             email=email,
             phone=phone,
             status="active",
+            email_classification=classification,
         )
         user.set_password(password)
         db.session.add(user)

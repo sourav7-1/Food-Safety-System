@@ -27,6 +27,7 @@ from models import (
     Notification,
     Review,
     Stall,
+    Vendor,
 )
 from routes import role_required
 from services.evidence import (
@@ -176,7 +177,7 @@ def _leaderboard_boards(row_limit):
 
 @customer_bp.route("/leaderboard")
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def leaderboard():
     row_limit = _leaderboard_limit()
     high_risk, low_risk = _leaderboard_boards(row_limit)
@@ -196,7 +197,7 @@ def leaderboard():
 
 @customer_bp.route("/api/leaderboard")
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def api_leaderboard():
     row_limit = _leaderboard_limit()
     high_risk, low_risk = _leaderboard_boards(row_limit)
@@ -244,7 +245,7 @@ def api_leaderboard():
 
 @customer_bp.route("/stalls")
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def search_stalls():
     search = request.args.get("q", "").strip()
     area_id = request.args.get("area_id", type=int)
@@ -331,7 +332,7 @@ def search_stalls():
 
 @customer_bp.route("/stalls/<int:stall_id>")
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def stall_detail(stall_id):
     stall = Stall.query.filter_by(
         stall_id=stall_id,
@@ -370,7 +371,7 @@ def stall_detail(stall_id):
 
 @customer_bp.route("/stalls/<int:stall_id>/review", methods=["POST"])
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def submit_review(stall_id):
     Stall.query.filter_by(stall_id=stall_id, status="active").first_or_404()
     if Review.query.filter_by(
@@ -406,7 +407,7 @@ def submit_review(stall_id):
 
 @customer_bp.route("/stalls/<int:stall_id>/complaint", methods=["POST"])
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 @limiter.limit("10 per hour")
 def submit_complaint(stall_id):
     Stall.query.filter_by(stall_id=stall_id, status="active").first_or_404()
@@ -501,7 +502,7 @@ def submit_complaint(stall_id):
 
 @customer_bp.route("/complaints")
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def my_complaints():
     records = Complaint.query.filter_by(
         submitted_by_user_id=current_user.user_id
@@ -514,7 +515,7 @@ def my_complaints():
 
 @customer_bp.route("/complaints/<int:complaint_id>")
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def complaint_detail(complaint_id):
     complaint = Complaint.query.filter_by(
         complaint_id=complaint_id,
@@ -528,7 +529,7 @@ def complaint_detail(complaint_id):
 
 @customer_bp.route("/evidence/<int:evidence_id>")
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def evidence_download(evidence_id):
     evidence = db.get_or_404(ComplaintEvidence, evidence_id)
     if evidence.complaint.submitted_by_user_id != current_user.user_id:
@@ -539,7 +540,7 @@ def evidence_download(evidence_id):
 
 @customer_bp.route("/notifications")
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def notifications():
     records = (
         Notification.query.filter_by(user_id=current_user.user_id)
@@ -551,7 +552,7 @@ def notifications():
 
 @customer_bp.route("/notifications/read-all", methods=["POST"])
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def mark_all_notifications_read():
     Notification.query.filter_by(
         user_id=current_user.user_id, is_read=False
@@ -562,7 +563,7 @@ def mark_all_notifications_read():
 
 @customer_bp.route("/notifications/<int:notification_id>/read", methods=["POST"])
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def read_notification(notification_id):
     notification = Notification.query.filter_by(
         notification_id=notification_id, user_id=current_user.user_id
@@ -577,3 +578,98 @@ def read_notification(notification_id):
             )
         )
     return redirect(url_for("customer_portal.notifications"))
+
+
+def _parse_application_date(value):
+    if not value:
+        return None
+    return datetime.strptime(value, "%Y-%m-%d").date()
+
+
+@customer_bp.route("/vendor-application", methods=["GET", "POST"])
+@login_required
+@role_required("customer", "consumer", "student")
+def vendor_application():
+    # A Vendor row existing at all -- pending, approved, rejected, or
+    # suspended -- means this account already went through (or is going
+    # through) the workflow once; the vendor role itself is only ever
+    # activated by routes/admin.py:vendor_approve, never here.
+    existing = current_user.vendor_profile
+
+    if request.method == "POST":
+        if existing is not None:
+            flash("You already have a vendor application on file.", "warning")
+            return redirect(url_for("customer_portal.vendor_application"))
+
+        business_name = request.form.get("business_name", "").strip()
+        license_number = request.form.get("license_number", "").strip()
+        national_id = request.form.get("national_id", "").strip() or None
+        requested_stall_name = request.form.get("requested_stall_name", "").strip()
+        requested_address = request.form.get("requested_address", "").strip()
+        requested_area_id = request.form.get("requested_area_id", type=int)
+
+        errors = []
+        if not business_name:
+            errors.append("Business name is required.")
+        if not license_number:
+            errors.append("Licence number is required.")
+        if not requested_stall_name:
+            errors.append("Proposed stall name is required.")
+        if not requested_address:
+            errors.append("Proposed stall address is required.")
+        area = db.session.get(Area, requested_area_id) if requested_area_id else None
+        if area is None:
+            errors.append("Select a valid area for the proposed stall.")
+
+        try:
+            license_expiry_date = _parse_application_date(
+                request.form.get("license_expiry_date")
+            )
+        except ValueError:
+            errors.append("Enter a valid licence expiry date.")
+            license_expiry_date = None
+
+        if errors:
+            for error in errors:
+                flash(error, "danger")
+            return render_template(
+                "customer/vendor_application.html",
+                application=None,
+                areas=Area.query.order_by(Area.area_name).all(),
+            ), 400
+
+        vendor = Vendor(
+            user_id=current_user.user_id,
+            business_name=business_name,
+            license_number=license_number,
+            license_expiry_date=license_expiry_date,
+            national_id=national_id,
+            status="pending",
+            requested_stall_name=requested_stall_name,
+            requested_area_id=area.area_id,
+            requested_address=requested_address,
+        )
+        db.session.add(vendor)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash(
+                "Could not submit application. That licence number or "
+                "national ID may already be registered.",
+                "danger",
+            )
+            return redirect(url_for("customer_portal.vendor_application"))
+
+        flash(
+            "Vendor application submitted. An administrator will review "
+            "it shortly -- your account stays a regular user until then.",
+            "success",
+        )
+        return redirect(url_for("customer_portal.vendor_application"))
+
+    return render_template(
+        "customer/vendor_application.html",
+        application=existing,
+        areas=Area.query.order_by(Area.area_name).all(),
+    )

@@ -652,6 +652,11 @@
 .customer-shell .grade-chip.grade-c { background: var(--cf-amber); }
 .customer-shell .grade-chip.grade-d { background: var(--cf-red); }
 
+/* ---------- Vendor application status (not covered by portal.css's
+   generic .status-* set) ---------- */
+.customer-shell .status-approved { background: #e3f7ed; color: #128155; }
+.customer-shell .status-suspended { background: #fee8ea; color: #d43d46; }
+
 /* ---------- Notifications ---------- */
 .customer-shell .notification-nav-link {
     position: relative;

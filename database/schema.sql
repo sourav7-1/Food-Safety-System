@@ -6,6 +6,7 @@ use smart_street_food_safety;
 
 set foreign_key_checks = 0;
 
+drop table if exists role_audit_log;
 drop table if exists street_food_stall_registrations;
 drop table if exists corrective_actions;
 drop table if exists reviews;
@@ -77,6 +78,7 @@ create table users (
   date_of_birth date null,
   preferred_area_id int null,
   is_super_admin tinyint(1) not null default 0,
+  email_classification enum('unclassified', 'student', 'official_diu', 'external') not null default 'unclassified',
   created_at timestamp not null default current_timestamp,
   updated_at timestamp not null default current_timestamp on update current_timestamp,
   primary key (user_id),
@@ -105,6 +107,13 @@ create table vendors (
   license_number varchar(80) not null,
   license_expiry_date date null,
   national_id varchar(80) null,
+  status enum('pending', 'approved', 'rejected', 'suspended') not null default 'approved',
+  requested_stall_name varchar(150) null,
+  requested_area_id int null,
+  requested_address varchar(255) null,
+  rejection_reason varchar(500) null,
+  reviewed_by_user_id int null,
+  reviewed_at datetime null,
   created_at timestamp not null default current_timestamp,
   primary key (vendor_id),
   constraint uq_vendors_user_id unique (user_id),
@@ -115,11 +124,46 @@ create table vendors (
   constraint fk_vendors_user_id
     foreign key (user_id) references users (user_id)
     on update cascade
-    on delete restrict
+    on delete restrict,
+  constraint fk_vendors_reviewed_by_user_id
+    foreign key (reviewed_by_user_id) references users (user_id)
+    on update cascade
+    on delete set null
 ) engine=innodb;
 
 create index idx_vendors_created_at on vendors (created_at);
 create index idx_vendors_license_expiry_date on vendors (license_expiry_date);
+create index idx_vendors_status on vendors (status);
+
+create table role_audit_log (
+  audit_id int not null auto_increment,
+  target_user_id int not null,
+  actor_user_id int null,
+  old_role_id int null,
+  new_role_id int not null,
+  reason varchar(255) null,
+  created_at timestamp not null default current_timestamp,
+  primary key (audit_id),
+  constraint fk_role_audit_log_target_user_id
+    foreign key (target_user_id) references users (user_id)
+    on update cascade
+    on delete cascade,
+  constraint fk_role_audit_log_actor_user_id
+    foreign key (actor_user_id) references users (user_id)
+    on update cascade
+    on delete set null,
+  constraint fk_role_audit_log_old_role_id
+    foreign key (old_role_id) references roles (role_id)
+    on update cascade
+    on delete set null,
+  constraint fk_role_audit_log_new_role_id
+    foreign key (new_role_id) references roles (role_id)
+    on update cascade
+    on delete restrict
+) engine=innodb;
+
+create index idx_role_audit_log_target_user_id on role_audit_log (target_user_id);
+create index idx_role_audit_log_created_at on role_audit_log (created_at);
 
 create table areas (
   area_id int not null auto_increment,
@@ -140,11 +184,18 @@ create table areas (
 create index idx_areas_city_zone on areas (city, zone);
 create index idx_areas_created_at on areas (created_at);
 
--- users.preferred_area_id references this table, defined above, so the
--- foreign key is attached here rather than inline in `create table users`.
+-- users.preferred_area_id and vendors.requested_area_id both reference
+-- this table, defined above, so their foreign keys are attached here
+-- rather than inline in their own `create table` statements.
 alter table users
   add constraint fk_users_preferred_area_id
   foreign key (preferred_area_id) references areas (area_id)
+  on update cascade
+  on delete set null;
+
+alter table vendors
+  add constraint fk_vendors_requested_area_id
+  foreign key (requested_area_id) references areas (area_id)
   on update cascade
   on delete set null;
 

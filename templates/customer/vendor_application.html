@@ -1,0 +1,83 @@
+{% extends "customer/base.html" %}
+{% block title %}Become a Vendor{% endblock %}
+{% block portal_title %}Become a Vendor{% endblock %}
+{% block portal_subtitle %}Apply to list your stall. An administrator reviews every application before the vendor role is activated.{% endblock %}
+{% block portal_content %}
+{% if application %}
+<div class="portal-card">
+    <div class="d-flex justify-content-between align-items-start gap-3">
+        <div>
+            <span class="code">APPLICATION STATUS</span>
+            <h2>{{ application.business_name }}</h2>
+            <p>Licence {{ application.license_number }} &middot; submitted {{ application.created_at.strftime('%d %b %Y') }}</p>
+        </div>
+        <span class="risk-badge status-{{ application.status }}">{{ application.status|replace('_',' ') }}</span>
+    </div>
+
+    {% if application.status == 'pending' %}
+    <p class="mt-3 mb-0 text-secondary">Your application is waiting for an administrator to review it. You'll keep your current account access until it's approved.</p>
+    {% elif application.status == 'approved' %}
+    <p class="mt-3 mb-0 text-secondary">Your application was approved on {{ application.reviewed_at.strftime('%d %b %Y') if application.reviewed_at else 'an earlier date' }}. Your account now has vendor access &mdash; sign out and back in if you don't see the Vendor portal yet.</p>
+    {% elif application.status == 'rejected' %}
+    <p class="mt-3 mb-0 text-secondary">Your application was not approved{% if application.rejection_reason %}: {{ application.rejection_reason }}{% endif %}.</p>
+    {% else %}
+    <p class="mt-3 mb-0 text-secondary">Your vendor account is currently suspended. Contact an administrator for details.</p>
+    {% endif %}
+
+    {% if application.requested_stall_name %}
+    <dl class="portal-dl mt-3">
+        <dt>Proposed stall</dt><dd>{{ application.requested_stall_name }}</dd>
+        <dt>Proposed area</dt><dd>{{ application.requested_area.area_name if application.requested_area else '—' }}</dd>
+        <dt>Proposed address</dt><dd>{{ application.requested_address or '—' }}</dd>
+    </dl>
+    {% endif %}
+</div>
+{% else %}
+<form class="portal-card" method="post">
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <h3 class="panel-heading"><i class="fa-solid fa-store"></i> Business details</h3>
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label>Business name</label>
+            <input class="form-control" name="business_name" required maxlength="150">
+        </div>
+        <div class="col-md-6">
+            <label>Licence number</label>
+            <input class="form-control" name="license_number" required maxlength="80">
+        </div>
+        <div class="col-md-6">
+            <label>Licence expiry date <span class="text-secondary">(optional)</span></label>
+            <input class="form-control" type="date" name="license_expiry_date">
+        </div>
+        <div class="col-md-6">
+            <label>National ID <span class="text-secondary">(optional)</span></label>
+            <input class="form-control" name="national_id" maxlength="80">
+        </div>
+    </div>
+
+    <h3 class="panel-heading mt-2"><i class="fa-solid fa-shop"></i> Proposed stall</h3>
+    <p class="text-secondary small">This is what you'd like to list &mdash; an administrator creates the actual stall record once your application is approved.</p>
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label>Stall name</label>
+            <input class="form-control" name="requested_stall_name" required maxlength="150">
+        </div>
+        <div class="col-md-6">
+            <label>Area</label>
+            <select class="form-select" name="requested_area_id" required>
+                <option value="">Select area</option>
+                {% for area in areas %}
+                <option value="{{ area.area_id }}">{{ area.area_name }} — {{ area.city }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12">
+            <label>Full address</label>
+            <input class="form-control" name="requested_address" required maxlength="255">
+        </div>
+    </div>
+
+    <button class="btn btn-success" type="submit">Submit application</button>
+</form>
+{% endif %}
+{% endblock %}

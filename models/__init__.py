@@ -101,6 +101,17 @@ class User(UserMixin, db.Model):
     is_super_admin = db.Column(
         db.Boolean, nullable=False, default=False, server_default=db.false()
     )
+    # Informational only -- derived purely from the email address by
+    # services/account_classification.py and never used to grant a role
+    # or permission by itself. Set at signup (local or Google) and
+    # refreshed on each Google login; MySQL's roles table (role_id) is
+    # the only thing that ever authorizes access.
+    email_classification = db.Column(
+        db.Enum("unclassified", "student", "official_diu", "external"),
+        nullable=False,
+        default="unclassified",
+        server_default="unclassified",
+    )
     created_at = db.Column(
         db.DateTime,
         nullable=False,
@@ -115,7 +126,10 @@ class User(UserMixin, db.Model):
 
     role = db.relationship("Role", back_populates="users")
     vendor_profile = db.relationship(
-        "Vendor", back_populates="user", uselist=False
+        "Vendor",
+        back_populates="user",
+        uselist=False,
+        foreign_keys="Vendor.user_id",
     )
     inspector_profile = db.relationship(
         "Inspector", back_populates="user", uselist=False
@@ -173,14 +187,78 @@ class Vendor(db.Model):
     license_number = db.Column(db.String(80), nullable=False, unique=True)
     license_expiry_date = db.Column(db.Date)
     national_id = db.Column(db.String(80), unique=True)
+    # Approval workflow for self-service applications (routes/customer.py
+    # :vendor_application). Defaults to 'approved' because a Vendor row
+    # created directly by an admin (routes/admin.py:vendor_create) is
+    # already vetted at creation time -- only self-submitted applications
+    # are explicitly inserted as 'pending'. The user's role_id is NOT the
+    # vendor role until an admin approves (see admin.py:vendor_approve),
+    # so the vendor role itself is never self-granted.
+    status = db.Column(
+        db.Enum("pending", "approved", "rejected", "suspended"),
+        nullable=False,
+        default="approved",
+        server_default="approved",
+    )
+    requested_stall_name = db.Column(db.String(150))
+    requested_area_id = db.Column(
+        db.Integer,
+        db.ForeignKey("areas.area_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
+    requested_address = db.Column(db.String(255))
+    rejection_reason = db.Column(db.String(500))
+    reviewed_by_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
+    reviewed_at = db.Column(db.DateTime)
     created_at = db.Column(
         db.DateTime,
         nullable=False,
         server_default=db.func.current_timestamp(),
     )
 
-    user = db.relationship("User", back_populates="vendor_profile")
+    user = db.relationship(
+        "User", back_populates="vendor_profile", foreign_keys=[user_id]
+    )
     stalls = db.relationship("Stall", back_populates="vendor")
+    requested_area = db.relationship("Area", foreign_keys=[requested_area_id])
+    reviewed_by = db.relationship("User", foreign_keys=[reviewed_by_user_id])
+
+
+class RoleAuditLog(db.Model):
+    __tablename__ = "role_audit_log"
+
+    audit_id = db.Column(db.Integer, primary_key=True)
+    target_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE"),
+        nullable=False,
+    )
+    actor_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
+    old_role_id = db.Column(
+        db.Integer,
+        db.ForeignKey("roles.role_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
+    new_role_id = db.Column(
+        db.Integer,
+        db.ForeignKey("roles.role_id", onupdate="CASCADE"),
+        nullable=False,
+    )
+    reason = db.Column(db.String(255))
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.current_timestamp(),
+    )
+
+    target_user = db.relationship("User", foreign_keys=[target_user_id])
+    actor_user = db.relationship("User", foreign_keys=[actor_user_id])
+    old_role = db.relationship("Role", foreign_keys=[old_role_id])
+    new_role = db.relationship("Role", foreign_keys=[new_role_id])
 
 
 class Area(db.Model):

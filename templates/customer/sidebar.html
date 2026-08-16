@@ -36,6 +36,11 @@
         <a class="dashboard-link {{ 'active' if request.endpoint and request.endpoint.startswith('profile.') }}" href="{{ url_for('profile.view') }}">
             <i class="fa-solid fa-id-card"></i><span>Profile</span>
         </a>
+        {% if current_user.role_name in ('customer', 'consumer', 'student') %}
+        <a class="dashboard-link {{ 'active' if request.endpoint == 'customer_portal.vendor_application' }}" href="{{ url_for('customer_portal.vendor_application') }}">
+            <i class="fa-solid fa-store"></i><span>Become a Vendor</span>
+        </a>
+        {% endif %}
     </nav>
 
     <form action="{{ url_for('auth.logout') }}" method="post" class="dashboard-logout" data-no-ajax>

@@ -24,17 +24,30 @@
 <div class="panel-card p-0 overflow-hidden">
     <div class="table-responsive">
         <table class="table admin-table align-middle mb-0">
-            <thead><tr><th>Vendor</th><th>Business</th><th>Licence</th><th>Expiry</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+            <thead><tr><th>Vendor</th><th>Business</th><th>Licence</th><th>Expiry</th><th>Application</th><th>Account</th><th class="text-end">Actions</th></tr></thead>
             <tbody>
             {% for vendor in vendors %}
                 <tr>
-                    <td><strong>{{ vendor.user.full_name }}</strong><small>{{ vendor.user.email }}</small></td>
+                    <td>
+                        <strong>{{ vendor.user.full_name }}</strong><small>{{ vendor.user.email }}</small>
+                        {% if vendor.status == 'pending' and vendor.requested_stall_name %}
+                        <small class="d-block mt-1"><i class="fa-solid fa-shop me-1"></i>Proposed: {{ vendor.requested_stall_name }}{% if vendor.requested_area %} &middot; {{ vendor.requested_area.area_name }}{% endif %}</small>
+                        {% endif %}
+                    </td>
                     <td>{{ vendor.business_name }}</td>
                     <td><span class="code-chip">{{ vendor.license_number }}</span></td>
                     <td>{{ vendor.license_expiry_date.strftime('%d %b %Y') if vendor.license_expiry_date else '—' }}</td>
+                    <td><span class="status-pill risk-{{ 'low' if vendor.status == 'approved' else ('critical' if vendor.status in ('rejected', 'suspended') else 'medium') }}">{{ vendor.status }}</span></td>
                     <td><span class="status-pill status-{{ vendor.user.status }}">{{ vendor.user.status }}</span></td>
                     <td class="text-end table-actions">
-                        {% if current_user.has_permission('vendors.edit') %}
+                        {% if vendor.status == 'pending' and current_user.has_permission('vendors.edit') %}
+                        <form class="d-inline" action="{{ url_for('admin.vendor_approve', vendor_id=vendor.vendor_id) }}" method="post" data-confirm="Approve this vendor application? The applicant's account will immediately gain vendor access.">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-success" type="submit">Approve</button>
+                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-vendor-reject-open data-action="{{ url_for('admin.vendor_reject', vendor_id=vendor.vendor_id) }}">Reject</button>
+                        {% endif %}
+                        {% if vendor.status != 'pending' and current_user.has_permission('vendors.edit') %}
                         <button
                             type="button"
                             aria-label="Edit"
@@ -58,7 +71,7 @@
                         {% endif %}
                     </td>
                 </tr>
-            {% else %}<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-store-slash" aria-hidden="true"></i>No vendors found.</td></tr>{% endfor %}
+            {% else %}<tr><td colspan="7" class="empty-state"><i class="fa-solid fa-store-slash" aria-hidden="true"></i>No vendors found.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
@@ -126,6 +139,27 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" id="vendorModalSubmit">Save Vendor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="vendorRejectModal" tabindex="-1" aria-labelledby="vendorRejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" id="vendorRejectForm">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="vendorRejectModalLabel">Reject Vendor Application</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="vendorRejectReason">Reason <span class="text-secondary">(shown to the applicant)</span></label>
+                    <textarea class="form-control" id="vendorRejectReason" name="rejection_reason" rows="3" maxlength="500"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject Application</button>
                 </div>
             </form>
         </div>
@@ -228,8 +262,25 @@
     }
     }
 
+    function initVendorRejectModal() {
+    var modalEl = document.getElementById("vendorRejectModal");
+    if (!modalEl) { return; }
+    var modal = new bootstrap.Modal(modalEl);
+    var form = document.getElementById("vendorRejectForm");
+
+    document.querySelectorAll("[data-vendor-reject-open]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            form.action = button.getAttribute("data-action");
+            document.getElementById("vendorRejectReason").value = "";
+            modal.show();
+        });
+    });
+    }
+
     initVendorModal();
+    initVendorRejectModal();
     document.addEventListener("admin:content-updated", initVendorModal);
+    document.addEventListener("admin:content-updated", initVendorRejectModal);
 })();
 </script>
 {% endblock %}

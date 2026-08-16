@@ -144,6 +144,6 @@ def vendor():
 
 @dashboard_bp.route("/customer")
 @login_required
-@role_required("customer", "consumer")
+@role_required("customer", "consumer", "student")
 def customer():
     return redirect(url_for("customer_portal.search_stalls"))

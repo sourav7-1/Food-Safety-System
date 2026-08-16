@@ -32,7 +32,7 @@ _MIN_PASSWORD_LENGTH = 8
 @login_required
 def view():
     reviews = complaints = None
-    if current_user.role_name in ("customer", "consumer"):
+    if current_user.role_name in ("customer", "consumer", "student"):
         reviews = (
             Review.query.filter_by(user_id=current_user.user_id)
             .order_by(Review.created_at.desc())
