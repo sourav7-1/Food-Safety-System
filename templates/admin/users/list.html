@@ -165,6 +165,9 @@
         </div>
     </div>
 </div>
+{% if reopen_modal %}
+<script type="application/json" id="reopenModalData">{{ reopen_modal | tojson }}</script>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -259,6 +262,39 @@
     });
 
     syncConditionalFields();
+
+    // If the last submission failed validation, the server hands back
+    // what was typed so the modal can reopen pre-filled instead of the
+    // user having to retype everything from scratch.
+    var reopenEl = document.getElementById("reopenModalData");
+    if (reopenEl) {
+        var reopen = JSON.parse(reopenEl.textContent);
+        var values = reopen.values || {};
+        form.action = reopen.action;
+        titleEl.textContent = reopen.mode === "edit" ? "Edit User" : "New User";
+        if (reopen.mode === "edit") {
+            passwordLabel.textContent = "New password";
+            passwordInput.required = false;
+            passwordHint.textContent = "Leave blank to keep the current password.";
+        } else {
+            passwordLabel.textContent = "Password";
+            passwordInput.required = true;
+            passwordHint.textContent = "At least 8 characters.";
+        }
+        document.getElementById("userFullName").value = values.full_name || "";
+        document.getElementById("userEmail").value = values.email || "";
+        document.getElementById("userPhone").value = values.phone || "";
+        document.getElementById("userStatus").value = values.status || "active";
+        roleSelect.value = values.role_id || "";
+        document.getElementById("userEmployeeCode").value = values.employee_code || "";
+        document.getElementById("userDesignation").value = values.designation || "";
+        document.getElementById("userAssignedArea").value = values.assigned_area_id || "";
+        syncConditionalFields();
+        if (document.getElementById("userIsSuperAdmin")) {
+            document.getElementById("userIsSuperAdmin").checked = values.is_super_admin === "on";
+        }
+        modal.show();
+    }
     }
 
     initUserModal();

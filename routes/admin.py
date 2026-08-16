@@ -105,6 +105,20 @@ def _commit(success_message, failure_message):
     return True
 
 
+def _reopen_payload(mode, action, form):
+    """Built when a create/edit modal submission fails validation, so the
+    list page can hand it straight back to the client-side script and
+    reopen the same modal pre-filled with what the user already typed --
+    instead of the old behavior of silently discarding it on redirect.
+    The password field is deliberately never echoed back."""
+    values = {
+        key: value
+        for key, value in form.items()
+        if key not in {"_csrf_token", "password"}
+    }
+    return {"mode": mode, "action": action, "values": values}
+
+
 def _notify_complaint_update(complaint, status_changed, response_text):
     """Best-effort in-app notification for the customer who submitted this
     complaint. Never fails the request that just successfully updated the
@@ -189,11 +203,7 @@ def _refresh_stall_risk(stall_id):
         db.session.commit()
 
 
-@admin_bp.route("/vendors")
-@login_required
-@permission_required("vendors.view")
-def vendors():
-    search = request.args.get("q", "").strip()
+def _render_vendors_list(search="", reopen_modal=None, status_code=200):
     query = Vendor.query.join(Vendor.user)
     if search:
         term = f"%{search}%"
@@ -206,32 +216,45 @@ def vendors():
             )
         )
     records = query.order_by(Vendor.created_at.desc()).all()
-    return render_template(
-        "admin/vendors/list.html",
-        page_title="Vendors",
-        vendors=records,
-        search=search,
+    return (
+        render_template(
+            "admin/vendors/list.html",
+            page_title="Vendors",
+            vendors=records,
+            search=search,
+            reopen_modal=reopen_modal,
+        ),
+        status_code,
     )
+
+
+@admin_bp.route("/vendors")
+@login_required
+@permission_required("vendors.view")
+def vendors():
+    return _render_vendors_list(request.args.get("q", "").strip())
 
 
 @admin_bp.route("/vendors", methods=["POST"])
 @login_required
 @permission_required("vendors.create")
 def vendor_create():
+    reopen = _reopen_payload("create", url_for("admin.vendor_create"), request.form)
+
     vendor_role = _role("vendor")
     if vendor_role is None:
         flash("The vendor role is missing from the roles table.", "danger")
-        return redirect(url_for("admin.vendors"))
+        return _render_vendors_list(reopen_modal=reopen, status_code=409)
 
     password = request.form.get("password", "")
     if len(password) < 8:
         flash("Password must contain at least 8 characters.", "danger")
-        return redirect(url_for("admin.vendors"))
+        return _render_vendors_list(reopen_modal=reopen, status_code=400)
 
     status = request.form.get("status", "active").strip() or "active"
     if status not in USER_STATUSES:
         flash("Select a valid account status.", "danger")
-        return redirect(url_for("admin.vendors"))
+        return _render_vendors_list(reopen_modal=reopen, status_code=400)
 
     try:
         user = User(
@@ -254,12 +277,13 @@ def vendor_create():
         db.session.add(vendor)
     except ValueError as error:
         flash(str(error), "danger")
-        return redirect(url_for("admin.vendors"))
+        return _render_vendors_list(reopen_modal=reopen, status_code=400)
 
-    _commit(
+    if not _commit(
         "Vendor created successfully.",
         "Could not create vendor. Email, phone, licence, or national ID may already exist.",
-    )
+    ):
+        return _render_vendors_list(reopen_modal=reopen, status_code=409)
     return redirect(url_for("admin.vendors"))
 
 
@@ -268,19 +292,25 @@ def vendor_create():
 @permission_required("vendors.edit")
 def vendor_edit(vendor_id):
     vendor = db.get_or_404(Vendor, vendor_id)
+    reopen = _reopen_payload(
+        "edit", url_for("admin.vendor_edit", vendor_id=vendor_id), request.form
+    )
+
     vendor.user.full_name = request.form.get("full_name", "").strip()
     vendor.user.email = request.form.get("email", "").strip().lower()
     vendor.user.phone = request.form.get("phone", "").strip() or None
     status = request.form.get("status", "active").strip() or "active"
     if status not in USER_STATUSES:
+        db.session.rollback()
         flash("Select a valid account status.", "danger")
-        return redirect(url_for("admin.vendors"))
+        return _render_vendors_list(reopen_modal=reopen, status_code=400)
     vendor.user.status = status
     password = request.form.get("password", "")
     if password:
         if len(password) < 8:
+            db.session.rollback()
             flash("Password must contain at least 8 characters.", "danger")
-            return redirect(url_for("admin.vendors"))
+            return _render_vendors_list(reopen_modal=reopen, status_code=400)
         vendor.user.set_password(password)
     vendor.business_name = request.form.get("business_name", "").strip()
     vendor.license_number = request.form.get("license_number", "").strip()
@@ -291,13 +321,14 @@ def vendor_edit(vendor_id):
     except ValueError:
         db.session.rollback()
         flash("Enter a valid licence expiry date.", "danger")
-        return redirect(url_for("admin.vendors"))
+        return _render_vendors_list(reopen_modal=reopen, status_code=400)
     vendor.national_id = request.form.get("national_id", "").strip() or None
 
-    _commit(
+    if not _commit(
         "Vendor updated successfully.",
         "Could not update vendor. A unique field may already be in use.",
-    )
+    ):
+        return _render_vendors_list(reopen_modal=reopen, status_code=409)
     return redirect(url_for("admin.vendors"))
 
 
@@ -317,11 +348,7 @@ def vendor_delete(vendor_id):
     return redirect(url_for("admin.vendors"))
 
 
-@admin_bp.route("/stalls")
-@login_required
-@permission_required("stalls.view")
-def stalls():
-    search = request.args.get("q", "").strip()
+def _render_stalls_list(search="", reopen_modal=None, status_code=200):
     query = Stall.query.join(Stall.vendor).join(Stall.area)
     if search:
         term = f"%{search}%"
@@ -334,20 +361,32 @@ def stalls():
             )
         )
     records = query.order_by(Stall.created_at.desc()).all()
-    return render_template(
-        "admin/stalls/list.html",
-        page_title="Stalls",
-        stalls=records,
-        vendors=Vendor.query.order_by(Vendor.business_name).all(),
-        areas=Area.query.order_by(Area.area_name).all(),
-        search=search,
+    return (
+        render_template(
+            "admin/stalls/list.html",
+            page_title="Stalls",
+            stalls=records,
+            vendors=Vendor.query.order_by(Vendor.business_name).all(),
+            areas=Area.query.order_by(Area.area_name).all(),
+            search=search,
+            reopen_modal=reopen_modal,
+        ),
+        status_code,
     )
+
+
+@admin_bp.route("/stalls")
+@login_required
+@permission_required("stalls.view")
+def stalls():
+    return _render_stalls_list(request.args.get("q", "").strip())
 
 
 @admin_bp.route("/stalls", methods=["POST"])
 @login_required
 @permission_required("stalls.create")
 def stall_create():
+    reopen = _reopen_payload("create", url_for("admin.stall_create"), request.form)
     try:
         status = request.form.get("status", "active").strip() or "active"
         if status not in STALL_STATUSES:
@@ -371,12 +410,13 @@ def stall_create():
         db.session.add(stall)
     except (KeyError, ValueError) as error:
         flash(str(error), "danger")
-        return redirect(url_for("admin.stalls"))
+        return _render_stalls_list(reopen_modal=reopen, status_code=400)
 
-    _commit(
+    if not _commit(
         "Stall created successfully.",
         "Could not create stall. The stall code may already exist.",
-    )
+    ):
+        return _render_stalls_list(reopen_modal=reopen, status_code=409)
     return redirect(url_for("admin.stalls"))
 
 
@@ -385,6 +425,9 @@ def stall_create():
 @permission_required("stalls.edit")
 def stall_edit(stall_id):
     stall = db.get_or_404(Stall, stall_id)
+    reopen = _reopen_payload(
+        "edit", url_for("admin.stall_edit", stall_id=stall_id), request.form
+    )
     try:
         stall.vendor_id = int(request.form["vendor_id"])
         stall.area_id = int(request.form["area_id"])
@@ -407,12 +450,13 @@ def stall_edit(stall_id):
     except (KeyError, ValueError) as error:
         db.session.rollback()
         flash(str(error), "danger")
-        return redirect(url_for("admin.stalls"))
+        return _render_stalls_list(reopen_modal=reopen, status_code=400)
 
-    _commit(
+    if not _commit(
         "Stall updated successfully.",
         "Could not update stall. The stall code may already exist.",
-    )
+    ):
+        return _render_stalls_list(reopen_modal=reopen, status_code=409)
     return redirect(url_for("admin.stalls"))
 
 
@@ -812,27 +856,38 @@ def _assignable_roles():
     return query.order_by(Role.role_name).all()
 
 
-@admin_bp.route("/users")
-@login_required
-@permission_required("users.view")
-def users():
-    role_name = request.args.get("role", "").strip()
-    status = request.args.get("status", "").strip()
+def _render_users_list(
+    role_name="", status="", reopen_modal=None, status_code=200
+):
     query = User.query.join(User.role)
     if role_name:
         query = query.filter(Role.role_name == role_name)
     if status in {"active", "inactive", "suspended"}:
         query = query.filter(User.status == status)
     records = query.order_by(User.created_at.desc()).all()
-    return render_template(
-        "admin/users/list.html",
-        page_title="Users",
-        users=records,
-        all_roles=Role.query.order_by(Role.role_name).all(),
-        assignable_roles=_assignable_roles(),
-        areas=Area.query.order_by(Area.area_name).all(),
-        selected_role=role_name,
-        selected_status=status,
+    return (
+        render_template(
+            "admin/users/list.html",
+            page_title="Users",
+            users=records,
+            all_roles=Role.query.order_by(Role.role_name).all(),
+            assignable_roles=_assignable_roles(),
+            areas=Area.query.order_by(Area.area_name).all(),
+            selected_role=role_name,
+            selected_status=status,
+            reopen_modal=reopen_modal,
+        ),
+        status_code,
+    )
+
+
+@admin_bp.route("/users")
+@login_required
+@permission_required("users.view")
+def users():
+    return _render_users_list(
+        request.args.get("role", "").strip(),
+        request.args.get("status", "").strip(),
     )
 
 
@@ -911,15 +966,17 @@ def _apply_inspector_transition(user, role, form):
 @login_required
 @permission_required("users.create")
 def user_create():
+    reopen = _reopen_payload("create", url_for("admin.user_create"), request.form)
+
     role = db.session.get(Role, request.form.get("role_id", type=int))
     if role is None or role.role_name == "vendor":
         flash("Select a valid role.", "danger")
-        return redirect(url_for("admin.users"))
+        return _render_users_list(reopen_modal=reopen, status_code=400)
     if role.is_admin_tier and not current_user.is_super_admin:
         flash(
             "Only a super admin can create an admin-tier account.", "danger"
         )
-        return redirect(url_for("admin.users"))
+        return _render_users_list(reopen_modal=reopen, status_code=403)
 
     full_name = request.form.get("full_name", "").strip()
     email = request.form.get("email", "").strip().lower()
@@ -929,13 +986,13 @@ def user_create():
 
     if not full_name or not email:
         flash("Full name and email are required.", "danger")
-        return redirect(url_for("admin.users"))
+        return _render_users_list(reopen_modal=reopen, status_code=400)
     if status not in USER_STATUSES:
         flash("Select a valid account status.", "danger")
-        return redirect(url_for("admin.users"))
+        return _render_users_list(reopen_modal=reopen, status_code=400)
     if len(password) < 8:
         flash("Password must contain at least 8 characters.", "danger")
-        return redirect(url_for("admin.users"))
+        return _render_users_list(reopen_modal=reopen, status_code=400)
 
     user = User(
         role_id=role.role_id,
@@ -952,16 +1009,16 @@ def user_create():
         error = _apply_inspector_transition(user, role, request.form)
         if error:
             flash(error, "danger")
-            return redirect(url_for("admin.users"))
+            return _render_users_list(reopen_modal=reopen, status_code=400)
     else:
         db.session.add(user)
 
-    if _commit(
+    if not _commit(
         "User created successfully.",
         "Could not create user. Email, phone, or employee code may "
         "already exist.",
     ):
-        pass
+        return _render_users_list(reopen_modal=reopen, status_code=409)
     return redirect(url_for("admin.users"))
 
 
@@ -971,11 +1028,14 @@ def user_create():
 def user_edit(user_id):
     user = db.get_or_404(User, user_id)
     target_was_admin_tier = bool(user.role and user.role.is_admin_tier)
+    reopen = _reopen_payload(
+        "edit", url_for("admin.user_edit", user_id=user_id), request.form
+    )
 
     role = db.session.get(Role, request.form.get("role_id", type=int))
     if role is None or role.role_name == "vendor":
         flash("Select a valid role.", "danger")
-        return redirect(url_for("admin.users"))
+        return _render_users_list(reopen_modal=reopen, status_code=400)
     if (
         (target_was_admin_tier or role.is_admin_tier)
         and not current_user.is_super_admin
@@ -983,7 +1043,7 @@ def user_edit(user_id):
         flash(
             "Only a super admin can manage admin-tier accounts.", "danger"
         )
-        return redirect(url_for("admin.users"))
+        return _render_users_list(reopen_modal=reopen, status_code=403)
 
     full_name = request.form.get("full_name", "").strip()
     email = request.form.get("email", "").strip().lower()
@@ -993,37 +1053,37 @@ def user_edit(user_id):
 
     if not full_name or not email:
         flash("Full name and email are required.", "danger")
-        return redirect(url_for("admin.users"))
+        return _render_users_list(reopen_modal=reopen, status_code=400)
     if status not in USER_STATUSES:
         flash("Select a valid account status.", "danger")
-        return redirect(url_for("admin.users"))
+        return _render_users_list(reopen_modal=reopen, status_code=400)
 
     if user.user_id == current_user.user_id:
         if status != "active":
             flash("You cannot disable your own signed-in account.", "danger")
-            return redirect(url_for("admin.users"))
+            return _render_users_list(reopen_modal=reopen, status_code=400)
         if not role.is_admin_tier:
             flash(
                 "You cannot change your own role away from an admin-tier "
                 "role.",
                 "danger",
             )
-            return redirect(url_for("admin.users"))
+            return _render_users_list(reopen_modal=reopen, status_code=400)
         if current_user.is_super_admin and not is_super_admin_field:
             flash("You cannot remove your own super admin access.", "danger")
-            return redirect(url_for("admin.users"))
+            return _render_users_list(reopen_modal=reopen, status_code=400)
 
     password = request.form.get("password", "")
     if password:
         if len(password) < 8:
             flash("Password must contain at least 8 characters.", "danger")
-            return redirect(url_for("admin.users"))
+            return _render_users_list(reopen_modal=reopen, status_code=400)
         user.set_password(password)
 
     error = _apply_inspector_transition(user, role, request.form)
     if error:
         flash(error, "danger")
-        return redirect(url_for("admin.users"))
+        return _render_users_list(reopen_modal=reopen, status_code=400)
 
     user.full_name = full_name
     user.email = email
@@ -1032,11 +1092,11 @@ def user_edit(user_id):
     user.role_id = role.role_id
     user.is_super_admin = role.is_admin_tier and is_super_admin_field
 
-    if _commit(
+    if not _commit(
         "User updated successfully.",
         "Could not update user. A unique field may already be in use.",
     ):
-        pass
+        return _render_users_list(reopen_modal=reopen, status_code=409)
     return redirect(url_for("admin.users"))
 
 

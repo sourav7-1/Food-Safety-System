@@ -293,7 +293,9 @@ class RbacTests(unittest.TestCase):
                 "password": "SecurePass123",
             },
         )
-        self.assertEqual(response.status_code, 302)
+        # Blocked before ever reaching the redirect-on-success path -- the
+        # list re-renders in place (with the modal reopened) instead.
+        self.assertEqual(response.status_code, 403)
         self.assertEqual(self._user_count(), before)
 
     def test_limited_admin_cannot_promote_user_to_admin_role(self):
@@ -308,7 +310,7 @@ class RbacTests(unittest.TestCase):
                 "status": "active",
             },
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
         with self.app.app_context():
             user = db.session.get(User, self.customer_id)
             self.assertEqual(user.role_id, self.customer_role_id)
@@ -418,7 +420,7 @@ class RbacTests(unittest.TestCase):
                 "password": "SecurePass123",
             },
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 400)
         self.assertEqual(self._user_count(), before)
 
     def test_removing_inspector_role_deletes_inspector_row_when_no_inspections(self):
@@ -462,7 +464,7 @@ class RbacTests(unittest.TestCase):
                 "status": "active",
             },
         )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 400)
         with self.app.app_context():
             self.assertIsNotNone(db.session.get(Inspector, self.inspector_id))
             user = db.session.get(User, self.inspector_user_id)
@@ -680,7 +682,7 @@ class RbacTests(unittest.TestCase):
                 "employee_code": "EMP-77",
             },
         )
-        self.assertEqual(blocked_response.status_code, 302)
+        self.assertEqual(blocked_response.status_code, 400)
         with self.app.app_context():
             self.assertIsNone(
                 User.query.filter_by(email="recruit-inspector@example.test").first()

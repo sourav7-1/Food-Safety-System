@@ -131,6 +131,9 @@
         </div>
     </div>
 </div>
+{% if reopen_modal %}
+<script type="application/json" id="reopenModalData">{{ reopen_modal | tojson }}</script>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -185,6 +188,32 @@
             modal.show();
         });
     });
+
+    var reopenEl = document.getElementById("reopenModalData");
+    if (reopenEl) {
+        var reopen = JSON.parse(reopenEl.textContent);
+        var values = reopen.values || {};
+        form.action = reopen.action;
+        titleEl.textContent = reopen.mode === "edit" ? "Edit Vendor" : "Add Vendor";
+        if (reopen.mode === "edit") {
+            passwordLabel.textContent = "New password";
+            passwordInput.required = false;
+            passwordHint.textContent = "Leave blank to keep the current password.";
+        } else {
+            passwordLabel.textContent = "Password";
+            passwordInput.required = true;
+            passwordHint.textContent = "At least 8 characters.";
+        }
+        document.getElementById("vendorFullName").value = values.full_name || "";
+        document.getElementById("vendorEmail").value = values.email || "";
+        document.getElementById("vendorPhone").value = values.phone || "";
+        document.getElementById("vendorStatus").value = values.status || "active";
+        document.getElementById("vendorBusinessName").value = values.business_name || "";
+        document.getElementById("vendorLicenseNumber").value = values.license_number || "";
+        document.getElementById("vendorLicenseExpiry").value = values.license_expiry_date || "";
+        document.getElementById("vendorNationalId").value = values.national_id || "";
+        modal.show();
+    }
     }
 
     initVendorModal();
