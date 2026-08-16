@@ -1,13 +1,180 @@
 {% extends "admin/base.html" %}
 {% block content %}
-{% with heading="Stalls", description="Manage food stall locations, ownership and operational status.", create_url=url_for('admin.stall_create'), create_label="Add Stall", search_placeholder="Search by stall, code, vendor or area...", clear_url=url_for('admin.stalls') %}
-    {% include "admin/_list_header.html" %}
-{% endwith %}
+<div class="page-actionbar">
+    <div>
+        <p class="eyebrow mb-1">MANAGEMENT</p>
+        <h2 class="h3 fw-bold mb-1">Stalls</h2>
+        <p class="text-secondary mb-0">Manage food stall locations, ownership and operational status.</p>
+    </div>
+    <div class="d-flex gap-2 align-items-start flex-wrap">
+        <form class="search-bar" method="get">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input name="q" value="{{ search }}" placeholder="Search by stall, code, vendor or area..." aria-label="Search">
+            {% if search %}<a href="{{ url_for('admin.stalls') }}" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></a>{% endif %}
+            <button type="submit">Search</button>
+        </form>
+        {% if current_user.has_permission('stalls.create') %}
+        <button type="button" class="btn btn-primary action-button" data-stall-modal-create {{ 'disabled' if not vendors or not areas }}>
+            <i class="fa-solid fa-plus me-2"></i>Add Stall
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% if not vendors or not areas %}<div class="alert alert-warning">At least one vendor and one area are required before a stall can be created.</div>{% endif %}
+
 <div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0">
 <thead><tr><th>Stall</th><th>Vendor</th><th>Area</th><th>Address</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
 <tbody>{% for stall in stalls %}<tr>
 <td><strong>{{ stall.stall_name }}</strong><small>{{ stall.stall_code }}</small></td><td>{{ stall.vendor.business_name }}</td><td>{{ stall.area.area_name }}<small>{{ stall.area.city }}</small></td><td class="address-cell">{{ stall.address }}</td><td><span class="status-pill status-{{ stall.status }}">{{ stall.status }}</span></td>
-<td class="text-end table-actions"><a href="{{ url_for('admin.stall_edit', stall_id=stall.stall_id) }}"><i class="fa-solid fa-pen"></i></a><form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" onsubmit="return confirm('Delete this stall?');"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="danger"><i class="fa-solid fa-trash"></i></button></form></td>
+<td class="text-end table-actions">
+    {% if current_user.has_permission('stalls.edit') %}
+    <button
+        type="button"
+        aria-label="Edit"
+        data-stall-modal-edit
+        data-action="{{ url_for('admin.stall_edit', stall_id=stall.stall_id) }}"
+        data-stall-name="{{ stall.stall_name }}"
+        data-stall-code="{{ stall.stall_code }}"
+        data-vendor-id="{{ stall.vendor_id }}"
+        data-area-id="{{ stall.area_id }}"
+        data-address="{{ stall.address }}"
+        data-photo-url="{{ stall.photo_url or '' }}"
+        data-latitude="{{ stall.latitude if stall.latitude is not none else '' }}"
+        data-longitude="{{ stall.longitude if stall.longitude is not none else '' }}"
+        data-status="{{ stall.status }}"
+    ><i class="fa-solid fa-pen"></i></button>
+    {% endif %}
+    {% if current_user.has_permission('stalls.delete') %}
+    <form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" onsubmit="return confirm('Delete this stall?');">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <button class="danger"><i class="fa-solid fa-trash"></i></button>
+    </form>
+    {% endif %}
+</td>
 </tr>{% else %}<tr><td colspan="6" class="empty-state">No stalls found.</td></tr>{% endfor %}</tbody>
 </table></div></div>
+
+<div class="modal fade" id="stallModal" tabindex="-1" aria-labelledby="stallModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" id="stallModalForm" action="{{ url_for('admin.stall_create') }}" class="entity-form">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="stallModalLabel">Add Stall</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="stallName">Stall name</label>
+                            <input class="form-control" id="stallName" name="stall_name" required maxlength="150">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="stallCode">Stall code</label>
+                            <input class="form-control" id="stallCode" name="stall_code" required maxlength="80">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="stallVendor">Vendor</label>
+                            <select class="form-select" id="stallVendor" name="vendor_id" required>
+                                <option value="">Select vendor</option>
+                                {% for vendor in vendors %}
+                                <option value="{{ vendor.vendor_id }}">{{ vendor.business_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="stallArea">Area</label>
+                            <select class="form-select" id="stallArea" name="area_id" required>
+                                <option value="">Select area</option>
+                                {% for area in areas %}
+                                <option value="{{ area.area_id }}">{{ area.area_name }} — {{ area.city }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="stallAddress">Full address</label>
+                            <input class="form-control" id="stallAddress" name="address" required maxlength="255">
+                        </div>
+                        <div class="col-12">
+                            <label for="stallPhotoUrl">Photo URL</label>
+                            <input class="form-control" id="stallPhotoUrl" name="photo_url" maxlength="1000" placeholder="https://...">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="stallLatitude">Latitude</label>
+                            <input class="form-control" id="stallLatitude" name="latitude">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="stallLongitude">Longitude</label>
+                            <input class="form-control" id="stallLongitude" name="longitude">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="stallStatus">Status</label>
+                            <select class="form-select" id="stallStatus" name="status">
+                                {% for value in ['active','closed','suspended'] %}
+                                <option value="{{ value }}">{{ value|title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Stall</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+    function initStallModal() {
+    var modalEl = document.getElementById("stallModal");
+    if (!modalEl) { return; }
+    var modal = new bootstrap.Modal(modalEl);
+    var form = document.getElementById("stallModalForm");
+    var titleEl = document.getElementById("stallModalLabel");
+    var createUrl = "{{ url_for('admin.stall_create') }}";
+
+    function resetForm() {
+        form.reset();
+        form.action = createUrl;
+        titleEl.textContent = "Add Stall";
+    }
+
+    document.querySelectorAll("[data-stall-modal-create]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            resetForm();
+            modal.show();
+        });
+    });
+
+    document.querySelectorAll("[data-stall-modal-edit]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            resetForm();
+            form.action = button.getAttribute("data-action");
+            titleEl.textContent = "Edit Stall";
+
+            document.getElementById("stallName").value = button.getAttribute("data-stall-name") || "";
+            document.getElementById("stallCode").value = button.getAttribute("data-stall-code") || "";
+            document.getElementById("stallVendor").value = button.getAttribute("data-vendor-id") || "";
+            document.getElementById("stallArea").value = button.getAttribute("data-area-id") || "";
+            document.getElementById("stallAddress").value = button.getAttribute("data-address") || "";
+            document.getElementById("stallPhotoUrl").value = button.getAttribute("data-photo-url") || "";
+            document.getElementById("stallLatitude").value = button.getAttribute("data-latitude") || "";
+            document.getElementById("stallLongitude").value = button.getAttribute("data-longitude") || "";
+            document.getElementById("stallStatus").value = button.getAttribute("data-status") || "active";
+
+            modal.show();
+        });
+    });
+    }
+
+    initStallModal();
+    document.addEventListener("admin:content-updated", initStallModal);
+})();
+</script>
 {% endblock %}

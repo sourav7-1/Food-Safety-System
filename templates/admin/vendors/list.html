@@ -1,8 +1,26 @@
 {% extends "admin/base.html" %}
 {% block content %}
-{% with heading="Vendors", description="Manage registered food businesses and vendor accounts.", create_url=url_for('admin.vendor_create'), create_label="Add Vendor", search_placeholder="Search by business, licence, name or email...", clear_url=url_for('admin.vendors') %}
-    {% include "admin/_list_header.html" %}
-{% endwith %}
+<div class="page-actionbar">
+    <div>
+        <p class="eyebrow mb-1">MANAGEMENT</p>
+        <h2 class="h3 fw-bold mb-1">Vendors</h2>
+        <p class="text-secondary mb-0">Manage registered food businesses and vendor accounts.</p>
+    </div>
+    <div class="d-flex gap-2 align-items-start flex-wrap">
+        <form class="search-bar" method="get">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input name="q" value="{{ search }}" placeholder="Search by business, licence, name or email..." aria-label="Search">
+            {% if search %}<a href="{{ url_for('admin.vendors') }}" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></a>{% endif %}
+            <button type="submit">Search</button>
+        </form>
+        {% if current_user.has_permission('vendors.create') %}
+        <button type="button" class="btn btn-primary action-button" data-vendor-modal-create>
+            <i class="fa-solid fa-plus me-2"></i>Add Vendor
+        </button>
+        {% endif %}
+    </div>
+</div>
+
 <div class="panel-card p-0 overflow-hidden">
     <div class="table-responsive">
         <table class="table admin-table align-middle mb-0">
@@ -16,11 +34,28 @@
                     <td>{{ vendor.license_expiry_date.strftime('%d %b %Y') if vendor.license_expiry_date else '—' }}</td>
                     <td><span class="status-pill status-{{ vendor.user.status }}">{{ vendor.user.status }}</span></td>
                     <td class="text-end table-actions">
-                        <a href="{{ url_for('admin.vendor_edit', vendor_id=vendor.vendor_id) }}" aria-label="Edit"><i class="fa-solid fa-pen"></i></a>
+                        {% if current_user.has_permission('vendors.edit') %}
+                        <button
+                            type="button"
+                            aria-label="Edit"
+                            data-vendor-modal-edit
+                            data-action="{{ url_for('admin.vendor_edit', vendor_id=vendor.vendor_id) }}"
+                            data-full-name="{{ vendor.user.full_name }}"
+                            data-email="{{ vendor.user.email }}"
+                            data-phone="{{ vendor.user.phone or '' }}"
+                            data-status="{{ vendor.user.status }}"
+                            data-business-name="{{ vendor.business_name }}"
+                            data-license-number="{{ vendor.license_number }}"
+                            data-license-expiry-date="{{ vendor.license_expiry_date.isoformat() if vendor.license_expiry_date else '' }}"
+                            data-national-id="{{ vendor.national_id or '' }}"
+                        ><i class="fa-solid fa-pen"></i></button>
+                        {% endif %}
+                        {% if current_user.has_permission('vendors.delete') %}
                         <form action="{{ url_for('admin.vendor_delete', vendor_id=vendor.vendor_id) }}" method="post" onsubmit="return confirm('Delete this vendor?');">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                             <button class="danger" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
                         </form>
+                        {% endif %}
                     </td>
                 </tr>
             {% else %}<tr><td colspan="6" class="empty-state">No vendors found.</td></tr>{% endfor %}
@@ -28,4 +63,132 @@
         </table>
     </div>
 </div>
+
+<div class="modal fade" id="vendorModal" tabindex="-1" aria-labelledby="vendorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="post" id="vendorModalForm" action="{{ url_for('admin.vendor_create') }}" class="entity-form">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h2 class="modal-title h5" id="vendorModalLabel">Add Vendor</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h3>Account information</h3>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="vendorFullName">Full name</label>
+                            <input class="form-control" id="vendorFullName" name="full_name" required maxlength="120">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vendorEmail">Email</label>
+                            <input class="form-control" type="email" id="vendorEmail" name="email" required maxlength="150">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="vendorPhone">Phone</label>
+                            <input class="form-control" id="vendorPhone" name="phone" maxlength="30">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="vendorStatus">Status</label>
+                            <select class="form-select" id="vendorStatus" name="status">
+                                {% for value in ['active','inactive','suspended'] %}
+                                <option value="{{ value }}">{{ value|title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="vendorPassword"><span id="vendorPasswordLabel">Password</span></label>
+                            <input class="form-control" type="password" id="vendorPassword" name="password" minlength="8">
+                            <div class="form-text" id="vendorPasswordHint">At least 8 characters.</div>
+                        </div>
+                    </div>
+                    <hr>
+                    <h3>Business and licence</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="vendorBusinessName">Business name</label>
+                            <input class="form-control" id="vendorBusinessName" name="business_name" required maxlength="150">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vendorLicenseNumber">Licence number</label>
+                            <input class="form-control" id="vendorLicenseNumber" name="license_number" required maxlength="80">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vendorLicenseExpiry">Licence expiry date</label>
+                            <input class="form-control" type="date" id="vendorLicenseExpiry" name="license_expiry_date">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vendorNationalId">National ID</label>
+                            <input class="form-control" id="vendorNationalId" name="national_id" maxlength="80">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Vendor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+    function initVendorModal() {
+    var modalEl = document.getElementById("vendorModal");
+    if (!modalEl) { return; }
+    var modal = new bootstrap.Modal(modalEl);
+    var form = document.getElementById("vendorModalForm");
+    var titleEl = document.getElementById("vendorModalLabel");
+    var passwordInput = document.getElementById("vendorPassword");
+    var passwordLabel = document.getElementById("vendorPasswordLabel");
+    var passwordHint = document.getElementById("vendorPasswordHint");
+    var createUrl = "{{ url_for('admin.vendor_create') }}";
+
+    function resetForm() {
+        form.reset();
+        form.action = createUrl;
+        titleEl.textContent = "Add Vendor";
+        passwordLabel.textContent = "Password";
+        passwordInput.required = true;
+        passwordHint.textContent = "At least 8 characters.";
+    }
+
+    document.querySelectorAll("[data-vendor-modal-create]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            resetForm();
+            modal.show();
+        });
+    });
+
+    document.querySelectorAll("[data-vendor-modal-edit]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            resetForm();
+            form.action = button.getAttribute("data-action");
+            titleEl.textContent = "Edit Vendor";
+            passwordLabel.textContent = "New password";
+            passwordInput.required = false;
+            passwordHint.textContent = "Leave blank to keep the current password.";
+
+            document.getElementById("vendorFullName").value = button.getAttribute("data-full-name") || "";
+            document.getElementById("vendorEmail").value = button.getAttribute("data-email") || "";
+            document.getElementById("vendorPhone").value = button.getAttribute("data-phone") || "";
+            document.getElementById("vendorStatus").value = button.getAttribute("data-status") || "active";
+            document.getElementById("vendorBusinessName").value = button.getAttribute("data-business-name") || "";
+            document.getElementById("vendorLicenseNumber").value = button.getAttribute("data-license-number") || "";
+            document.getElementById("vendorLicenseExpiry").value = button.getAttribute("data-license-expiry-date") || "";
+            document.getElementById("vendorNationalId").value = button.getAttribute("data-national-id") || "";
+
+            modal.show();
+        });
+    });
+    }
+
+    initVendorModal();
+    document.addEventListener("admin:content-updated", initVendorModal);
+})();
+</script>
 {% endblock %}

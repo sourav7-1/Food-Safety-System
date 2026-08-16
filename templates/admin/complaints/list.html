@@ -1,5 +1,84 @@
 {% extends "admin/base.html" %}{% block content %}
 <div class="page-actionbar"><div><p class="eyebrow mb-1">CUSTOMER SAFETY</p><h2 class="h3 fw-bold mb-1">Complaints</h2><p class="text-secondary mb-0">Review, assign and resolve reported food-safety concerns.</p></div></div>
 <form class="search-bar" method="get"><i class="fa-solid fa-filter"></i><select name="status" class="border-0 flex-grow-1"><option value="">All statuses</option>{% for value in ['submitted','under_review','investigation','action_required','resolved','rejected','closed'] %}<option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|replace('_',' ')|title }}</option>{% endfor %}</select><button>Filter</button></form>
-<div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>ID</th><th>Stall</th><th>Complaint</th><th>Severity</th><th>Submitted</th><th>Evidence</th><th>Status</th><th></th></tr></thead><tbody>{% for complaint in complaints %}<tr><td>#{{ complaint.complaint_id }}</td><td><strong>{{ complaint.stall.stall_name }}</strong><small>{{ complaint.stall.vendor.business_name }}</small></td><td><strong>{{ complaint.title }}</strong><small>{{ complaint.complaint_type.type_name }}</small></td><td><span class="status-pill risk-{{ complaint.complaint_type.severity_level }}">{{ complaint.complaint_type.severity_level }}</span></td><td>{{ complaint.submitted_at.strftime('%d %b %Y') }}</td><td>{{ complaint.evidence|length or '—' }}</td><td><span class="status-pill status-{{ complaint.status }}">{{ complaint.status|replace('_',' ') }}</span></td><td><a class="btn btn-sm btn-soft" href="{{ url_for('admin.complaint_manage', complaint_id=complaint.complaint_id) }}">Manage</a></td></tr>{% else %}<tr><td colspan="8" class="empty-state">No complaints found.</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>ID</th><th>Stall</th><th>Complaint</th><th>Severity</th><th>Submitted</th><th>Evidence</th><th>Status</th><th></th></tr></thead><tbody>{% for complaint in complaints %}<tr><td>#{{ complaint.complaint_id }}</td><td><strong>{{ complaint.stall.stall_name }}</strong><small>{{ complaint.stall.vendor.business_name }}</small></td><td><strong>{{ complaint.title }}</strong><small>{{ complaint.complaint_type.type_name }}</small></td><td><span class="status-pill risk-{{ complaint.complaint_type.severity_level }}">{{ complaint.complaint_type.severity_level }}</span></td><td>{{ complaint.submitted_at.strftime('%d %b %Y') }}</td><td>{{ complaint.evidence|length or '—' }}</td><td><span class="status-pill status-{{ complaint.status }}">{{ complaint.status|replace('_',' ') }}</span></td><td><button type="button" class="btn btn-sm btn-soft" data-complaint-modal-open data-complaint-id="{{ complaint.complaint_id }}" data-url="{{ url_for('admin.complaint_manage', complaint_id=complaint.complaint_id) }}">Manage</button></td></tr>{% else %}<tr><td colspan="8" class="empty-state">No complaints found.</td></tr>{% endfor %}</tbody></table></div></div>
+
+<div class="modal fade" id="complaintModal" tabindex="-1" aria-labelledby="complaintModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="complaintModalLabel">Complaint</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="complaintModalBody"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+    // Re-runs after admin:content-updated too, since AdminAjax.refresh()
+    // below replaces .admin-content (this modal included) once the
+    // modal is closed -- see admin/base.html for the shared swap layer.
+    function initComplaintModal() {
+    var modalEl = document.getElementById("complaintModal");
+    if (!modalEl) { return; }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    var body = document.getElementById("complaintModalBody");
+    var titleEl = document.getElementById("complaintModalLabel");
+    var needsListRefresh = false;
+
+    function loadPanel(url, options) {
+        body.innerHTML = '<div class="text-center py-5 text-secondary"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+        return fetch(url, Object.assign({ headers: { "X-Requested-With": "XMLHttpRequest" } }, options || {}))
+            .then(function (response) {
+                needsListRefresh = true;
+                return response.text();
+            })
+            .then(function (html) {
+                body.innerHTML = html;
+            })
+            .catch(function () {
+                body.innerHTML = '<div class="alert alert-danger">Could not load this complaint. Please try again.</div>';
+            });
+    }
+
+    document.querySelectorAll("[data-complaint-modal-open]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            titleEl.textContent = "Complaint #" + button.getAttribute("data-complaint-id");
+            needsListRefresh = false;
+            modal.show();
+            loadPanel(button.getAttribute("data-url"));
+        });
+    });
+
+    // Every form rendered inside the loaded panel (resolution form,
+    // per-evidence verify/reject forms) submits through this same
+    // fetch-and-replace path -- nothing in the modal ever navigates the
+    // browser away from the complaints list.
+    body.addEventListener("submit", function (event) {
+        var form = event.target;
+        if (!(form instanceof HTMLFormElement)) { return; }
+        event.preventDefault();
+        loadPanel(form.getAttribute("action"), {
+            method: form.getAttribute("method") || "POST",
+            body: new FormData(form),
+        });
+    });
+
+    modalEl.addEventListener("hidden.bs.modal", function () {
+        body.innerHTML = "";
+        if (needsListRefresh) {
+            window.AdminAjax.refresh();
+        }
+    });
+    }
+
+    initComplaintModal();
+    document.addEventListener("admin:content-updated", initComplaintModal);
+})();
+</script>
 {% endblock %}

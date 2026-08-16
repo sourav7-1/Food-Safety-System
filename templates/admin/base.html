@@ -69,6 +69,99 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (function () {
+        "use strict";
+        // Every POST form anywhere in the admin panel (modal saves,
+        // status toggles, approve/reject, delete) submits through here
+        // instead of a normal browser form post -- the response (the
+        // same list page the form already lived on) is fetched and
+        // swapped into .admin-content in place, so nothing ever
+        // navigates away or does a full page reload. Pages with their
+        // own bespoke AJAX handling (e.g. the complaints panel) already
+        // call preventDefault() before this listener sees the event, so
+        // they're left alone.
+        var CONTENT_SELECTOR = ".admin-content";
+
+        function cleanupModalArtifacts() {
+            document.body.classList.remove("modal-open");
+            document.body.style.removeProperty("padding-right");
+            document.body.style.removeProperty("overflow");
+            document.querySelectorAll(".modal-backdrop").forEach(function (el) {
+                el.remove();
+            });
+        }
+
+        function swapContent(html) {
+            var doc = new DOMParser().parseFromString(html, "text/html");
+            var next = doc.querySelector(CONTENT_SELECTOR);
+            var current = document.querySelector(CONTENT_SELECTOR);
+            if (!next || !current) {
+                window.location.reload();
+                return;
+            }
+            cleanupModalArtifacts();
+            current.innerHTML = next.innerHTML;
+            var title = doc.querySelector("title");
+            if (title) {
+                document.title = title.textContent;
+            }
+            document.dispatchEvent(new CustomEvent("admin:content-updated"));
+        }
+
+        // Exposed so pages with their own bespoke AJAX flow (e.g. the
+        // complaints modal) can refresh the underlying list in place
+        // too, instead of falling back to a real page reload.
+        window.AdminAjax = {
+            swapContent: swapContent,
+            refresh: function (url) {
+                return fetch(url || window.location.href, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                })
+                    .then(function (response) {
+                        return response.text();
+                    })
+                    .then(swapContent);
+            },
+        };
+
+        document.addEventListener("submit", function (event) {
+            if (event.defaultPrevented) {
+                return;
+            }
+            var form = event.target;
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+            if (form.method.toUpperCase() !== "POST") {
+                return;
+            }
+            if (!form.closest(CONTENT_SELECTOR) || form.hasAttribute("data-no-ajax")) {
+                return;
+            }
+
+            var confirmMessage = form.getAttribute("data-confirm");
+            if (confirmMessage && !window.confirm(confirmMessage)) {
+                event.preventDefault();
+                return;
+            }
+
+            event.preventDefault();
+            fetch(form.getAttribute("action"), {
+                method: "POST",
+                body: new FormData(form),
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+            })
+                .then(function (response) {
+                    return response.text();
+                })
+                .then(swapContent)
+                .catch(function () {
+                    window.location.reload();
+                });
+        });
+    })();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

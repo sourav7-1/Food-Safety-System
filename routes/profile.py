@@ -43,12 +43,19 @@ def view():
             .order_by(Complaint.submitted_at.desc())
             .all()
         )
+    # Admin-tier users (including custom admin-tier roles) get the profile
+    # page rendered inside the admin sidebar/topbar shell instead of the
+    # plain public shell, so it doesn't look like they've left the admin
+    # panel entirely.
+    is_admin_tier = bool(current_user.role and current_user.role.is_admin_tier)
     return render_template(
         "profile/view.html",
         areas=Area.query.order_by(Area.area_name).all(),
         reviews=reviews,
         complaints=complaints,
         today=date.today(),
+        base_template="admin/base.html" if is_admin_tier else "base.html",
+        page_title="My Profile",
     )
 
 

@@ -171,6 +171,11 @@
 <script>
 (function () {
     "use strict";
+    // The admin panel now swaps .admin-content in place after every save
+    // (see admin/base.html) instead of doing a real page navigation, so
+    // this whole setup re-runs on "admin:content-updated" to rebind to
+    // the freshly-swapped-in modal/buttons -- not just once at load.
+    function initUserModal() {
     var modalEl = document.getElementById("userModal");
     if (!modalEl) { return; }
     var modal = new bootstrap.Modal(modalEl);
@@ -254,6 +259,10 @@
     });
 
     syncConditionalFields();
+    }
+
+    initUserModal();
+    document.addEventListener("admin:content-updated", initUserModal);
 })();
 </script>
 {% endblock %}

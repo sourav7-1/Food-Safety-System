@@ -214,148 +214,91 @@ def vendors():
     )
 
 
-@admin_bp.route("/vendors/new", methods=["GET", "POST"])
+@admin_bp.route("/vendors", methods=["POST"])
 @login_required
 @permission_required("vendors.create")
 def vendor_create():
-    if request.method == "POST":
-        vendor_role = _role("vendor")
-        if vendor_role is None:
-            flash("The vendor role is missing from the roles table.", "danger")
-            return render_template(
-                "admin/vendors/form.html",
-                page_title="Add Vendor",
-                vendor=None,
-            ), 409
+    vendor_role = _role("vendor")
+    if vendor_role is None:
+        flash("The vendor role is missing from the roles table.", "danger")
+        return redirect(url_for("admin.vendors"))
 
-        password = request.form.get("password", "")
-        if len(password) < 8:
-            flash("Password must contain at least 8 characters.", "danger")
-            return render_template(
-                "admin/vendors/form.html",
-                page_title="Add Vendor",
-                vendor=None,
-            ), 400
+    password = request.form.get("password", "")
+    if len(password) < 8:
+        flash("Password must contain at least 8 characters.", "danger")
+        return redirect(url_for("admin.vendors"))
 
-        status = request.form.get("status", "active").strip() or "active"
-        if status not in USER_STATUSES:
-            flash("Select a valid account status.", "danger")
-            return render_template(
-                "admin/vendors/form.html",
-                page_title="Add Vendor",
-                vendor=None,
-            ), 400
+    status = request.form.get("status", "active").strip() or "active"
+    if status not in USER_STATUSES:
+        flash("Select a valid account status.", "danger")
+        return redirect(url_for("admin.vendors"))
 
-        try:
-            user = User(
-                role_id=vendor_role.role_id,
-                full_name=request.form.get("full_name", "").strip(),
-                email=request.form.get("email", "").strip().lower(),
-                phone=request.form.get("phone", "").strip() or None,
-                status=status,
-            )
-            user.set_password(password)
-            vendor = Vendor(
-                user=user,
-                business_name=request.form.get(
-                    "business_name", ""
-                ).strip(),
-                license_number=request.form.get(
-                    "license_number", ""
-                ).strip(),
-                license_expiry_date=_parse_date(
-                    request.form.get("license_expiry_date")
-                ),
-                national_id=request.form.get(
-                    "national_id", ""
-                ).strip()
-                or None,
-            )
-            db.session.add(vendor)
-        except ValueError as error:
-            flash(str(error), "danger")
-            return render_template(
-                "admin/vendors/form.html",
-                page_title="Add Vendor",
-                vendor=None,
-            ), 400
+    try:
+        user = User(
+            role_id=vendor_role.role_id,
+            full_name=request.form.get("full_name", "").strip(),
+            email=request.form.get("email", "").strip().lower(),
+            phone=request.form.get("phone", "").strip() or None,
+            status=status,
+        )
+        user.set_password(password)
+        vendor = Vendor(
+            user=user,
+            business_name=request.form.get("business_name", "").strip(),
+            license_number=request.form.get("license_number", "").strip(),
+            license_expiry_date=_parse_date(
+                request.form.get("license_expiry_date")
+            ),
+            national_id=request.form.get("national_id", "").strip() or None,
+        )
+        db.session.add(vendor)
+    except ValueError as error:
+        flash(str(error), "danger")
+        return redirect(url_for("admin.vendors"))
 
-        if _commit(
-            "Vendor created successfully.",
-            "Could not create vendor. Email, phone, licence, or national ID may already exist.",
-        ):
-            return redirect(url_for("admin.vendors"))
-
-    return render_template(
-        "admin/vendors/form.html",
-        page_title="Add Vendor",
-        vendor=None,
+    _commit(
+        "Vendor created successfully.",
+        "Could not create vendor. Email, phone, licence, or national ID may already exist.",
     )
+    return redirect(url_for("admin.vendors"))
 
 
-@admin_bp.route("/vendors/<int:vendor_id>/edit", methods=["GET", "POST"])
+@admin_bp.route("/vendors/<int:vendor_id>/edit", methods=["POST"])
 @login_required
 @permission_required("vendors.edit")
 def vendor_edit(vendor_id):
     vendor = db.get_or_404(Vendor, vendor_id)
-    if request.method == "POST":
-        vendor.user.full_name = request.form.get("full_name", "").strip()
-        vendor.user.email = request.form.get("email", "").strip().lower()
-        vendor.user.phone = request.form.get("phone", "").strip() or None
-        status = request.form.get("status", "active").strip() or "active"
-        if status not in USER_STATUSES:
-            flash("Select a valid account status.", "danger")
-            return render_template(
-                "admin/vendors/form.html",
-                page_title="Edit Vendor",
-                vendor=vendor,
-            ), 400
-        vendor.user.status = status
-        password = request.form.get("password", "")
-        if password:
-            if len(password) < 8:
-                flash(
-                    "Password must contain at least 8 characters.", "danger"
-                )
-                return render_template(
-                    "admin/vendors/form.html",
-                    page_title="Edit Vendor",
-                    vendor=vendor,
-                ), 400
-            vendor.user.set_password(password)
-        vendor.business_name = request.form.get(
-            "business_name", ""
-        ).strip()
-        vendor.license_number = request.form.get(
-            "license_number", ""
-        ).strip()
-        try:
-            vendor.license_expiry_date = _parse_date(
-                request.form.get("license_expiry_date")
-            )
-        except ValueError:
-            db.session.rollback()
-            flash("Enter a valid licence expiry date.", "danger")
-            return render_template(
-                "admin/vendors/form.html",
-                page_title="Edit Vendor",
-                vendor=vendor,
-            ), 400
-        vendor.national_id = (
-            request.form.get("national_id", "").strip() or None
-        )
-
-        if _commit(
-            "Vendor updated successfully.",
-            "Could not update vendor. A unique field may already be in use.",
-        ):
+    vendor.user.full_name = request.form.get("full_name", "").strip()
+    vendor.user.email = request.form.get("email", "").strip().lower()
+    vendor.user.phone = request.form.get("phone", "").strip() or None
+    status = request.form.get("status", "active").strip() or "active"
+    if status not in USER_STATUSES:
+        flash("Select a valid account status.", "danger")
+        return redirect(url_for("admin.vendors"))
+    vendor.user.status = status
+    password = request.form.get("password", "")
+    if password:
+        if len(password) < 8:
+            flash("Password must contain at least 8 characters.", "danger")
             return redirect(url_for("admin.vendors"))
+        vendor.user.set_password(password)
+    vendor.business_name = request.form.get("business_name", "").strip()
+    vendor.license_number = request.form.get("license_number", "").strip()
+    try:
+        vendor.license_expiry_date = _parse_date(
+            request.form.get("license_expiry_date")
+        )
+    except ValueError:
+        db.session.rollback()
+        flash("Enter a valid licence expiry date.", "danger")
+        return redirect(url_for("admin.vendors"))
+    vendor.national_id = request.form.get("national_id", "").strip() or None
 
-    return render_template(
-        "admin/vendors/form.html",
-        page_title="Edit Vendor",
-        vendor=vendor,
+    _commit(
+        "Vendor updated successfully.",
+        "Could not update vendor. A unique field may already be in use.",
     )
+    return redirect(url_for("admin.vendors"))
 
 
 @admin_bp.route("/vendors/<int:vendor_id>/delete", methods=["POST"])
@@ -395,119 +338,82 @@ def stalls():
         "admin/stalls/list.html",
         page_title="Stalls",
         stalls=records,
+        vendors=Vendor.query.order_by(Vendor.business_name).all(),
+        areas=Area.query.order_by(Area.area_name).all(),
         search=search,
     )
 
 
-@admin_bp.route("/stalls/new", methods=["GET", "POST"])
+@admin_bp.route("/stalls", methods=["POST"])
 @login_required
 @permission_required("stalls.create")
 def stall_create():
-    vendors = Vendor.query.order_by(Vendor.business_name).all()
-    areas = Area.query.order_by(Area.area_name).all()
-    if request.method == "POST":
-        try:
-            status = request.form.get("status", "active").strip() or "active"
-            if status not in STALL_STATUSES:
-                raise ValueError("Select a valid stall status.")
-            stall_code = request.form.get("stall_code", "").strip()
-            stall = Stall(
-                vendor_id=int(request.form["vendor_id"]),
-                area_id=int(request.form["area_id"]),
-                stall_name=request.form.get("stall_name", "").strip(),
-                stall_code=stall_code,
-                address=request.form.get("address", "").strip(),
-                photo_url=cache_photo(
-                    request.form.get("photo_url", ""), stall_code
-                ),
-                latitude=_parse_decimal(
-                    request.form.get("latitude"), "Latitude"
-                ),
-                longitude=_parse_decimal(
-                    request.form.get("longitude"), "Longitude"
-                ),
-                status=status,
-            )
-            db.session.add(stall)
-        except (KeyError, ValueError) as error:
-            flash(str(error), "danger")
-            return render_template(
-                "admin/stalls/form.html",
-                page_title="Add Stall",
-                stall=None,
-                vendors=vendors,
-                areas=areas,
-            ), 400
+    try:
+        status = request.form.get("status", "active").strip() or "active"
+        if status not in STALL_STATUSES:
+            raise ValueError("Select a valid stall status.")
+        stall_code = request.form.get("stall_code", "").strip()
+        stall = Stall(
+            vendor_id=int(request.form["vendor_id"]),
+            area_id=int(request.form["area_id"]),
+            stall_name=request.form.get("stall_name", "").strip(),
+            stall_code=stall_code,
+            address=request.form.get("address", "").strip(),
+            photo_url=cache_photo(
+                request.form.get("photo_url", ""), stall_code
+            ),
+            latitude=_parse_decimal(request.form.get("latitude"), "Latitude"),
+            longitude=_parse_decimal(
+                request.form.get("longitude"), "Longitude"
+            ),
+            status=status,
+        )
+        db.session.add(stall)
+    except (KeyError, ValueError) as error:
+        flash(str(error), "danger")
+        return redirect(url_for("admin.stalls"))
 
-        if _commit(
-            "Stall created successfully.",
-            "Could not create stall. The stall code may already exist.",
-        ):
-            return redirect(url_for("admin.stalls"))
-
-    return render_template(
-        "admin/stalls/form.html",
-        page_title="Add Stall",
-        stall=None,
-        vendors=vendors,
-        areas=areas,
+    _commit(
+        "Stall created successfully.",
+        "Could not create stall. The stall code may already exist.",
     )
+    return redirect(url_for("admin.stalls"))
 
 
-@admin_bp.route("/stalls/<int:stall_id>/edit", methods=["GET", "POST"])
+@admin_bp.route("/stalls/<int:stall_id>/edit", methods=["POST"])
 @login_required
 @permission_required("stalls.edit")
 def stall_edit(stall_id):
     stall = db.get_or_404(Stall, stall_id)
-    vendors = Vendor.query.order_by(Vendor.business_name).all()
-    areas = Area.query.order_by(Area.area_name).all()
-    if request.method == "POST":
-        try:
-            stall.vendor_id = int(request.form["vendor_id"])
-            stall.area_id = int(request.form["area_id"])
-            stall.stall_name = request.form.get(
-                "stall_name", ""
-            ).strip()
-            stall.stall_code = request.form.get(
-                "stall_code", ""
-            ).strip()
-            stall.address = request.form.get("address", "").strip()
-            stall.photo_url = cache_photo(
-                request.form.get("photo_url", ""), stall.stall_code
-            )
-            stall.latitude = _parse_decimal(
-                request.form.get("latitude"), "Latitude"
-            )
-            stall.longitude = _parse_decimal(
-                request.form.get("longitude"), "Longitude"
-            )
-            status = request.form.get("status", "active").strip() or "active"
-            if status not in STALL_STATUSES:
-                raise ValueError("Select a valid stall status.")
-            stall.status = status
-        except (KeyError, ValueError) as error:
-            flash(str(error), "danger")
-            return render_template(
-                "admin/stalls/form.html",
-                page_title="Edit Stall",
-                stall=stall,
-                vendors=vendors,
-                areas=areas,
-            ), 400
+    try:
+        stall.vendor_id = int(request.form["vendor_id"])
+        stall.area_id = int(request.form["area_id"])
+        stall.stall_name = request.form.get("stall_name", "").strip()
+        stall.stall_code = request.form.get("stall_code", "").strip()
+        stall.address = request.form.get("address", "").strip()
+        stall.photo_url = cache_photo(
+            request.form.get("photo_url", ""), stall.stall_code
+        )
+        stall.latitude = _parse_decimal(
+            request.form.get("latitude"), "Latitude"
+        )
+        stall.longitude = _parse_decimal(
+            request.form.get("longitude"), "Longitude"
+        )
+        status = request.form.get("status", "active").strip() or "active"
+        if status not in STALL_STATUSES:
+            raise ValueError("Select a valid stall status.")
+        stall.status = status
+    except (KeyError, ValueError) as error:
+        db.session.rollback()
+        flash(str(error), "danger")
+        return redirect(url_for("admin.stalls"))
 
-        if _commit(
-            "Stall updated successfully.",
-            "Could not update stall. The stall code may already exist.",
-        ):
-            return redirect(url_for("admin.stalls"))
-
-    return render_template(
-        "admin/stalls/form.html",
-        page_title="Edit Stall",
-        stall=stall,
-        vendors=vendors,
-        areas=areas,
+    _commit(
+        "Stall updated successfully.",
+        "Could not update stall. The stall code may already exist.",
     )
+    return redirect(url_for("admin.stalls"))
 
 
 @admin_bp.route("/stalls/<int:stall_id>/delete", methods=["POST"])
@@ -540,6 +446,34 @@ def complaints():
     )
 
 
+def _wants_partial():
+    """True when the request came from the in-page complaint modal (fetch
+    with this header) rather than a normal full-page navigation/bookmark,
+    so the response can be just the reusable inner panel instead of a
+    whole HTML document."""
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+def _render_complaint(complaint, status_code=200):
+    if _wants_partial():
+        return (
+            render_template(
+                "admin/complaints/_panel.html",
+                complaint=complaint,
+                standalone=True,
+            ),
+            status_code,
+        )
+    return (
+        render_template(
+            "admin/complaints/detail.html",
+            page_title="Manage Complaint",
+            complaint=complaint,
+        ),
+        status_code,
+    )
+
+
 @admin_bp.route("/complaints/<int:complaint_id>", methods=["GET", "POST"])
 @login_required
 @permission_required("complaints.view")
@@ -554,12 +488,7 @@ def complaint_manage(complaint_id):
         status = request.form.get("status", "")
         if status not in COMPLAINT_STATUSES:
             flash("Select a valid complaint status.", "danger")
-            return redirect(
-                url_for(
-                    "admin.complaint_manage",
-                    complaint_id=complaint.complaint_id,
-                )
-            )
+            return _render_complaint(complaint, 400)
         current_status = complaint.status
         if status not in COMPLAINT_TRANSITIONS.get(current_status, set()):
             flash(
@@ -567,12 +496,7 @@ def complaint_manage(complaint_id):
                 f"'{status}' directly.",
                 "danger",
             )
-            return redirect(
-                url_for(
-                    "admin.complaint_manage",
-                    complaint_id=complaint.complaint_id,
-                )
-            )
+            return _render_complaint(complaint, 400)
         status_changed = status != current_status
         response_text = request.form.get("admin_response", "").strip()
         response_changed = response_text != (complaint.admin_response or "")
@@ -596,21 +520,13 @@ def complaint_manage(complaint_id):
                     "A due date is required for a corrective action.",
                     "danger",
                 )
-                return render_template(
-                    "admin/complaints/detail.html",
-                    page_title="Manage Complaint",
-                    complaint=complaint,
-                ), 400
+                return _render_complaint(complaint, 400)
             try:
                 action_due_date = _parse_date(due_date)
             except ValueError:
                 db.session.rollback()
                 flash("Enter a valid corrective-action due date.", "danger")
-                return render_template(
-                    "admin/complaints/detail.html",
-                    page_title="Manage Complaint",
-                    complaint=complaint,
-                ), 400
+                return _render_complaint(complaint, 400)
             existing_open_action = next(
                 (
                     action
@@ -646,6 +562,7 @@ def complaint_manage(complaint_id):
                 _refresh_stall_risk(complaint.stall_id)
             if status_changed or response_changed:
                 _notify_complaint_update(complaint, status_changed, response_text)
+        if not _wants_partial():
             return redirect(
                 url_for(
                     "admin.complaint_manage",
@@ -653,11 +570,7 @@ def complaint_manage(complaint_id):
                 )
             )
 
-    return render_template(
-        "admin/complaints/detail.html",
-        page_title="Manage Complaint",
-        complaint=complaint,
-    )
+    return _render_complaint(complaint)
 
 
 @admin_bp.route("/evidence/<int:evidence_id>")
@@ -677,22 +590,26 @@ def evidence_status(evidence_id):
     status = request.form.get("verification_status", "")
     if status not in EVIDENCE_VERIFICATION_STATUSES:
         flash("Select a valid evidence verification status.", "danger")
-        return redirect(
-            url_for(
-                "admin.complaint_manage",
-                complaint_id=evidence.complaint_id,
+        if not _wants_partial():
+            return redirect(
+                url_for(
+                    "admin.complaint_manage",
+                    complaint_id=evidence.complaint_id,
+                )
             )
-        )
+        return _render_complaint(evidence.complaint, 400)
 
     rejection_reason = request.form.get("rejection_reason", "").strip()
     if status == "rejected" and not rejection_reason:
         flash("A rejection reason is required to reject evidence.", "danger")
-        return redirect(
-            url_for(
-                "admin.complaint_manage",
-                complaint_id=evidence.complaint_id,
+        if not _wants_partial():
+            return redirect(
+                url_for(
+                    "admin.complaint_manage",
+                    complaint_id=evidence.complaint_id,
+                )
             )
-        )
+        return _render_complaint(evidence.complaint, 400)
 
     # Evidence verification is a decision about the FILE, not about the
     # complaint -- complaint.status is never touched here. See
@@ -717,9 +634,11 @@ def evidence_status(evidence_id):
             details=rejection_reason if status == "rejected" else None,
         )
 
-    return redirect(
-        url_for("admin.complaint_manage", complaint_id=evidence.complaint_id)
-    )
+    if not _wants_partial():
+        return redirect(
+            url_for("admin.complaint_manage", complaint_id=evidence.complaint_id)
+        )
+    return _render_complaint(evidence.complaint)
 
 
 @admin_bp.route("/inspections")
