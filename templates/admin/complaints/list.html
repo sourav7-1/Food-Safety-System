@@ -33,7 +33,12 @@
 
     function loadPanel(url, options) {
         body.innerHTML = '<div class="text-center py-5 text-secondary"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
-        return fetch(url, Object.assign({ headers: { "X-Requested-With": "XMLHttpRequest" } }, options || {}))
+        // X-Panel-Request is the dedicated marker routes/admin.py checks
+        // for (_wants_partial()) -- deliberately distinct from the
+        // generic X-Requested-With the admin-wide AJAX layer also sends,
+        // so the server knows to return just this bare panel instead of
+        // a full page.
+        return fetch(url, Object.assign({ headers: { "X-Requested-With": "XMLHttpRequest", "X-Panel-Request": "1" } }, options || {}))
             .then(function (response) {
                 needsListRefresh = true;
                 return response.text();

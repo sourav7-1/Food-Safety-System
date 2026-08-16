@@ -45,7 +45,7 @@
     ><i class="fa-solid fa-pen"></i></button>
     {% endif %}
     {% if current_user.has_permission('stalls.delete') %}
-    <form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" onsubmit="return confirm('Delete this stall?');">
+    <form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" data-confirm="Delete this stall?">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <button class="danger"><i class="fa-solid fa-trash"></i></button>
     </form>

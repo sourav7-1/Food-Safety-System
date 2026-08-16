@@ -56,7 +56,7 @@
                 </div>
             </form>
             {% if not role.is_system %}
-            <form method="post" action="{{ url_for('admin.role_delete', role_id=role.role_id) }}" class="mt-2" onsubmit="return confirm('Delete this role? Users must be reassigned first.');">
+            <form method="post" action="{{ url_for('admin.role_delete', role_id=role.role_id) }}" class="mt-2" data-confirm="Delete this role? Users must be reassigned first.">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="fa-solid fa-trash me-1"></i>Delete role</button>
             </form>

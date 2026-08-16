@@ -51,7 +51,7 @@
                         ><i class="fa-solid fa-pen"></i></button>
                         {% endif %}
                         {% if current_user.has_permission('vendors.delete') %}
-                        <form action="{{ url_for('admin.vendor_delete', vendor_id=vendor.vendor_id) }}" method="post" onsubmit="return confirm('Delete this vendor?');">
+                        <form action="{{ url_for('admin.vendor_delete', vendor_id=vendor.vendor_id) }}" method="post" data-confirm="Delete this vendor?">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                             <button class="danger" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
                         </form>

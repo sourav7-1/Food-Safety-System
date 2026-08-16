@@ -447,11 +447,21 @@ def complaints():
 
 
 def _wants_partial():
-    """True when the request came from the in-page complaint modal (fetch
-    with this header) rather than a normal full-page navigation/bookmark,
-    so the response can be just the reusable inner panel instead of a
-    whole HTML document."""
-    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    """True only when the request came from the complaint list's own
+    modal loader (templates/admin/complaints/list.html), which sends this
+    dedicated marker and expects back just the reusable inner panel.
+
+    This is deliberately NOT the generic `X-Requested-With: XMLHttpRequest`
+    header -- the shared admin-wide AJAX layer in templates/admin/base.html
+    sends that on every POST form site-wide (including the standalone
+    complaint detail page's own forms), and that layer expects a *full*
+    page back so it can swap `.admin-content` in place. Keying off the
+    generic header here would make it hand those callers a bare partial
+    with no `.admin-content` to find, so `swapContent()` would fall back
+    to a full page reload on every save -- exactly the behavior this was
+    built to avoid.
+    """
+    return request.headers.get("X-Panel-Request") == "1"
 
 
 def _render_complaint(complaint, status_code=200):
