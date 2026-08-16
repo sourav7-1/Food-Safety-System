@@ -1,0 +1,200 @@
+{% extends "portal_base.html" %}
+{% from "customer/_leaderboard_macros.html" import render_leaderboard_rows %}
+{% block title %}Risk Leaderboard{% endblock %}
+{% block dashboard_title %}Risk Leaderboard{% endblock %}
+{% block dashboard_subtitle %}Live rankings straight from MySQL — worst-first and safest-first.{% endblock %}
+{% block dashboard_topbar_extra %}
+<span class="live-badge" id="leaderboardLive"><i class="fa-solid fa-tower-broadcast"></i> <span id="leaderboardLiveText">Updated just now</span></span>
+{% if row_limit < max_limit %}
+<a class="btn btn-sm btn-outline-success" href="{{ url_for('customer_portal.leaderboard', limit=max_limit) }}">Show top {{ max_limit }}</a>
+{% else %}
+<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('customer_portal.leaderboard', limit=default_limit) }}">Show top {{ default_limit }}</a>
+{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="stat-grid">
+    <div class="stat-card stat-blue">
+        <div class="stat-icon"><i class="fa-solid fa-shop"></i></div>
+        <div class="stat-value" id="statTotalStalls">{{ stats.total_active_stalls }}</div>
+        <div class="stat-label">Total Stalls Tracked</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-value" id="statHighRisk">{{ stats.high_risk_count }}</div>
+        <div class="stat-label">High Risk Stalls</div>
+    </div>
+    <div class="stat-card stat-green">
+        <div class="stat-icon"><i class="fa-solid fa-shield-heart"></i></div>
+        <div class="stat-value" id="statLowRisk">{{ stats.low_risk_count }}</div>
+        <div class="stat-label">Safest Stalls</div>
+    </div>
+    <div class="stat-card stat-amber">
+        <div class="stat-icon"><i class="fa-regular fa-message"></i></div>
+        <div class="stat-value" id="statOpenComplaints">{{ stats.open_complaints_count }}</div>
+        <div class="stat-label">My Open Complaints</div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-6">
+        <section class="dashboard-card board-high">
+            <div class="dashboard-card-header">
+                <h3><i class="fa-solid fa-triangle-exclamation"></i> High Risk</h3>
+                <span class="dashboard-count" id="highRiskCount">{{ high_risk|length }}</span>
+            </div>
+            <p class="dashboard-card-caption">Ranked worst first &mdash; critical stalls before high-risk ones.</p>
+            <div class="table-responsive">
+                <table class="table dashboard-table mb-0">
+                    <thead><tr><th>#</th><th>Stall</th><th>Area</th><th class="text-center">Score</th><th class="text-center">Grade</th><th class="text-center">Risk</th></tr></thead>
+                    <tbody id="highRiskBoardBody">{{ render_leaderboard_rows(high_risk, "No high-risk stalls right now.") }}</tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-6">
+        <section class="dashboard-card board-low">
+            <div class="dashboard-card-header">
+                <h3><i class="fa-solid fa-shield-heart"></i> Safest Stalls</h3>
+                <span class="dashboard-count" id="lowRiskCount">{{ low_risk|length }}</span>
+            </div>
+            <p class="dashboard-card-caption">Ranked best first &mdash; highest hygiene score leads.</p>
+            <div class="table-responsive">
+                <table class="table dashboard-table mb-0">
+                    <thead><tr><th>#</th><th>Stall</th><th>Area</th><th class="text-center">Score</th><th class="text-center">Grade</th><th class="text-center">Risk</th></tr></thead>
+                    <tbody id="lowRiskBoardBody">{{ render_leaderboard_rows(low_risk, "No low-risk stalls have been inspected yet.") }}</tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-12">
+        <section class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h3><i class="fa-solid fa-chart-pie"></i> Risk Distribution</h3>
+                <span class="dashboard-card-note">Live count across all active, inspected stalls</span>
+            </div>
+            <div class="chart-wrap"><canvas id="riskDistributionChart"></canvas></div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+<script>
+(function () {
+    var apiUrl = {{ url_for('customer_portal.api_leaderboard', limit=row_limit)|tojson }};
+    var highBody = document.getElementById("highRiskBoardBody");
+    var lowBody = document.getElementById("lowRiskBoardBody");
+    var liveText = document.getElementById("leaderboardLiveText");
+    var refreshTimer = null;
+
+    function escapeHtml(value) {
+        return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+        });
+    }
+
+    function rowHtml(entry) {
+        var score = entry.overall_score != null ? entry.overall_score + "%" : "—";
+        var grade = entry.hygiene_grade || "—";
+        var risk = entry.risk_level || "unrated";
+        return (
+            '<tr>' +
+            '<td class="dashboard-rank">' + entry.rank + '</td>' +
+            '<td><a href="' + entry.detail_url + '">' + escapeHtml(entry.stall_name) + '</a></td>' +
+            '<td>' + escapeHtml(entry.area_name) + (entry.city ? ', ' + escapeHtml(entry.city) : '') + '</td>' +
+            '<td class="text-center">' + escapeHtml(score) + '</td>' +
+            '<td class="text-center"><span class="grade-chip grade-' + escapeHtml(String(grade).toLowerCase()) + '">' + escapeHtml(grade) + '</span></td>' +
+            '<td class="text-center"><span class="risk-badge risk-' + escapeHtml(risk) + '">' + escapeHtml(risk) + '</span></td>' +
+            '</tr>'
+        );
+    }
+
+    function renderBoard(body, rows, emptyMessage) {
+        if (!body) { return; }
+        if (!rows.length) {
+            body.innerHTML = '<tr><td colspan="6" class="dashboard-empty-row">' + emptyMessage + '</td></tr>';
+            return;
+        }
+        body.innerHTML = rows.map(rowHtml).join("");
+    }
+
+    function setText(id, value) {
+        var el = document.getElementById(id);
+        if (el) { el.textContent = value; }
+    }
+
+    var chartEl = document.getElementById("riskDistributionChart");
+    var chart = null;
+    if (chartEl && window.Chart) {
+        var initial = {{ risk_distribution|tojson }};
+        chart = new Chart(chartEl, {
+            type: "doughnut",
+            data: {
+                labels: ["Low", "Medium", "High", "Critical"],
+                datasets: [{
+                    data: [initial.low, initial.medium, initial.high, initial.critical],
+                    backgroundColor: ["#22c55e", "#f59e0b", "#f97316", "#ef4444"],
+                    borderWidth: 0,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "68%",
+                plugins: { legend: { position: "bottom", labels: { usePointStyle: true } } },
+            },
+        });
+    }
+
+    function refresh() {
+        fetch(apiUrl, { headers: { "Accept": "application/json" } })
+            .then(function (response) {
+                if (!response.ok) { throw new Error("bad status"); }
+                return response.json();
+            })
+            .then(function (data) {
+                renderBoard(highBody, data.high_risk, "No high-risk stalls right now.");
+                renderBoard(lowBody, data.low_risk, "No low-risk stalls have been inspected yet.");
+                setText("highRiskCount", data.high_risk.length);
+                setText("lowRiskCount", data.low_risk.length);
+                if (data.stats) {
+                    setText("statTotalStalls", data.stats.total_active_stalls);
+                    setText("statHighRisk", data.stats.high_risk_count);
+                    setText("statLowRisk", data.stats.low_risk_count);
+                    setText("statOpenComplaints", data.stats.open_complaints_count);
+                }
+                if (chart && data.risk_distribution) {
+                    chart.data.datasets[0].data = [
+                        data.risk_distribution.low,
+                        data.risk_distribution.medium,
+                        data.risk_distribution.high,
+                        data.risk_distribution.critical,
+                    ];
+                    chart.update();
+                }
+                if (liveText) { liveText.textContent = "Updated just now"; }
+            })
+            .catch(function () {
+                if (liveText) { liveText.textContent = "Live refresh paused — showing last loaded data"; }
+            });
+    }
+
+    if (highBody && lowBody && window.fetch) {
+        refreshTimer = window.setInterval(refresh, 45000);
+        document.addEventListener("visibilitychange", function () {
+            if (document.hidden) {
+                window.clearInterval(refreshTimer);
+            } else {
+                refresh();
+                refreshTimer = window.setInterval(refresh, 45000);
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}

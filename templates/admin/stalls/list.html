@@ -25,7 +25,7 @@
 <div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0">
 <thead><tr><th>Stall</th><th>Vendor</th><th>Area</th><th>Address</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
 <tbody>{% for stall in stalls %}<tr>
-<td><strong>{{ stall.stall_name }}</strong><small>{{ stall.stall_code }}</small></td><td>{{ stall.vendor.business_name }}</td><td>{{ stall.area.area_name }}<small>{{ stall.area.city }}</small></td><td class="address-cell">{{ stall.address }}</td><td><span class="status-pill status-{{ stall.status }}">{{ stall.status }}</span></td>
+<td><strong>{{ stall.stall_name }}</strong><small>{{ stall.stall_code }}</small></td><td><a class="entity-link" href="{{ url_for('admin.vendors', q=stall.vendor.license_number) }}">{{ stall.vendor.business_name }}</a></td><td>{{ stall.area.area_name }}<small>{{ stall.area.city }}</small></td><td class="address-cell">{{ stall.address }}</td><td><span class="status-pill status-{{ stall.status }}">{{ stall.status }}</span></td>
 <td class="text-end table-actions">
     {% if current_user.has_permission('stalls.edit') %}
     <button

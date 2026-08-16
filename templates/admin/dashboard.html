@@ -62,7 +62,7 @@
             <tbody>
             {% for inspection in recent_inspections %}
                 <tr>
-                    <td><strong>{{ inspection.stall.stall_name }}</strong><small>{{ inspection.stall.stall_code }}</small></td>
+                    <td><a class="entity-link" href="{{ url_for('admin.stalls', q=inspection.stall.stall_code) }}"><strong>{{ inspection.stall.stall_name }}</strong></a><small>{{ inspection.stall.stall_code }}</small></td>
                     <td>{{ inspection.inspection_date.strftime('%d %b %Y, %I:%M %p') }}</td>
                     <td><span class="score-value">{{ inspection.overall_score if inspection.overall_score is not none else '—' }}</span></td>
                     <td><span class="status-pill risk-{{ inspection.risk_level or 'unknown' }}">{{ inspection.risk_level or 'unrated' }}</span></td>

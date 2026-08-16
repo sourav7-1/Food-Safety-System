@@ -79,6 +79,23 @@ SELECT
 FROM latest_stall_inspection AS lsi
 WHERE lsi.risk_level IN ('high', 'critical');
 
+CREATE OR REPLACE VIEW low_risk_stalls AS
+SELECT
+  lsi.stall_id,
+  lsi.stall_name,
+  lsi.stall_code,
+  lsi.area_id,
+  lsi.area_name,
+  lsi.city,
+  lsi.inspection_id,
+  lsi.inspection_date,
+  lsi.overall_score,
+  lsi.hygiene_grade,
+  lsi.risk_level,
+  lsi.reinspection_date
+FROM latest_stall_inspection AS lsi
+WHERE lsi.risk_level = 'low';
+
 CREATE OR REPLACE VIEW area_hygiene_summary AS
 SELECT
   a.area_id,

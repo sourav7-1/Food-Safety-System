@@ -1,8 +1,11 @@
+from datetime import datetime, timezone
+
 from flask import (
     Blueprint,
     abort,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -73,6 +76,170 @@ def _grade(score):
         text("SELECT get_hygiene_grade(:score)"),
         {"score": score},
     ).scalar_one()
+
+
+LEADERBOARD_DEFAULT_LIMIT = 10
+LEADERBOARD_MAX_LIMIT = 50
+
+# Both boards read straight from MySQL views (database/views.sql) — the
+# ranking, risk classification, and grade are all computed in the
+# database, not in Python. The INNER JOIN on stalls filters out
+# closed/suspended stalls without needing to change high_risk_stalls
+# itself, since that view is also consumed by the admin dashboard/reports
+# where an inactive stall's overdue reinspection can still be relevant.
+_HIGH_RISK_LEADERBOARD_SQL = text(
+    """
+    SELECT
+      hr.stall_id, hr.stall_name, hr.area_name, hr.city,
+      hr.overall_score, hr.hygiene_grade, hr.risk_level, hr.inspection_date
+    FROM high_risk_stalls AS hr
+    INNER JOIN stalls AS s
+      ON s.stall_id = hr.stall_id AND s.status = 'active'
+    ORDER BY FIELD(hr.risk_level, 'critical', 'high'), hr.overall_score ASC, hr.stall_name
+    LIMIT :row_limit
+    """
+)
+
+_LOW_RISK_LEADERBOARD_SQL = text(
+    """
+    SELECT
+      lr.stall_id, lr.stall_name, lr.area_name, lr.city,
+      lr.overall_score, lr.hygiene_grade, lr.risk_level, lr.inspection_date
+    FROM low_risk_stalls AS lr
+    INNER JOIN stalls AS s
+      ON s.stall_id = lr.stall_id AND s.status = 'active'
+    ORDER BY lr.overall_score DESC, lr.stall_name
+    LIMIT :row_limit
+    """
+)
+
+
+# One additional lightweight aggregate for the dashboard's KPI cards and
+# risk-distribution chart. The two board queries above only ever return
+# their top-N rows and never touch 'medium' at all, so they can't answer
+# "how many stalls in each risk band" -- this reuses the same
+# latest_stall_inspection view (no new SQL view) with a GROUP BY instead.
+_RISK_DISTRIBUTION_SQL = text(
+    """
+    SELECT lsi.risk_level, COUNT(*) AS stall_count
+    FROM latest_stall_inspection AS lsi
+    INNER JOIN stalls AS s
+      ON s.stall_id = lsi.stall_id AND s.status = 'active'
+    GROUP BY lsi.risk_level
+    """
+)
+
+
+def _risk_distribution():
+    counts = {"low": 0, "medium": 0, "high": 0, "critical": 0}
+    for row in db.session.execute(_RISK_DISTRIBUTION_SQL).mappings():
+        if row["risk_level"] in counts:
+            counts[row["risk_level"]] = row["stall_count"]
+    return counts
+
+
+def _open_complaints_count():
+    return Complaint.query.filter(
+        Complaint.submitted_by_user_id == current_user.user_id,
+        Complaint.status.in_(
+            ("submitted", "under_review", "investigation", "action_required")
+        ),
+    ).count()
+
+
+def _leaderboard_stats():
+    distribution = _risk_distribution()
+    return {
+        "total_active_stalls": sum(distribution.values()),
+        "high_risk_count": distribution["high"] + distribution["critical"],
+        "low_risk_count": distribution["low"],
+        "open_complaints_count": _open_complaints_count(),
+    }, distribution
+
+
+def _leaderboard_limit():
+    requested = request.args.get("limit", LEADERBOARD_DEFAULT_LIMIT, type=int)
+    if not requested or requested < 1:
+        requested = LEADERBOARD_DEFAULT_LIMIT
+    return min(requested, LEADERBOARD_MAX_LIMIT)
+
+
+def _leaderboard_boards(row_limit):
+    high_risk = db.session.execute(
+        _HIGH_RISK_LEADERBOARD_SQL, {"row_limit": row_limit}
+    ).mappings().all()
+    low_risk = db.session.execute(
+        _LOW_RISK_LEADERBOARD_SQL, {"row_limit": row_limit}
+    ).mappings().all()
+    return high_risk, low_risk
+
+
+@customer_bp.route("/leaderboard")
+@login_required
+@role_required("customer", "consumer")
+def leaderboard():
+    row_limit = _leaderboard_limit()
+    high_risk, low_risk = _leaderboard_boards(row_limit)
+    stats, risk_distribution = _leaderboard_stats()
+    return render_template(
+        "customer/leaderboard.html",
+        high_risk=high_risk,
+        low_risk=low_risk,
+        row_limit=row_limit,
+        default_limit=LEADERBOARD_DEFAULT_LIMIT,
+        max_limit=LEADERBOARD_MAX_LIMIT,
+        stats=stats,
+        risk_distribution=risk_distribution,
+        generated_at=datetime.now(timezone.utc),
+    )
+
+
+@customer_bp.route("/api/leaderboard")
+@login_required
+@role_required("customer", "consumer")
+def api_leaderboard():
+    row_limit = _leaderboard_limit()
+    high_risk, low_risk = _leaderboard_boards(row_limit)
+    stats, risk_distribution = _leaderboard_stats()
+
+    def _serialize(rows):
+        serialized = []
+        for rank, row in enumerate(rows, start=1):
+            serialized.append(
+                {
+                    "rank": rank,
+                    "stall_id": row["stall_id"],
+                    "stall_name": row["stall_name"],
+                    "area_name": row["area_name"],
+                    "city": row["city"],
+                    "overall_score": (
+                        float(row["overall_score"])
+                        if row["overall_score"] is not None
+                        else None
+                    ),
+                    "hygiene_grade": row["hygiene_grade"],
+                    "risk_level": row["risk_level"],
+                    "inspection_date": (
+                        row["inspection_date"].isoformat()
+                        if row["inspection_date"]
+                        else None
+                    ),
+                    "detail_url": url_for(
+                        "customer_portal.stall_detail", stall_id=row["stall_id"]
+                    ),
+                }
+            )
+        return serialized
+
+    return jsonify(
+        {
+            "high_risk": _serialize(high_risk),
+            "low_risk": _serialize(low_risk),
+            "stats": stats,
+            "risk_distribution": risk_distribution,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
 
 
 @customer_bp.route("/stalls")

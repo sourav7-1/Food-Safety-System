@@ -291,6 +291,7 @@ create index idx_inspections_status on inspections (status);
 create index idx_inspections_risk_level on inspections (risk_level);
 create index idx_inspections_reinspection_date on inspections (reinspection_date);
 create index idx_inspections_created_at on inspections (created_at);
+create index idx_inspections_stall_status_date on inspections (stall_id, status, inspection_date, inspection_id);
 
 create table inspection_scores (
   score_id int not null auto_increment,

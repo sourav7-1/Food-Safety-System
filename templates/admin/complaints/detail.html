@@ -1,4 +1,4 @@
 {% extends "admin/base.html" %}{% block content %}
-<div class="form-heading"><a href="{{ url_for('admin.complaints') }}"><i class="fa-solid fa-arrow-left"></i></a><div><p class="eyebrow mb-1">COMPLAINT #{{ complaint.complaint_id }}</p><h2>{{ complaint.title }}</h2><p>{{ complaint.stall.stall_name }} · {{ complaint.complaint_type.type_name }}</p></div></div>
+<div class="form-heading"><a href="{{ url_for('admin.complaints') }}"><i class="fa-solid fa-arrow-left"></i></a><div><p class="eyebrow mb-1">COMPLAINT #{{ complaint.complaint_id }}</p><h2>{{ complaint.title }}</h2><p><a class="entity-link" href="{{ url_for('admin.stalls', q=complaint.stall.stall_code) }}">{{ complaint.stall.stall_name }}</a> · {{ complaint.complaint_type.type_name }}</p></div></div>
 {% include "admin/complaints/_panel.html" %}
 {% endblock %}

@@ -19,14 +19,14 @@
 <section class="panel-card mt-4">
     <div class="panel-header"><div><h3>High-risk Stalls</h3><p>Latest high and critical risk classifications</p></div><span class="panel-badge">{{ high_risk_stalls|length }} STALLS</span></div>
     <div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>Stall</th><th>Area</th><th>Score</th><th>Risk</th><th>Reinspection</th></tr></thead><tbody>
-    {% for row in high_risk_stalls %}<tr><td><strong>{{ row.stall_name }}</strong></td><td>{{ row.area_name }}</td><td><span class="score-value">{{ row.overall_score }}%</span></td><td><span class="status-pill risk-{{ row.risk_level }}">{{ row.risk_level }}</span></td><td>{{ row.reinspection_date.strftime('%d %b %Y') if row.reinspection_date else 'Not scheduled' }}</td></tr>{% else %}<tr><td colspan="5" class="empty-state">No high-risk stalls found.</td></tr>{% endfor %}
+    {% for row in high_risk_stalls %}<tr><td><a class="entity-link" href="{{ url_for('admin.stalls', q=row.stall_code) }}"><strong>{{ row.stall_name }}</strong></a></td><td>{{ row.area_name }}</td><td><span class="score-value">{{ row.overall_score }}%</span></td><td><span class="status-pill risk-{{ row.risk_level }}">{{ row.risk_level }}</span></td><td>{{ row.reinspection_date.strftime('%d %b %Y') if row.reinspection_date else 'Not scheduled' }}</td></tr>{% else %}<tr><td colspan="5" class="empty-state">No high-risk stalls found.</td></tr>{% endfor %}
     </tbody></table></div>
 </section>
 
 <section class="panel-card mt-4">
     <div class="panel-header"><div><h3>Reinspection Schedule</h3><p>Active stalls due within 30 days</p></div></div>
     <div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>Stall</th><th>Area</th><th>Risk</th><th>Due date</th><th>Timing</th></tr></thead><tbody>
-    {% for row in reinspection_rows %}<tr><td><strong>{{ row.stall_name }}</strong></td><td>{{ row.area_name }}</td><td><span class="status-pill risk-{{ row.risk_level }}">{{ row.risk_level }}</span></td><td>{{ row.reinspection_date.strftime('%d %b %Y') }}</td><td>{% set days=(row.reinspection_date-generated_at).days %}<span class="status-pill {{ 'risk-critical' if days < 0 else 'risk-medium' }}">{{ (-days) ~ ' days overdue' if days < 0 else 'in ' ~ days ~ ' days' }}</span></td></tr>{% else %}<tr><td colspan="5" class="empty-state">No reinspections due within 30 days.</td></tr>{% endfor %}
+    {% for row in reinspection_rows %}<tr><td><a class="entity-link" href="{{ url_for('admin.stalls', q=row.stall_code) }}"><strong>{{ row.stall_name }}</strong></a></td><td>{{ row.area_name }}</td><td><span class="status-pill risk-{{ row.risk_level }}">{{ row.risk_level }}</span></td><td>{{ row.reinspection_date.strftime('%d %b %Y') }}</td><td>{% set days=(row.reinspection_date-generated_at).days %}<span class="status-pill {{ 'risk-critical' if days < 0 else 'risk-medium' }}">{{ (-days) ~ ' days overdue' if days < 0 else 'in ' ~ days ~ ' days' }}</span></td></tr>{% else %}<tr><td colspan="5" class="empty-state">No reinspections due within 30 days.</td></tr>{% endfor %}
     </tbody></table></div>
 </section>
 {% endblock %}

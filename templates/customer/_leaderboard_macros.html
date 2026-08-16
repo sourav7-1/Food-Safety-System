@@ -1,0 +1,14 @@
+{% macro render_leaderboard_rows(rows, empty_message) %}
+{% for row in rows %}
+<tr>
+    <td class="leaderboard-rank">{{ loop.index }}</td>
+    <td><a href="{{ url_for('customer_portal.stall_detail', stall_id=row.stall_id) }}">{{ row.stall_name }}</a></td>
+    <td>{{ row.area_name }}{{ ', ' ~ row.city if row.city }}</td>
+    <td class="text-center">{{ (row.overall_score ~ '%') if row.overall_score is not none else '—' }}</td>
+    <td class="text-center"><span class="grade-chip grade-{{ (row.hygiene_grade or 'x')|lower }}">{{ row.hygiene_grade or '—' }}</span></td>
+    <td class="text-center"><span class="risk-badge risk-{{ row.risk_level or 'unrated' }}">{{ row.risk_level or 'unrated' }}</span></td>
+</tr>
+{% else %}
+<tr><td colspan="6" class="leaderboard-empty-row">{{ empty_message }}</td></tr>
+{% endfor %}
+{% endmacro %}

@@ -1,0 +1,379 @@
+/* Customer portal dashboard shell — used by templates/portal_base.html.
+   Mirrors the admin panel's sidebar-shell structure (admin.css) but on
+   brand green instead of navy, and lives inside the site's normal
+   #main-content (so it keeps the global no-reload AJAX layer, footer,
+   and top brand bar from templates/base.html for free). */
+
+:root {
+    --dash-green: #1f7a4d;
+    --dash-green-dark: #145c39;
+    --dash-sidebar-bg: #0f3d26;
+    --dash-sidebar-bg-soft: #154a30;
+    --dash-page: #f4f8f6;
+    --dash-ink: #16212e;
+    --dash-muted: #64748b;
+    --dash-line: #e4eaf1;
+}
+
+.dashboard-viewport { padding: 0 !important; max-width: 100% !important; }
+
+.dashboard-shell {
+    min-height: 70vh;
+    display: flex;
+    align-items: stretch;
+    background: var(--dash-page);
+    font-family: "Inter", system-ui, sans-serif;
+}
+
+/* ---------- Sidebar ---------- */
+.dashboard-sidebar {
+    width: 258px;
+    min-width: 258px;
+    background: var(--dash-sidebar-bg);
+}
+
+.dashboard-sidebar-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 22px 15px 16px;
+    background: var(--dash-sidebar-bg);
+    color: #fff;
+}
+
+.dashboard-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 0 8px 20px;
+    color: #fff;
+    text-decoration: none;
+}
+
+.dashboard-brand .brand-logo {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    border: 2px solid rgba(255, 255, 255, .8);
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
+}
+
+.dashboard-brand strong { display: block; font-size: 16px; letter-spacing: -.3px; }
+.dashboard-brand small { display: block; color: #7fd6a8; font-size: 8.5px; letter-spacing: 1.6px; margin-top: 2px; }
+
+.dashboard-user {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 12px 10px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+    background: var(--dash-sidebar-bg-soft);
+    text-decoration: none;
+    transition: background .15s ease;
+}
+
+.dashboard-user:hover { background: #1a5a39; }
+
+.dashboard-avatar {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #0f3d26;
+    font-weight: 800;
+    font-size: 14px;
+    background: linear-gradient(135deg, #eafff4, #bdf0d2);
+    overflow: hidden;
+}
+
+.dashboard-avatar-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+.dashboard-user-info { min-width: 0; }
+.dashboard-user-info strong { display: block; font-size: 12.5px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-user-info small { display: block; font-size: 10px; color: #9fd9bb; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.dashboard-nav { flex: 1; overflow-y: auto; scrollbar-width: thin; }
+
+.dashboard-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 42px;
+    color: #a9d9c0;
+    text-decoration: none;
+    padding: 0 13px;
+    margin: 3px 0;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: .18s ease;
+}
+
+.dashboard-link i { width: 18px; text-align: center; font-size: 14px; }
+
+.dashboard-link:hover { color: #fff; background: var(--dash-sidebar-bg-soft); }
+
+.dashboard-link.active {
+    color: #fff;
+    background: linear-gradient(90deg, var(--dash-green), #2f9d68);
+    box-shadow: 0 8px 22px rgba(31, 122, 77, .32);
+}
+
+.dashboard-badge {
+    margin-left: auto;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 9.5px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-logout {
+    border-top: 1px solid #1c4a30;
+    padding-top: 12px;
+    margin-top: 8px;
+}
+
+.dashboard-logout button {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: #9fd9bb;
+    text-align: left;
+    padding: 10px 13px;
+    display: flex;
+    gap: 13px;
+    align-items: center;
+    font-size: 13px;
+    border-radius: 9px;
+}
+
+.dashboard-logout button:hover { color: #ff9a9f; background: var(--dash-sidebar-bg-soft); }
+
+.dashboard-offcanvas { width: 258px !important; border: 0 !important; }
+
+/* ---------- Main column ---------- */
+.dashboard-main { flex: 1; min-width: 0; }
+
+.dashboard-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    padding: 18px 28px;
+    background: #fff;
+    border-bottom: 1px solid var(--dash-line);
+}
+
+.dashboard-subtitle { margin: 2px 0 0; font-size: 12px; color: var(--dash-muted); }
+
+.dashboard-topbar-extra { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+
+.dashboard-content {
+    padding: 24px 28px 44px;
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+/* ---------- Live badge ---------- */
+.live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: #e6f6ec;
+    color: var(--dash-green-dark);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    white-space: nowrap;
+}
+
+.live-badge i { color: var(--dash-green); animation: dashPulse 2.2s ease-in-out infinite; }
+
+@keyframes dashPulse {
+    0%, 100% { opacity: .5; }
+    50% { opacity: 1; }
+}
+
+/* ---------- Stat (KPI) cards ---------- */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.stat-card {
+    background: #fff;
+    border: 1px solid var(--dash-line);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 7px 24px rgba(15, 61, 38, .05);
+    animation: dashFadeUp .4s ease both;
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 13px;
+    font-size: 16px;
+}
+
+.stat-value { font-size: 25px; line-height: 1; font-weight: 800; letter-spacing: -.6px; color: var(--dash-ink); }
+.stat-label { font-size: 11.5px; font-weight: 700; color: var(--dash-muted); margin-top: 6px; }
+
+.stat-blue .stat-icon { background: #e6f4ff; color: #1686e8; }
+.stat-red .stat-icon { background: #ffebec; color: #e5484d; }
+.stat-green .stat-icon { background: #e4f8f0; color: var(--dash-green); }
+.stat-amber .stat-icon { background: #fff2df; color: #ed8a22; }
+
+/* ---------- Dashboard cards (leaderboard boards + chart) ---------- */
+.dashboard-card {
+    background: #fff;
+    border: 1px solid var(--dash-line);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 26px rgba(15, 61, 38, .05);
+    height: 100%;
+    animation: dashFadeIn .4s ease both;
+}
+
+.dashboard-card.board-high { border-top: 4px solid #f97316; }
+.dashboard-card.board-low { border-top: 4px solid var(--dash-green); }
+
+.dashboard-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.dashboard-card-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14.5px;
+    font-weight: 800;
+    margin: 0;
+    color: var(--dash-ink);
+}
+
+.board-high .dashboard-card-header h3 i { color: #e5484d; }
+.board-low .dashboard-card-header h3 i { color: var(--dash-green); }
+
+.dashboard-count {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--dash-page);
+    color: var(--dash-muted);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.dashboard-card-note { font-size: 11px; color: var(--dash-muted); }
+
+.dashboard-card-caption { margin: 4px 0 14px; font-size: 12px; color: var(--dash-muted); }
+
+.dashboard-table { font-size: 13px; margin-bottom: 0; }
+.dashboard-table th {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--dash-muted);
+    border-bottom-width: 1px;
+}
+.dashboard-table td { vertical-align: middle; }
+.dashboard-table a { color: var(--dash-ink); font-weight: 700; text-decoration: none; }
+.dashboard-table a:hover { color: var(--dash-green-dark); text-decoration: underline; }
+
+.dashboard-rank, .leaderboard-rank { width: 28px; font-weight: 800; color: var(--dash-muted); }
+
+.dashboard-empty-row, .leaderboard-empty-row {
+    text-align: center;
+    padding: 22px 12px;
+    color: var(--dash-muted);
+    font-size: 12.5px;
+}
+
+.grade-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    padding: 2px 7px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 12px;
+    color: #fff;
+    background: var(--dash-muted);
+}
+
+.grade-chip.grade-a { background: var(--dash-green); }
+.grade-chip.grade-b { background: #2a9d8f; }
+.grade-chip.grade-c { background: #d99a2b; }
+.grade-chip.grade-d { background: #d9534f; }
+
+.risk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: capitalize;
+}
+
+.risk-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .85; }
+
+.risk-badge.risk-low { background: #e3f7ed; color: #128155; }
+.risk-badge.risk-medium { background: #fff4dc; color: #aa680d; }
+.risk-badge.risk-high { background: #fff0df; color: #cd6412; }
+.risk-badge.risk-critical { background: #fee8ea; color: #d43d46; }
+.risk-badge.risk-unrated { background: #edf1f5; color: #68778b; }
+
+.chart-wrap { position: relative; height: 300px; }
+
+@keyframes dashFadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dashFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 991.98px) {
+    .dashboard-sidebar { display: none; }
+    .dashboard-topbar { padding: 14px 18px; }
+    .dashboard-content { padding: 20px 18px 36px; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 575.98px) {
+    .stat-grid { grid-template-columns: 1fr; }
+    .dashboard-content { padding: 16px 14px 30px; }
+    .chart-wrap { height: 240px; }
+}

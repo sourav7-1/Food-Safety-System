@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block head %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+{% block main_class %}dashboard-viewport{% endblock %}
+{% block navbar_actions %}{% endblock %}
+{% block flash_top_pad %}{% endblock %}
+
+{% block content %}
+<div class="dashboard-shell">
+    <aside class="dashboard-sidebar d-none d-lg-flex">
+        {% include "customer/sidebar.html" %}
+    </aside>
+
+    <div class="offcanvas offcanvas-start dashboard-offcanvas" tabindex="-1" id="portalSidebar">
+        <div class="offcanvas-body p-0">
+            {% include "customer/sidebar.html" %}
+        </div>
+    </div>
+
+    <div class="dashboard-main">
+        <header class="dashboard-topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#portalSidebar" aria-label="Open navigation">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div>
+                    <h1 class="h5 fw-bold mb-0">{% block dashboard_title %}{% endblock %}</h1>
+                    <p class="dashboard-subtitle">{% block dashboard_subtitle %}{% endblock %}</p>
+                </div>
+            </div>
+            <div class="dashboard-topbar-extra">{% block dashboard_topbar_extra %}{% endblock %}</div>
+        </header>
+
+        <div class="dashboard-content">
+            {% block dashboard_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

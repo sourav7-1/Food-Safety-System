@@ -139,6 +139,7 @@ def dashboard():
         db.session.query(
             Stall.stall_id,
             Stall.stall_name,
+            Stall.stall_code,
             Area.area_name,
             latest.c.overall_score,
             latest.c.risk_level,
@@ -160,6 +161,7 @@ def dashboard():
     reinspection_rows = (
         db.session.query(
             Stall.stall_name,
+            Stall.stall_code,
             Area.area_name,
             latest.c.risk_level,
             latest.c.reinspection_date,

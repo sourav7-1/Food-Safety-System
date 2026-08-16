@@ -523,6 +523,135 @@
     }
 }
 
+/* ---------- Risk leaderboard ---------- */
+.customer-shell .leaderboard-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.customer-shell .leaderboard-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--cf-green-soft);
+    color: var(--cf-green-dark);
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.customer-shell .leaderboard-live i {
+    color: var(--cf-green);
+    animation: leaderboard-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes leaderboard-pulse {
+    0%, 100% { opacity: .5; }
+    50% { opacity: 1; }
+}
+
+.customer-shell .leaderboard-board {
+    border-top: 4px solid var(--cf-grey);
+}
+
+.customer-shell .leaderboard-board.risk-high {
+    border-top-color: var(--cf-orange);
+}
+
+.customer-shell .leaderboard-board.risk-high .panel-heading i {
+    color: var(--cf-red);
+}
+
+.customer-shell .leaderboard-board.risk-low {
+    border-top-color: var(--cf-green);
+}
+
+.customer-shell .leaderboard-board .panel-heading {
+    justify-content: space-between;
+}
+
+.customer-shell .leaderboard-count {
+    margin-left: auto;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: var(--cf-grey-soft);
+    color: var(--cf-ink-dim);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.customer-shell .leaderboard-caption {
+    margin: 2px 0 14px;
+    font-size: 12px;
+    color: var(--cf-ink-dim);
+}
+
+.customer-shell .leaderboard-table {
+    font-size: 13px;
+    margin-bottom: 0;
+}
+
+.customer-shell .leaderboard-table th {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--cf-ink-dim);
+    border-bottom-width: 1px;
+}
+
+.customer-shell .leaderboard-table td {
+    vertical-align: middle;
+}
+
+.customer-shell .leaderboard-table a {
+    color: var(--cf-ink);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.customer-shell .leaderboard-table a:hover {
+    color: var(--cf-green-dark);
+    text-decoration: underline;
+}
+
+.customer-shell .leaderboard-rank {
+    width: 28px;
+    font-weight: 800;
+    color: var(--cf-ink-dim);
+}
+
+.customer-shell .leaderboard-empty-row {
+    text-align: center;
+    padding: 22px 12px;
+    color: var(--cf-ink-dim);
+    font-size: 12.5px;
+}
+
+.customer-shell .grade-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    padding: 2px 7px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 12px;
+    color: #fff;
+    background: var(--cf-grey);
+}
+
+.customer-shell .grade-chip.grade-a { background: var(--cf-green); }
+.customer-shell .grade-chip.grade-b { background: #2a9d8f; }
+.customer-shell .grade-chip.grade-c { background: var(--cf-amber); }
+.customer-shell .grade-chip.grade-d { background: var(--cf-red); }
+
 /* ---------- Notifications ---------- */
 .customer-shell .notification-nav-link {
     position: relative;
