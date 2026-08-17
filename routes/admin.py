@@ -32,14 +32,21 @@ from models import (
     Review,
     Role,
     RoleAuditLog,
+    RoleRequest,
     Stall,
     User,
     Vendor,
 )
 from routes import permission_required, super_admin_required
+from services.auth_audit import record_auth_event
 from services.evidence import record_audit, serve_complaint_evidence
 from services.registration_import import cache_photo
 from services.role_audit import record_role_change
+from services.role_requests import (
+    RoleRequestError,
+    approve_role_request,
+    reject_role_request,
+)
 
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -1172,6 +1179,7 @@ def user_edit(user_id):
         return _render_users_list(reopen_modal=reopen, status_code=400)
 
     old_role_id = user.role_id
+    old_status = user.status
     user.full_name = full_name
     user.email = email
     user.phone = phone
@@ -1182,6 +1190,16 @@ def user_edit(user_id):
         current_user, user, old_role_id, role.role_id,
         "Changed via admin Users management",
     )
+    if old_status != "suspended" and status == "suspended":
+        record_auth_event(
+            "account_suspended", user=user,
+            details=f"Suspended by {current_user.email}",
+        )
+    elif old_status == "suspended" and status == "active":
+        record_auth_event(
+            "account_reactivated", user=user,
+            details=f"Reactivated by {current_user.email}",
+        )
 
     if not _commit(
         "User updated successfully.",
@@ -1358,6 +1376,112 @@ def audit_log():
         entries=entries,
         search=search,
     )
+
+
+@admin_bp.route("/audit-log/logins")
+@login_required
+@super_admin_required
+def login_audit_log():
+    from models import AuthAuditLog
+
+    search = request.args.get("q", "").strip()
+    query = db.session.query(AuthAuditLog).outerjoin(
+        User, AuthAuditLog.user_id == User.user_id
+    )
+    if search:
+        term = f"%{search}%"
+        query = query.filter(
+            or_(
+                User.full_name.ilike(term),
+                User.email.ilike(term),
+                AuthAuditLog.email_attempted.ilike(term),
+                AuthAuditLog.ip_address.ilike(term),
+                AuthAuditLog.details.ilike(term),
+            )
+        )
+
+    # Same append-only, most-recent-300 approach as the role audit log
+    # above -- simplest thing that stays fast without real pagination.
+    entries = query.order_by(AuthAuditLog.audit_id.desc()).limit(300).all()
+    return render_template(
+        "admin/audit_log/login_list.html",
+        page_title="Login Activity",
+        entries=entries,
+        search=search,
+    )
+
+
+@admin_bp.route("/access-requests")
+@login_required
+@super_admin_required
+def access_requests():
+    # Unified view of every pending self-service escalation: Inspector
+    # and Admin requests live in role_requests, but Vendor keeps using
+    # its own existing pending-application workflow (vendors.status) --
+    # see services/role_requests.py's module docstring for why these
+    # aren't merged into one table. Both are shown together here so a
+    # Super Admin has one place to review all three.
+    status_filter = request.args.get("status", "pending").strip().lower()
+
+    role_query = RoleRequest.query
+    if status_filter in ("pending", "approved", "rejected", "cancelled"):
+        role_query = role_query.filter_by(status=status_filter)
+    role_entries = role_query.order_by(RoleRequest.request_id.desc()).limit(300).all()
+
+    vendor_entries = []
+    if status_filter in ("pending", "approved", "rejected"):
+        vendor_status = {"approved": "approved", "rejected": "rejected"}.get(
+            status_filter, "pending"
+        )
+        vendor_entries = (
+            Vendor.query.filter_by(status=vendor_status)
+            .order_by(Vendor.created_at.desc())
+            .limit(300)
+            .all()
+        )
+
+    return render_template(
+        "admin/access_requests/list.html",
+        page_title="Access Requests",
+        role_entries=role_entries,
+        vendor_entries=vendor_entries,
+        status_filter=status_filter,
+        areas=Area.query.order_by(Area.area_name).all(),
+    )
+
+
+@admin_bp.route("/access-requests/<int:request_id>/approve", methods=["POST"])
+@login_required
+@super_admin_required
+def access_request_approve(request_id):
+    role_request = db.get_or_404(RoleRequest, request_id)
+    try:
+        approve_role_request(role_request, current_user, inspector_form=request.form)
+    except RoleRequestError as error:
+        flash(str(error), "danger")
+        return redirect(url_for("admin.access_requests"))
+    flash(
+        f"{role_request.requested_role.title()} access approved for "
+        f"{role_request.user.full_name}.",
+        "success",
+    )
+    return redirect(url_for("admin.access_requests"))
+
+
+@admin_bp.route("/access-requests/<int:request_id>/reject", methods=["POST"])
+@login_required
+@super_admin_required
+def access_request_reject(request_id):
+    role_request = db.get_or_404(RoleRequest, request_id)
+    try:
+        reject_role_request(
+            role_request, current_user, request.form.get("rejection_reason", "")
+        )
+    except RoleRequestError as error:
+        flash(str(error), "danger")
+        return redirect(url_for("admin.access_requests"))
+    flash("Request rejected.", "info")
+    return redirect(url_for("admin.access_requests"))
 
 
 @admin_bp.route("/settings")

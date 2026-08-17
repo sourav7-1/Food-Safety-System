@@ -21,7 +21,13 @@
         <div>
             <p class="eyebrow mb-1"><i class="fa-solid fa-user"></i> MY PROFILE</p>
             <h1>{{ current_user.full_name }}</h1>
-            <p class="text-secondary mb-0">{{ current_user.email }} &middot; {{ current_user.role_name | title }}</p>
+            <p class="text-secondary mb-0">
+                {{ current_user.email }} &middot; {{ current_user.role_name | title }}
+                &middot; <span class="risk-badge status-{{ current_user.status }}">{{ current_user.status | title }}</span>
+                {% if current_user.vendor_profile %}
+                &middot; Vendor: <span class="risk-badge status-{{ current_user.vendor_profile.status }}">{{ current_user.vendor_profile.status | replace('_',' ') | title }}</span>
+                {% endif %}
+            </p>
         </div>
     </div>
 
@@ -192,6 +198,26 @@
                     </div>
                     <button class="btn btn-success w-100" type="submit"><i class="fa-solid fa-key"></i> Change password</button>
                 </form>
+                {% endif %}
+            </section>
+
+            <section class="portal-card mt-4" style="max-width: 480px;">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent sign-in activity</h3>
+                {% if recent_logins %}
+                <table class="table portal-table">
+                    <thead><tr><th>When</th><th>Event</th><th>From</th></tr></thead>
+                    <tbody>
+                        {% for entry in recent_logins %}
+                        <tr>
+                            <td>{{ entry.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+                            <td>{{ entry.event | replace('_',' ') | title }}</td>
+                            <td class="text-secondary">{{ entry.ip_address or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-secondary mb-0">No sign-in activity recorded yet.</p>
                 {% endif %}
             </section>
         </div>

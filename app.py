@@ -59,6 +59,7 @@ def create_app(config_class=Config):
     from routes.profile import profile_bp
     from routes.reports import reports_bp
     from routes.vendor import vendor_bp
+    from routes.access_requests import access_requests_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
@@ -68,6 +69,7 @@ def create_app(config_class=Config):
     app.register_blueprint(profile_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(vendor_bp)
+    app.register_blueprint(access_requests_bp)
 
     def csrf_token():
         token = session.get("_csrf_token")
@@ -80,6 +82,14 @@ def create_app(config_class=Config):
 
     @app.before_request
     def enforce_session_security():
+        if current_user.is_authenticated:
+            # Makes PERMANENT_SESSION_LIFETIME (config.py) actually apply
+            # to the session cookie -- without this, Flask treats the
+            # session as non-permanent and it only expires when the
+            # browser closes. Doesn't affect the separate "remember me"
+            # cookie, which Flask-Login manages independently.
+            session.permanent = True
+
         if request.method == "POST":
             expected_token = session.get("_csrf_token", "")
             submitted_token = request.form.get("_csrf_token", "")

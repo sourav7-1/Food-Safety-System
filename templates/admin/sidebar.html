@@ -47,6 +47,8 @@
         {% if current_user.is_super_admin %}
         <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.role') }}" href="{{ url_for('admin.roles') }}"><i class="fa-solid fa-user-shield"></i><span>Roles & Permissions</span></a>
         <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.audit_log' }}" href="{{ url_for('admin.audit_log') }}"><i class="fa-solid fa-clock-rotate-left"></i><span>Audit Log</span></a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.login_audit_log' }}" href="{{ url_for('admin.login_audit_log') }}"><i class="fa-solid fa-right-to-bracket"></i><span>Login Activity</span></a>
+        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.access_request') }}" href="{{ url_for('admin.access_requests') }}"><i class="fa-solid fa-user-shield"></i><span>Access Requests</span></a>
         {% endif %}
         {% if current_user.has_permission('settings.view') %}
         <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.settings' }}" href="{{ url_for('admin.settings') }}"><i class="fa-solid fa-gear"></i><span>Settings</span></a>

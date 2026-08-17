@@ -14,7 +14,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from extensions import db
-from models import Area, Complaint, Review, User
+from models import Area, AuthAuditLog, Complaint, Review, User
 from services.account_classification import is_valid_student_email
 from services.email_verification import send_verification_email
 from services.profile_photo import (
@@ -49,11 +49,18 @@ def view():
     # plain public shell, so it doesn't look like they've left the admin
     # panel entirely.
     is_admin_tier = bool(current_user.role and current_user.role.is_admin_tier)
+    recent_logins = (
+        AuthAuditLog.query.filter_by(user_id=current_user.user_id)
+        .order_by(AuthAuditLog.audit_id.desc())
+        .limit(10)
+        .all()
+    )
     return render_template(
         "profile/view.html",
         areas=Area.query.order_by(Area.area_name).all(),
         reviews=reviews,
         complaints=complaints,
+        recent_logins=recent_logins,
         today=date.today(),
         base_template="admin/base.html" if is_admin_tier else "base.html",
         page_title="My Profile",

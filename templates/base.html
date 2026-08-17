@@ -39,6 +39,9 @@
                     {% if current_user.is_authenticated %}
                         <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.dashboard_redirect') }}">Dashboard</a>
                         <a class="btn btn-outline-light btn-sm" href="{{ url_for('profile.view') }}">Profile</a>
+                        {% if current_user.role_name not in ('inspector', 'admin') and not (current_user.role and current_user.role.is_admin_tier) %}
+                        <a class="btn btn-outline-light btn-sm" href="{{ url_for('access_requests.view') }}">Request Access</a>
+                        {% endif %}
                         <span class="text-white small d-none d-md-inline">{{ current_user.full_name }}</span>
                         <form action="{{ url_for('auth.logout') }}" method="post" class="m-0">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

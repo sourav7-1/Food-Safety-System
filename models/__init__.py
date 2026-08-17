@@ -261,6 +261,93 @@ class RoleAuditLog(db.Model):
     new_role = db.relationship("Role", foreign_keys=[new_role_id])
 
 
+class AuthAuditLog(db.Model):
+    """Append-only trail of authentication/account-lifecycle events --
+    who signed in (or failed to), when, from where, and what changed on
+    their account. Distinct from role_audit_log (role changes) and
+    evidence_audit_logs (evidence actions). Never stores OAuth tokens,
+    passwords, or client secrets -- only the outcome of an auth attempt."""
+
+    __tablename__ = "auth_audit_log"
+
+    audit_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
+    # email_attempted covers login_failed events where the address didn't
+    # match any account, so there's no user_id to attach the row to.
+    email_attempted = db.Column(db.String(150))
+    event = db.Column(
+        db.Enum(
+            "login_success",
+            "login_failed",
+            "logout",
+            "account_created",
+            "account_suspended",
+            "account_reactivated",
+            "role_requested",
+            "role_approved",
+            "role_rejected",
+        ),
+        nullable=False,
+    )
+    auth_provider = db.Column(db.Enum("local", "google"))
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.String(255))
+    details = db.Column(db.String(255))
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.current_timestamp(),
+    )
+
+    user = db.relationship("User")
+
+
+class RoleRequest(db.Model):
+    """Self-service request from an authenticated user to be granted an
+    operational role that can never be self-granted -- Inspector or
+    Admin. (Vendor has its own dedicated request flow already: see the
+    Vendor model's status/requested_* columns and
+    routes/customer.py:vendor_application -- it isn't duplicated here.)
+
+    A role_id change never happens until a Super Admin approves the
+    request (routes/admin.py:access_request_approve); this table is the
+    only record of the pending state in between."""
+
+    __tablename__ = "role_requests"
+
+    request_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    requested_role = db.Column(db.Enum("inspector", "admin"), nullable=False)
+    reason = db.Column(db.String(500))
+    status = db.Column(
+        db.Enum("pending", "approved", "rejected", "cancelled"),
+        nullable=False,
+        default="pending",
+        server_default="pending",
+    )
+    requested_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.current_timestamp(),
+    )
+    reviewed_by = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
+    reviewed_at = db.Column(db.DateTime)
+    rejection_reason = db.Column(db.String(500))
+
+    user = db.relationship("User", foreign_keys=[user_id])
+    reviewer = db.relationship("User", foreign_keys=[reviewed_by])
+
+
 class Area(db.Model):
     __tablename__ = "areas"
     __table_args__ = (

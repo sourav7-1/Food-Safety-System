@@ -23,6 +23,7 @@ from services.account_classification import (
     is_valid_student_email,
     resolve_signup_role_name,
 )
+from services.auth_audit import record_auth_event
 from services.email_verification import (
     VerificationTokenExpired,
     VerificationTokenInvalid,
@@ -124,10 +125,19 @@ def login():
         ).first()
 
         if user is None or not user.check_password(password):
+            record_auth_event(
+                "login_failed", email=email, auth_provider="local",
+                details="invalid credentials",
+            )
+            db.session.commit()
             flash("Invalid email or password.", "danger")
             return render_template("auth/login.html"), 401
 
         if not user.is_active:
+            record_auth_event(
+                "login_failed", user=user, details="account not active"
+            )
+            db.session.commit()
             flash(
                 "Your account is disabled. Please contact an administrator.",
                 "danger",
@@ -158,6 +168,8 @@ def login():
             return render_template("auth/login.html"), 403
 
         login_user(user, remember=remember)
+        record_auth_event("login_success", user=user)
+        db.session.commit()
         flash(f"Welcome back, {user.full_name}.", "success")
 
         next_url = request.args.get("next")
@@ -169,6 +181,7 @@ def login():
 
 
 @auth_bp.route("/auth/google/login")
+@limiter.limit("10 per minute")
 def google_login():
     if current_user.is_authenticated:
         return redirect(_dashboard_url(current_user))
@@ -182,6 +195,7 @@ def google_login():
 
 
 @auth_bp.route("/auth/google/callback")
+@limiter.limit("10 per minute")
 def google_callback():
     if not _google_oauth_configured():
         flash("Google sign-in is not configured.", "danger")
@@ -190,6 +204,13 @@ def google_callback():
     try:
         token = oauth.google.authorize_access_token()
     except OAuthError:
+        # Never log the underlying OAuthError -- it can carry the raw
+        # token exchange response. The audit trail only needs to know an
+        # attempt failed, not why in token-level detail.
+        record_auth_event(
+            "login_failed", auth_provider="google", details="oauth exchange failed"
+        )
+        db.session.commit()
         flash("Google sign-in was cancelled or failed. Please try again.", "danger")
         return redirect(url_for("auth.login"))
 
@@ -197,8 +218,14 @@ def google_callback():
     google_id = userinfo.get("sub")
     email = (userinfo.get("email") or "").strip().lower()
     full_name = userinfo.get("name") or (email.split("@")[0] if email else "")
+    picture_url = userinfo.get("picture") or None
 
     if not google_id or not email or not userinfo.get("email_verified"):
+        record_auth_event(
+            "login_failed", email=email or None, auth_provider="google",
+            details="unverified or missing google email",
+        )
+        db.session.commit()
         flash(
             "Could not verify your Google account email. Please try again "
             "or sign in with your email and password.",
@@ -207,6 +234,7 @@ def google_callback():
         return redirect(url_for("auth.login"))
 
     user = User.query.filter_by(google_id=google_id).first()
+    created_account = False
 
     if user is None:
         user = User.query.filter(func.lower(User.email) == email).first()
@@ -228,6 +256,11 @@ def google_callback():
                 # Same rule as local register(): a diu.edu.bd address
                 # that doesn't match the exact ID format never creates
                 # an account at all, Google or otherwise.
+                record_auth_event(
+                    "login_failed", email=email, auth_provider="google",
+                    details="malformed diu student email",
+                )
+                db.session.commit()
                 flash(
                     "DIU student Google accounts must use the exact ID "
                     "email format, e.g. 222-35-456@diu.edu.bd. Please "
@@ -250,8 +283,10 @@ def google_callback():
                 status="active",
                 email_verified_at=datetime.now(timezone.utc),
                 email_classification=classification,
+                profile_photo_url=picture_url,
             )
             db.session.add(user)
+            created_account = True
 
         try:
             db.session.commit()
@@ -260,7 +295,17 @@ def google_callback():
             flash("Could not complete Google sign-in. Please try again.", "danger")
             return redirect(url_for("auth.login"))
 
+        if created_account:
+            record_auth_event(
+                "account_created", user=user, auth_provider="google"
+            )
+            db.session.commit()
+
     if not user.is_active:
+        record_auth_event(
+            "login_failed", user=user, details="account not active"
+        )
+        db.session.commit()
         flash(
             "Your account is disabled. Please contact an administrator.",
             "danger",
@@ -277,6 +322,8 @@ def google_callback():
         return redirect(url_for("auth.login"))
 
     login_user(user)
+    record_auth_event("login_success", user=user)
+    db.session.commit()
     flash(f"Welcome, {user.full_name}.", "success")
     return redirect(_dashboard_url(user))
 
@@ -353,6 +400,9 @@ def register():
                 "danger",
             )
             return render_template("auth/register.html"), 409
+
+        record_auth_event("account_created", user=user, auth_provider="local")
+        db.session.commit()
 
         result = send_verification_email(user)
         if result.sent:
@@ -450,6 +500,8 @@ def resend_verification():
 @auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
+    record_auth_event("logout", user=current_user)
+    db.session.commit()
     logout_user()
     flash("You have been logged out.", "info")
     return redirect(url_for("auth.login"))

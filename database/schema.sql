@@ -6,6 +6,8 @@ use smart_street_food_safety;
 
 set foreign_key_checks = 0;
 
+drop table if exists role_requests;
+drop table if exists auth_audit_log;
 drop table if exists role_audit_log;
 drop table if exists street_food_stall_registrations;
 drop table if exists corrective_actions;
@@ -164,6 +166,50 @@ create table role_audit_log (
 
 create index idx_role_audit_log_target_user_id on role_audit_log (target_user_id);
 create index idx_role_audit_log_created_at on role_audit_log (created_at);
+
+create table auth_audit_log (
+  audit_id int not null auto_increment,
+  user_id int null,
+  email_attempted varchar(150) null,
+  event enum('login_success', 'login_failed', 'logout', 'account_created', 'account_suspended', 'account_reactivated', 'role_requested', 'role_approved', 'role_rejected') not null,
+  auth_provider enum('local', 'google') null,
+  ip_address varchar(45) null,
+  user_agent varchar(255) null,
+  details varchar(255) null,
+  created_at timestamp not null default current_timestamp,
+  primary key (audit_id),
+  constraint fk_auth_audit_log_user_id
+    foreign key (user_id) references users (user_id)
+    on update cascade
+    on delete set null
+) engine=innodb;
+
+create index idx_auth_audit_log_user_id on auth_audit_log (user_id);
+create index idx_auth_audit_log_created_at on auth_audit_log (created_at);
+
+create table role_requests (
+  request_id int not null auto_increment,
+  user_id int not null,
+  requested_role enum('inspector', 'admin') not null,
+  reason varchar(500) null,
+  status enum('pending', 'approved', 'rejected', 'cancelled') not null default 'pending',
+  requested_at timestamp not null default current_timestamp,
+  reviewed_by int null,
+  reviewed_at datetime null,
+  rejection_reason varchar(500) null,
+  primary key (request_id),
+  constraint fk_role_requests_user_id
+    foreign key (user_id) references users (user_id)
+    on update cascade
+    on delete cascade,
+  constraint fk_role_requests_reviewed_by
+    foreign key (reviewed_by) references users (user_id)
+    on update cascade
+    on delete set null
+) engine=innodb;
+
+create index idx_role_requests_user_id on role_requests (user_id);
+create index idx_role_requests_status on role_requests (status);
 
 create table areas (
   area_id int not null auto_increment,

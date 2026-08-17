@@ -1,0 +1,54 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="page-actionbar">
+    <div>
+        <p class="eyebrow mb-1">ACCESS CONTROL</p>
+        <h2 class="h3 fw-bold mb-1">Login Activity</h2>
+        <p class="text-secondary mb-0">Super admin only. Every sign-in attempt, logout, and account-lifecycle event &mdash; local and Google.</p>
+    </div>
+    <form class="search-bar" method="get">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input name="q" value="{{ search }}" placeholder="Search by user, email, IP, or details..." aria-label="Search">
+        {% if search %}<a href="{{ url_for('admin.login_audit_log') }}" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></a>{% endif %}
+        <button type="submit">Search</button>
+    </form>
+</div>
+
+<div class="panel-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead><tr><th>When</th><th>Event</th><th>User</th><th>Provider</th><th>IP address</th><th>Details</th></tr></thead>
+            <tbody>
+            {% for entry in entries %}
+                <tr>
+                    <td class="text-nowrap">{{ entry.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+                    <td>
+                        {% set event_style = {
+                            'login_success': 'risk-low',
+                            'login_failed': 'risk-critical',
+                            'logout': 'risk-medium',
+                            'account_created': 'risk-low',
+                            'account_suspended': 'risk-critical',
+                        } %}
+                        <span class="status-pill {{ event_style.get(entry.event, 'risk-medium') }}">{{ entry.event|replace('_',' ')|title }}</span>
+                    </td>
+                    <td>
+                        {% if entry.user %}
+                        <strong>{{ entry.user.full_name }}</strong><small>{{ entry.user.email }}</small>
+                        {% else %}
+                        <span class="text-secondary">{{ entry.email_attempted or 'Unknown' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ (entry.auth_provider or '—')|title }}</td>
+                    <td class="text-secondary">{{ entry.ip_address or '—' }}</td>
+                    <td class="text-secondary">{{ entry.details or '—' }}</td>
+                </tr>
+            {% else %}<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>No login activity recorded yet.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if entries|length == 300 %}
+<p class="text-secondary small mt-3">Showing the most recent 300 entries.</p>
+{% endif %}
+{% endblock %}

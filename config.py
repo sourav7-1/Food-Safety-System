@@ -18,6 +18,13 @@ class Config:
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SAMESITE = "Lax"
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
+    # A plain (non-"remember me") session expires after this many seconds
+    # of the cookie's own age, independent of activity. "Remember me"
+    # logins use Flask-Login's separate, longer-lived remember cookie
+    # instead and are unaffected by this setting.
+    PERMANENT_SESSION_LIFETIME = int(
+        os.getenv("SESSION_LIFETIME_SECONDS") or str(12 * 60 * 60)
+    )
     # Raised well past the old flat 8 MB so a multi-file complaint
     # submission isn't rejected by Werkzeug before per-file validation in
     # services/evidence.py even runs; that per-file/per-type validation is

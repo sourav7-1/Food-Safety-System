@@ -1,0 +1,101 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="page-actionbar">
+    <div>
+        <p class="eyebrow mb-1">ACCESS CONTROL</p>
+        <h2 class="h3 fw-bold mb-1">Access Requests</h2>
+        <p class="text-secondary mb-0">Super admin only. Vendor, Inspector, and Admin escalation requests &mdash; nothing here becomes active until you approve it.</p>
+    </div>
+    <form class="search-bar" method="get">
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="Filter by status" style="max-width: 160px;">
+            {% for value in ['pending', 'approved', 'rejected', 'cancelled'] %}
+            <option value="{{ value }}" {{ 'selected' if status_filter == value }}>{{ value | title }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="panel-card p-0 overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead><tr><th>Requested</th><th>User</th><th>Requested role</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for entry in role_entries %}
+                <tr>
+                    <td class="text-nowrap">{{ entry.requested_at.strftime('%d %b %Y, %H:%M') }}</td>
+                    <td><strong>{{ entry.user.full_name }}</strong><small>{{ entry.user.email }}</small></td>
+                    <td><span class="code-chip">{{ entry.requested_role }}</span></td>
+                    <td class="text-secondary">{{ entry.reason or '—' }}</td>
+                    <td>
+                        <span class="status-pill status-{{ entry.status }}">{{ entry.status | title }}</span>
+                        {% if entry.status == 'rejected' and entry.rejection_reason %}<br><small class="text-secondary">{{ entry.rejection_reason }}</small>{% endif %}
+                    </td>
+                    <td>
+                        {% if entry.status == 'pending' %}
+                        {% if entry.requested_role == 'inspector' %}
+                        <button class="btn btn-sm btn-success" type="button" data-bs-toggle="modal" data-bs-target="#approveInspector{{ entry.request_id }}">Approve</button>
+                        <div class="modal fade" id="approveInspector{{ entry.request_id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <form class="modal-content" method="post" action="{{ url_for('admin.access_request_approve', request_id=entry.request_id) }}">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                    <div class="modal-header"><h5 class="modal-title">Approve Inspector access</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                                    <div class="modal-body">
+                                        <p class="text-secondary small">Inspector accounts need an employee code, same as creating one directly in Users.</p>
+                                        <label>Employee code</label>
+                                        <input class="form-control mb-2" name="employee_code" required maxlength="80">
+                                        <label>Designation <span class="text-secondary">(optional)</span></label>
+                                        <input class="form-control mb-2" name="designation" maxlength="100">
+                                        <label>Assigned area <span class="text-secondary">(optional)</span></label>
+                                        <select class="form-select" name="assigned_area_id">
+                                            <option value="">Not assigned</option>
+                                            {% for area in areas %}
+                                            <option value="{{ area.area_id }}">{{ area.area_name }} — {{ area.city }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="modal-footer"><button class="btn btn-success" type="submit">Approve</button></div>
+                                </form>
+                            </div>
+                        </div>
+                        {% else %}
+                        <form method="post" action="{{ url_for('admin.access_request_approve', request_id=entry.request_id) }}" class="d-inline">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-success" type="submit">Approve</button>
+                        </form>
+                        {% endif %}
+                        <form method="post" action="{{ url_for('admin.access_request_reject', request_id=entry.request_id) }}" class="d-inline evidence-rejection-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <input class="form-control form-control-sm d-inline-block mb-1" style="width: 160px;" type="text" name="rejection_reason" placeholder="Reason (optional)">
+                            <button class="btn btn-sm btn-outline-danger" type="submit">Reject</button>
+                        </form>
+                        {% else %}
+                        <span class="text-secondary small">Reviewed{% if entry.reviewer %} by {{ entry.reviewer.full_name }}{% endif %}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-user-shield" aria-hidden="true"></i>No Inspector/Admin requests in this status.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <caption class="px-3 pt-2 text-secondary small">Vendor applications ({{ status_filter }}) &mdash; reviewed on the <a href="{{ url_for('admin.vendors') }}">Vendors</a> page.</caption>
+            <thead><tr><th>Submitted</th><th>Applicant</th><th>Business</th><th>Proposed stall</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for vendor in vendor_entries %}
+                <tr>
+                    <td class="text-nowrap">{{ vendor.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+                    <td><strong>{{ vendor.user.full_name }}</strong><small>{{ vendor.user.email }}</small></td>
+                    <td>{{ vendor.business_name }}</td>
+                    <td>{{ vendor.requested_stall_name or '—' }}</td>
+                    <td><span class="status-pill status-{{ vendor.status }}">{{ vendor.status | title }}</span></td>
+                </tr>
+            {% else %}<tr><td colspan="5" class="empty-state"><i class="fa-solid fa-shop" aria-hidden="true"></i>No vendor applications in this status.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
