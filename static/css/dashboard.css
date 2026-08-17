@@ -377,3 +377,31 @@
     .dashboard-content { padding: 16px 14px 30px; }
     .chart-wrap { height: 240px; }
 }
+
+/* ---------- Dashboard Micro-interactions ---------- */
+.dashboard-link {
+    transition: transform .18s cubic-bezier(.34, 1.56, .64, 1), color .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+.dashboard-link:hover i {
+    transform: translateX(2px) scale(1.05);
+}
+.dashboard-link:active {
+    transform: scale(0.97);
+}
+
+.stat-card {
+    transition: transform .25s cubic-bezier(.25, .8, .25, 1), box-shadow .25s ease !important;
+}
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(15, 61, 38, 0.08) !important;
+}
+
+.dashboard-card {
+    transition: transform .25s cubic-bezier(.25, .8, .25, 1), box-shadow .25s ease !important;
+}
+.dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(15, 61, 38, 0.08) !important;
+}
+

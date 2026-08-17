@@ -2,11 +2,25 @@
 
 {% block title %}Register · Street Food Safety{% endblock %}
 
+{% block main_class %}container py-3 py-md-4{% endblock %}
+
 {% block content %}
 <div class="auth-card card border-0 shadow-sm mx-auto">
     <div class="card-body p-4 p-md-5">
+        {% if request.args.get('role') == 'vendor' %}
+        <div class="alert alert-success border-0 shadow-sm d-flex align-items-start gap-3 p-3 mb-4" style="background: rgba(25, 135, 84, 0.08); border-left: 4px solid var(--brand-green) !important;">
+            <i class="bi bi-shop-window text-success fs-4 mt-1"></i>
+            <div>
+                <strong class="text-success d-block mb-1" style="font-size: 0.95rem;">Vendor Registration Info</strong>
+                <span class="small text-secondary" style="font-size: 0.85rem; line-height: 1.4; display: block;">Step 1 of 2: Create your personal user account below. Once registered and logged in, you can fill in your business details and stall address to apply for Vendor approval.</span>
+            </div>
+        </div>
+        <h1 class="h3 mb-2">Create Vendor Account</h1>
+        <p class="text-secondary mb-4">Register your account to begin the vendor application.</p>
+        {% else %}
         <h1 class="h3 mb-2">Create customer account</h1>
         <p class="text-secondary mb-4">Register to access public food-safety services.</p>
+        {% endif %}
 
         <form method="post" data-no-ajax>
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

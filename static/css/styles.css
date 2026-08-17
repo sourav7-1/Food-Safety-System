@@ -108,7 +108,7 @@ html {
 }
 
 .login-role-panel {
-    padding: 3rem;
+    padding: 2.25rem 2rem;
     color: #fff;
     background:
         radial-gradient(circle at 100% 0, rgba(52, 211, 153, .26), transparent 35%),
@@ -126,14 +126,14 @@ html {
 }
 
 .login-logo-lockup img {
-    width: 4.5rem;
-    height: 4.5rem;
-    flex: 0 0 4.5rem;
-    border: 3px solid rgba(255, 255, 255, .9);
+    width: 3.5rem;
+    height: 3.5rem;
+    flex: 0 0 3.5rem;
+    border: 2px solid rgba(255, 255, 255, .9);
     border-radius: 50%;
     object-fit: cover;
     background: #fff;
-    box-shadow: 0 .75rem 2rem rgba(0, 0, 0, .2);
+    box-shadow: 0 .5rem 1.5rem rgba(0, 0, 0, .15);
 }
 
 .login-role-panel h1 {
@@ -155,15 +155,15 @@ html {
 
 .login-role-list {
     display: grid;
-    gap: .7rem;
-    margin-top: 2rem;
+    gap: .6rem;
+    margin-top: 1.5rem;
 }
 
 .login-role-item {
     display: flex;
     align-items: center;
-    gap: .85rem;
-    padding: .85rem;
+    gap: .75rem;
+    padding: .65rem .85rem;
     border: 1px solid rgba(255, 255, 255, .12);
     border-radius: .85rem;
     background: rgba(255, 255, 255, .07);
@@ -193,7 +193,7 @@ html {
 }
 
 .login-form-panel {
-    padding: 3rem;
+    padding: 2.25rem 2rem;
 }
 
 .login-form-panel .form-control {
@@ -402,7 +402,7 @@ html {
 .hero-lead {
     max-width: 34rem;
     margin-bottom: 1.75rem;
-    color: var(--text-slate-muted);
+    color: #3c4a5c;
     font-size: 1.08rem;
     line-height: 1.7;
 }
@@ -800,7 +800,7 @@ html {
 }
 
 .about-lead {
-    color: var(--text-slate-muted);
+    color: #334155;
     font-size: 1rem;
     line-height: 1.75;
     margin-bottom: 1.15rem;
@@ -1070,3 +1070,106 @@ html {
 @keyframes site-btn-spin {
     to { transform: rotate(360deg); }
 }
+
+/* ==========================================================================
+   Micro-interactions & global motion layer (additive upgrades)
+   ========================================================================== */
+
+/* Slow floating animation for hero background blobs */
+@keyframes siteBlobFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(15px, -20px) scale(1.08); }
+    66% { transform: translate(-10px, 15px) scale(0.95); }
+}
+
+.hero-blob--a {
+    animation: siteBlobFloat 14s ease-in-out infinite alternate !important;
+}
+
+.hero-blob--b {
+    animation: siteBlobFloat 18s ease-in-out infinite alternate-reverse !important;
+}
+
+/* Base button animations */
+.btn {
+    transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s ease, background-color .2s ease, border-color .2s ease !important;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(31, 122, 77, 0.15) !important;
+}
+
+.btn:active {
+    transform: translateY(1px) scale(0.97);
+    box-shadow: 0 4px 10px rgba(31, 122, 77, 0.08) !important;
+}
+
+/* Google Sign-in button hover */
+.btn-google {
+    transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s ease, background-color .2s ease !important;
+}
+
+.btn-google:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(60, 64, 67, 0.15) !important;
+}
+
+.btn-google:active {
+    transform: translateY(1px) scale(0.97);
+}
+
+/* Navbar Link Underline Animation */
+.navbar-nav .nav-link {
+    position: relative;
+    transition: color .2s ease;
+}
+
+.navbar-nav .nav-link::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 2px;
+    bottom: -4px;
+    left: 0;
+    background-color: var(--brand-green);
+    transform-origin: bottom right;
+    transition: transform 0.25s cubic-bezier(.22, 1, .36, 1);
+}
+
+.navbar-nav .nav-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+}
+
+/* Focus input fields styling */
+.form-control, .form-select {
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease !important;
+}
+
+.form-control:focus, .form-select:focus {
+    transform: translateY(-1px);
+}
+
+/* Reveal elements animation speed */
+.reveal {
+    transition: transform .6s cubic-bezier(.22, 1, .36, 1), opacity .6s ease !important;
+}
+
+/* Landing card animations */
+.feature-card, .stat-card {
+    transition: transform .3s cubic-bezier(.25, .8, .25, 1), box-shadow .3s ease, border-color .3s ease !important;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08) !important;
+    border-color: rgba(31, 122, 77, 0.25) !important;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06) !important;
+}
+
