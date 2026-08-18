@@ -243,6 +243,56 @@ def api_leaderboard():
     )
 
 
+@customer_bp.route("/api/risk-stalls/<risk_level>")
+@login_required
+@role_required("customer", "consumer", "student")
+def api_risk_stalls(risk_level):
+    if risk_level not in ("low", "medium", "high", "critical"):
+        return jsonify({"stalls": []}), 400
+
+    if risk_level == "high":
+        sql = text(
+            """
+            SELECT 
+              s.stall_id, s.stall_name, a.area_name, a.city,
+              lsi.overall_score, lsi.risk_level
+            FROM latest_stall_inspection AS lsi
+            INNER JOIN stalls AS s ON s.stall_id = lsi.stall_id
+            INNER JOIN areas AS a ON a.area_id = s.area_id
+            WHERE s.status = 'active' AND lsi.risk_level IN ('critical', 'high')
+            ORDER BY FIELD(lsi.risk_level, 'critical', 'high'), lsi.overall_score ASC, s.stall_name
+            """
+        )
+        rows = db.session.execute(sql).mappings().all()
+    else:
+        sql = text(
+            """
+            SELECT 
+              s.stall_id, s.stall_name, a.area_name, a.city,
+              lsi.overall_score, lsi.risk_level
+            FROM latest_stall_inspection AS lsi
+            INNER JOIN stalls AS s ON s.stall_id = lsi.stall_id
+            INNER JOIN areas AS a ON a.area_id = s.area_id
+            WHERE s.status = 'active' AND lsi.risk_level = :risk_level
+            ORDER BY lsi.overall_score DESC, s.stall_name
+            """
+        )
+        rows = db.session.execute(sql, {"risk_level": risk_level}).mappings().all()
+
+    stalls = []
+    for r in rows:
+        stalls.append({
+            "stall_id": r["stall_id"],
+            "stall_name": r["stall_name"],
+            "area_name": r["area_name"],
+            "city": r["city"],
+            "overall_score": float(r["overall_score"]) if r["overall_score"] is not None else None,
+            "risk_level": r["risk_level"],
+            "detail_url": url_for("customer_portal.stall_detail", stall_id=r["stall_id"])
+        })
+    return jsonify({"stalls": stalls})
+
+
 @customer_bp.route("/stalls")
 @login_required
 @role_required("customer", "consumer", "student")

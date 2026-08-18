@@ -39,7 +39,7 @@
 <div class="row g-4 mt-1">
     <div class="col-lg-6">
         <section class="dashboard-card board-high">
-            <div class="dashboard-card-header">
+            <div class="dashboard-card-header clickable-header" onclick="openRiskModal('high')">
                 <h3><i class="fa-solid fa-triangle-exclamation"></i> High Risk</h3>
                 <span class="dashboard-count" id="highRiskCount">{{ high_risk|length }}</span>
             </div>
@@ -54,7 +54,7 @@
     </div>
     <div class="col-lg-6">
         <section class="dashboard-card board-low">
-            <div class="dashboard-card-header">
+            <div class="dashboard-card-header clickable-header" onclick="openRiskModal('low')">
                 <h3><i class="fa-solid fa-shield-heart"></i> Safest Stalls</h3>
                 <span class="dashboard-count" id="lowRiskCount">{{ low_risk|length }}</span>
             </div>
@@ -80,6 +80,62 @@
         </section>
     </div>
 </div>
+
+<!-- Risk Details Modal -->
+<div class="modal fade" id="riskDetailsModal" tabindex="-1" aria-labelledby="riskDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-bottom-0 pb-0" style="padding: 20px 24px;">
+                <h5 class="modal-title fw-bold" id="riskDetailsModalLabel">
+                    <span id="modalRiskBadge" class="badge me-2" style="font-size: 11px; padding: 6px 10px; border-radius: 8px; text-transform: uppercase;"></span>
+                    Stalls List
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 16px 24px 24px;">
+                <p class="text-secondary small mb-3">Click on any food stall to view its details, customer feedback, and safety audits.</p>
+                <div id="modalLoadingSpinner" class="text-center py-4">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="modalErrorState" class="text-center py-3 text-danger d-none">
+                    <i class="fa-solid fa-circle-exclamation fs-3 mb-2"></i>
+                    <p class="small mb-0">Failed to load stalls list. Please try again.</p>
+                </div>
+                <div id="modalStallsList" class="d-flex flex-column gap-2" style="max-height: 380px; overflow-y: auto;">
+                    <!-- Dynamic items go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-bg-light:hover {
+    background-color: #f4fdf8 !important;
+    border-color: #1f7a4d !important;
+    transform: translateX(3px);
+}
+.bg-orange-subtle {
+    background-color: #ffebd9 !important;
+    color: #e65100 !important;
+}
+.clickable-header {
+    cursor: pointer;
+    transition: background-color 0.25s ease, opacity 0.25s ease;
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin: -6px -12px 6px;
+}
+.clickable-header:hover {
+    background-color: rgba(244, 253, 248, 0.85);
+    opacity: 0.95;
+}
+.board-high .clickable-header:hover {
+    background-color: rgba(254, 242, 242, 0.85);
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -147,9 +203,90 @@
                 maintainAspectRatio: false,
                 cutout: "68%",
                 plugins: { legend: { position: "bottom", labels: { usePointStyle: true } } },
+                onClick: function (event, activeElements) {
+                    if (activeElements && activeElements.length > 0) {
+                        var index = activeElements[0].index;
+                        var label = chart.data.labels[index].toLowerCase();
+                        openRiskModal(label);
+                    }
+                },
+                onHover: function (event, activeElements) {
+                    event.native.target.style.cursor = (activeElements && activeElements.length > 0) ? "pointer" : "default";
+                }
             },
         });
     }
+
+    // Modal & Click Handler
+    var riskModalEl = document.getElementById("riskDetailsModal");
+    var riskModal = null;
+    if (riskModalEl && window.bootstrap) {
+        riskModal = new bootstrap.Modal(riskModalEl);
+    }
+
+    window.openRiskModal = function(level) {
+        if (!riskModal) return;
+
+        var labelSpan = document.getElementById("modalRiskBadge");
+        var listContainer = document.getElementById("modalStallsList");
+        var spinner = document.getElementById("modalLoadingSpinner");
+        var errorState = document.getElementById("modalErrorState");
+
+        // Set badge style
+        labelSpan.textContent = level;
+        labelSpan.className = "badge me-2";
+        if (level === "low") {
+            labelSpan.classList.add("bg-success-subtle", "text-success");
+        } else if (level === "medium") {
+            labelSpan.classList.add("bg-warning-subtle", "text-warning");
+        } else if (level === "high") {
+            labelSpan.classList.add("bg-orange-subtle", "text-orange");
+        } else if (level === "critical") {
+            labelSpan.classList.add("bg-danger-subtle", "text-danger");
+        }
+
+        // Show spinner, hide list and error
+        spinner.classList.remove("d-none");
+        errorState.classList.add("d-none");
+        listContainer.innerHTML = "";
+
+        riskModal.show();
+
+        // Fetch stalls
+        var url = "/customer/api/risk-stalls/" + encodeURIComponent(level);
+        fetch(url)
+            .then(function(res) {
+                if (!res.ok) throw new Error("API error");
+                return res.json();
+            })
+            .then(function(data) {
+                spinner.classList.add("d-none");
+                if (!data.stalls || data.stalls.length === 0) {
+                    listContainer.innerHTML = '<div class="text-center py-4 text-secondary small"><i class="fa-solid fa-circle-info mb-2 fs-4 d-block"></i>No active stalls found in this risk category.</div>';
+                    return;
+                }
+
+                var html = data.stalls.map(function(stall) {
+                    var scoreText = stall.overall_score != null ? stall.overall_score + "%" : "—";
+                    return (
+                        '<a href="' + stall.detail_url + '" class="d-flex align-items-center justify-content-between p-3 border rounded-3 text-decoration-none text-dark hover-bg-light transition" style="transition: all 0.2s;">' +
+                        '  <div>' +
+                        '    <strong class="d-block text-success" style="font-size: 14px;">' + escapeHtml(stall.stall_name) + '</strong>' +
+                        '    <span class="text-secondary" style="font-size: 11px;"><i class="fa-solid fa-location-dot me-1"></i>' + escapeHtml(stall.area_name) + (stall.city ? ', ' + escapeHtml(stall.city) : '') + '</span>' +
+                        '  </div>' +
+                        '  <div class="text-end">' +
+                        '    <span class="badge bg-light text-dark border" style="font-size: 12px; font-weight: 600;">' + scoreText + '</span>' +
+                        '  </div>' +
+                        '</a>'
+                    );
+                }).join("");
+                listContainer.innerHTML = html;
+            })
+            .catch(function() {
+                spinner.classList.add("d-none");
+                errorState.classList.remove("d-none");
+            });
+    };
 
     function refresh() {
         fetch(apiUrl, { headers: { "Accept": "application/json" } })
