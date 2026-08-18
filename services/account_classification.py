@@ -70,6 +70,17 @@ def is_valid_student_email(email):
     return classify_email(email) == STUDENT
 
 
+def is_allowed_signup_email(email):
+    """True only for a new account signup (local register or Google
+    OAuth account creation) -- i.e. an exact, correctly formatted DIU
+    student email (@diu.edu.bd). No other domain -- including Gmail and
+    the official daffodilvariversity.edu.bd staff domain -- may create a
+    NEW account. This does not affect logging in to an account that
+    already exists; it only gates who can sign up going forward.
+    """
+    return classify_email(email) == STUDENT
+
+
 def resolve_signup_role_name(email):
     """The only role name a self-service signup (local register or
     Google OAuth) may ever receive, plus its classification tag.

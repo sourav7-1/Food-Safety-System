@@ -33,6 +33,7 @@
                 <label class="form-label" for="email">Email address</label>
                 <input class="form-control" id="email" name="email" type="email"
                        value="{{ request.form.get('email', '') }}" autocomplete="email" maxlength="150" required>
+                <div class="form-text">Only official DIU student emails are accepted, e.g. 222-35-456@diu.edu.bd.</div>
             </div>
             <div class="mb-3">
                 <label class="form-label" for="phone">Phone number <span class="text-secondary">(optional)</span></label>
