@@ -57,7 +57,8 @@
                         {% if current_user.has_permission('users.edit') %}
                         <button
                             type="button"
-                            class="btn btn-sm btn-soft"
+                            class="btn-action-edit"
+                            aria-label="Edit"
                             data-user-modal-edit
                             data-action="{{ url_for('admin.user_edit', user_id=user.user_id) }}"
                             data-full-name="{{ user.full_name }}"

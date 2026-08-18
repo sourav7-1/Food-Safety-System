@@ -14,22 +14,22 @@
 
 {% block dashboard_content %}
 <div class="stat-grid">
-    <div class="stat-card stat-blue">
+    <div class="stat-card stat-blue clickable-stat-card" onclick="openRiskModal('all')">
         <div class="stat-icon"><i class="fa-solid fa-shop"></i></div>
         <div class="stat-value" id="statTotalStalls">{{ stats.total_active_stalls }}</div>
         <div class="stat-label">Total Stalls Tracked</div>
     </div>
-    <div class="stat-card stat-red">
+    <div class="stat-card stat-red clickable-stat-card" onclick="openRiskModal('high')">
         <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
         <div class="stat-value" id="statHighRisk">{{ stats.high_risk_count }}</div>
         <div class="stat-label">High Risk Stalls</div>
     </div>
-    <div class="stat-card stat-green">
+    <div class="stat-card stat-green clickable-stat-card" onclick="openRiskModal('low')">
         <div class="stat-icon"><i class="fa-solid fa-shield-heart"></i></div>
         <div class="stat-value" id="statLowRisk">{{ stats.low_risk_count }}</div>
         <div class="stat-label">Safest Stalls</div>
     </div>
-    <div class="stat-card stat-amber">
+    <div class="stat-card stat-amber clickable-stat-card" onclick="openRiskModal('complaints')">
         <div class="stat-icon"><i class="fa-regular fa-message"></i></div>
         <div class="stat-value" id="statOpenComplaints">{{ stats.open_complaints_count }}</div>
         <div class="stat-label">My Open Complaints</div>
@@ -135,6 +135,14 @@
 .board-high .clickable-header:hover {
     background-color: rgba(254, 242, 242, 0.85);
 }
+.clickable-stat-card {
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.25s ease !important;
+}
+.clickable-stat-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important;
+}
 </style>
 {% endblock %}
 
@@ -232,17 +240,26 @@
         var spinner = document.getElementById("modalLoadingSpinner");
         var errorState = document.getElementById("modalErrorState");
 
-        // Set badge style
-        labelSpan.textContent = level;
+        // Set badge style and title label
         labelSpan.className = "badge me-2";
         if (level === "low") {
+            labelSpan.textContent = "Low Risk";
             labelSpan.classList.add("bg-success-subtle", "text-success");
         } else if (level === "medium") {
+            labelSpan.textContent = "Medium Risk";
             labelSpan.classList.add("bg-warning-subtle", "text-warning");
         } else if (level === "high") {
+            labelSpan.textContent = "High Risk / Critical";
             labelSpan.classList.add("bg-orange-subtle", "text-orange");
         } else if (level === "critical") {
+            labelSpan.textContent = "Critical Risk";
             labelSpan.classList.add("bg-danger-subtle", "text-danger");
+        } else if (level === "all") {
+            labelSpan.textContent = "All Stalls";
+            labelSpan.classList.add("bg-primary-subtle", "text-primary");
+        } else if (level === "complaints") {
+            labelSpan.textContent = "Open Complaints";
+            labelSpan.classList.add("bg-warning-subtle", "text-warning");
         }
 
         // Show spinner, hide list and error
@@ -252,7 +269,7 @@
 
         riskModal.show();
 
-        // Fetch stalls
+        // Fetch stalls or complaints
         var url = "/customer/api/risk-stalls/" + encodeURIComponent(level);
         fetch(url)
             .then(function(res) {
@@ -261,26 +278,53 @@
             })
             .then(function(data) {
                 spinner.classList.add("d-none");
-                if (!data.stalls || data.stalls.length === 0) {
-                    listContainer.innerHTML = '<div class="text-center py-4 text-secondary small"><i class="fa-solid fa-circle-info mb-2 fs-4 d-block"></i>No active stalls found in this risk category.</div>';
-                    return;
-                }
+                if (level === "complaints") {
+                    if (!data.complaints || data.complaints.length === 0) {
+                        listContainer.innerHTML = '<div class="text-center py-4 text-secondary small"><i class="fa-solid fa-circle-info mb-2 fs-4 d-block"></i>You have no open complaints.</div>';
+                        return;
+                    }
+                    var html = data.complaints.map(function(c) {
+                        return (
+                            '<a href="' + c.detail_url + '" class="d-flex align-items-center justify-content-between p-3 border rounded-3 text-decoration-none text-dark hover-bg-light transition" style="transition: all 0.2s;">' +
+                            '  <div>' +
+                            '    <strong class="d-block text-success" style="font-size: 14px;">' + escapeHtml(c.title) + '</strong>' +
+                            '    <span class="text-secondary" style="font-size: 11px;"><i class="fa-solid fa-shop me-1"></i>' + escapeHtml(c.stall_name) + '</span>' +
+                            '  </div>' +
+                            '  <div class="text-end">' +
+                            '    <span class="badge bg-warning-subtle text-warning border" style="font-size: 11px; font-weight: 600;">' + escapeHtml(c.status) + '</span>' +
+                            '  </div>' +
+                            '</a>'
+                        );
+                    }).join("");
+                    listContainer.innerHTML = html;
+                } else {
+                    if (!data.stalls || data.stalls.length === 0) {
+                        listContainer.innerHTML = '<div class="text-center py-4 text-secondary small"><i class="fa-solid fa-circle-info mb-2 fs-4 d-block"></i>No active stalls found.</div>';
+                        return;
+                    }
+                    var html = data.stalls.map(function(stall) {
+                        var scoreText = stall.overall_score != null ? stall.overall_score + "%" : "—";
+                        var badgeClass = "bg-secondary-subtle text-secondary";
+                        if (stall.risk_level === "low") badgeClass = "bg-success-subtle text-success";
+                        else if (stall.risk_level === "medium") badgeClass = "bg-warning-subtle text-warning";
+                        else if (stall.risk_level === "high") badgeClass = "bg-orange-subtle text-orange";
+                        else if (stall.risk_level === "critical") badgeClass = "bg-danger-subtle text-danger";
 
-                var html = data.stalls.map(function(stall) {
-                    var scoreText = stall.overall_score != null ? stall.overall_score + "%" : "—";
-                    return (
-                        '<a href="' + stall.detail_url + '" class="d-flex align-items-center justify-content-between p-3 border rounded-3 text-decoration-none text-dark hover-bg-light transition" style="transition: all 0.2s;">' +
-                        '  <div>' +
-                        '    <strong class="d-block text-success" style="font-size: 14px;">' + escapeHtml(stall.stall_name) + '</strong>' +
-                        '    <span class="text-secondary" style="font-size: 11px;"><i class="fa-solid fa-location-dot me-1"></i>' + escapeHtml(stall.area_name) + (stall.city ? ', ' + escapeHtml(stall.city) : '') + '</span>' +
-                        '  </div>' +
-                        '  <div class="text-end">' +
-                        '    <span class="badge bg-light text-dark border" style="font-size: 12px; font-weight: 600;">' + scoreText + '</span>' +
-                        '  </div>' +
-                        '</a>'
-                    );
-                }).join("");
-                listContainer.innerHTML = html;
+                        return (
+                            '<a href="' + stall.detail_url + '" class="d-flex align-items-center justify-content-between p-3 border rounded-3 text-decoration-none text-dark hover-bg-light transition" style="transition: all 0.2s;">' +
+                            '  <div>' +
+                            '    <strong class="d-block text-success" style="font-size: 14px;">' + escapeHtml(stall.stall_name) + '</strong>' +
+                            '    <span class="text-secondary" style="font-size: 11px;"><i class="fa-solid fa-location-dot me-1"></i>' + escapeHtml(stall.area_name) + (stall.city ? ', ' + escapeHtml(stall.city) : '') + '</span>' +
+                            '  </div>' +
+                            '  <div class="d-flex align-items-center gap-2">' +
+                            '    <span class="badge ' + badgeClass + '" style="font-size: 10px; font-weight: 600; text-transform: uppercase;">' + escapeHtml(stall.risk_level) + '</span>' +
+                            '    <span class="badge bg-light text-dark border" style="font-size: 12px; font-weight: 600;">' + scoreText + '</span>' +
+                            '  </div>' +
+                            '</a>'
+                        );
+                    }).join("");
+                    listContainer.innerHTML = html;
+                }
             })
             .catch(function() {
                 spinner.classList.add("d-none");

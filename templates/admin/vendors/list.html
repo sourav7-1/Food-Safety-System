@@ -6,7 +6,7 @@
         <h2 class="h3 fw-bold mb-1">Vendors</h2>
         <p class="text-secondary mb-0">Manage registered food businesses and vendor accounts.</p>
     </div>
-    <div class="d-flex gap-2 align-items-start flex-wrap">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
         <form class="search-bar" method="get">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input name="q" value="{{ search }}" placeholder="Search by business, licence, name or email..." aria-label="Search">
@@ -24,51 +24,119 @@
 <div class="panel-card p-0 overflow-hidden">
     <div class="table-responsive">
         <table class="table admin-table align-middle mb-0">
-            <thead><tr><th>Vendor</th><th>Business</th><th>Licence</th><th>Expiry</th><th>Application</th><th>Account</th><th class="text-end">Actions</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Vendor</th>
+                    <th>Business</th>
+                    <th>Licence</th>
+                    <th>Expiry</th>
+                    <th>Application</th>
+                    <th>Account</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
             <tbody>
             {% for vendor in vendors %}
                 <tr>
                     <td>
-                        <strong>{{ vendor.user.full_name }}</strong><small>{{ vendor.user.email }}</small>
-                        {% if vendor.status == 'pending' and vendor.requested_stall_name %}
-                        <small class="d-block mt-1"><i class="fa-solid fa-shop me-1"></i>Proposed: {{ vendor.requested_stall_name }}{% if vendor.requested_area %} &middot; {{ vendor.requested_area.area_name }}{% endif %}</small>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar-circle-sm" style="background: linear-gradient(135deg, #4f46e5, #8b5cf6); color: white; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; flex-shrink: 0;">
+                                {{ vendor.user.full_name[:2] | upper }}
+                            </div>
+                            <div>
+                                <strong class="text-dark fw-bold" style="font-size: 13.5px;">{{ vendor.user.full_name }}</strong>
+                                <small class="text-muted d-block" style="font-size: 11px; margin-top: 1px;">{{ vendor.user.email }}</small>
+                                {% if vendor.status == 'pending' and vendor.requested_stall_name %}
+                                <small class="d-block mt-1 text-warning-emphasis" style="font-size: 10.5px; font-weight: 500;">
+                                    <i class="fa-solid fa-store me-1"></i>Proposed: {{ vendor.requested_stall_name }}
+                                    {% if vendor.requested_area %} &middot; {{ vendor.requested_area.area_name }}{% endif %}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="fw-semibold text-dark" style="font-size: 13px;">
+                            <i class="fa-solid fa-briefcase text-secondary me-1" style="font-size: 12px;"></i>
+                            {{ vendor.business_name if vendor.business_name else '—' }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="code-chip border-0 bg-light text-secondary px-2 py-1" style="font-size: 11px; font-family: monospace; border-radius: 6px;">
+                            <i class="fa-solid fa-id-card me-1" style="font-size: 10px;"></i>{{ vendor.license_number }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if vendor.license_expiry_date %}
+                        <span class="text-dark" style="font-size: 12px;">
+                            <i class="fa-regular fa-calendar me-1 text-muted"></i>
+                            {{ vendor.license_expiry_date.strftime('%d %b %Y') }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">—</span>
                         {% endif %}
                     </td>
-                    <td>{{ vendor.business_name }}</td>
-                    <td><span class="code-chip">{{ vendor.license_number }}</span></td>
-                    <td>{{ vendor.license_expiry_date.strftime('%d %b %Y') if vendor.license_expiry_date else '—' }}</td>
-                    <td><span class="status-pill risk-{{ 'low' if vendor.status == 'approved' else ('critical' if vendor.status in ('rejected', 'suspended') else 'medium') }}">{{ vendor.status }}</span></td>
-                    <td><span class="status-pill status-{{ vendor.user.status }}">{{ vendor.user.status }}</span></td>
+                    <td>
+                        {% if vendor.status == 'approved' %}
+                        <span class="badge bg-success-subtle text-success border-0 px-2 py-1.5 fw-semibold" style="font-size: 11px; border-radius: 12px;">
+                            <i class="fa-solid fa-circle-check me-1"></i>Approved
+                        </span>
+                        {% elif vendor.status == 'pending' %}
+                        <span class="badge bg-warning-subtle text-warning border-0 px-2 py-1.5 fw-semibold" style="font-size: 11px; border-radius: 12px;">
+                            <i class="fa-solid fa-clock me-1"></i>Pending
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger-subtle text-danger border-0 px-2 py-1.5 fw-semibold" style="font-size: 11px; border-radius: 12px;">
+                            <i class="fa-solid fa-circle-xmark me-1"></i>{{ vendor.status | title }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if vendor.user.status == 'active' %}
+                        <span class="d-inline-flex align-items-center gap-2 text-success fw-semibold" style="font-size: 12px;">
+                            <span class="status-dot-active"></span>Active
+                        </span>
+                        {% else %}
+                        <span class="d-inline-flex align-items-center gap-2 text-muted fw-semibold" style="font-size: 12px;">
+                            <span class="status-dot-inactive"></span>{{ vendor.user.status | title }}
+                        </span>
+                        {% endif %}
+                    </td>
                     <td class="text-end table-actions">
-                        {% if vendor.status == 'pending' and current_user.has_permission('vendors.edit') %}
-                        <form class="d-inline" action="{{ url_for('admin.vendor_approve', vendor_id=vendor.vendor_id) }}" method="post" data-confirm="Approve this vendor application? The applicant's account will immediately gain vendor access.">
-                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                            <button class="btn btn-sm btn-success" type="submit">Approve</button>
-                        </form>
-                        <button type="button" class="btn btn-sm btn-outline-danger" data-vendor-reject-open data-action="{{ url_for('admin.vendor_reject', vendor_id=vendor.vendor_id) }}">Reject</button>
-                        {% endif %}
-                        {% if vendor.status != 'pending' and current_user.has_permission('vendors.edit') %}
-                        <button
-                            type="button"
-                            aria-label="Edit"
-                            data-vendor-modal-edit
-                            data-action="{{ url_for('admin.vendor_edit', vendor_id=vendor.vendor_id) }}"
-                            data-full-name="{{ vendor.user.full_name }}"
-                            data-email="{{ vendor.user.email }}"
-                            data-phone="{{ vendor.user.phone or '' }}"
-                            data-status="{{ vendor.user.status }}"
-                            data-business-name="{{ vendor.business_name }}"
-                            data-license-number="{{ vendor.license_number }}"
-                            data-license-expiry-date="{{ vendor.license_expiry_date.isoformat() if vendor.license_expiry_date else '' }}"
-                            data-national-id="{{ vendor.national_id or '' }}"
-                        ><i class="fa-solid fa-pen"></i></button>
-                        {% endif %}
-                        {% if current_user.has_permission('vendors.delete') %}
-                        <form action="{{ url_for('admin.vendor_delete', vendor_id=vendor.vendor_id) }}" method="post" data-confirm="Delete this vendor?">
-                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                            <button class="danger" aria-label="Delete" data-done-label="" data-error-label=""><i class="fa-solid fa-trash"></i></button>
-                        </form>
-                        {% endif %}
+                        <div class="d-flex justify-content-end gap-2 align-items-center">
+                            {% if vendor.status == 'pending' and current_user.has_permission('vendors.edit') %}
+                            <form action="{{ url_for('admin.vendor_approve', vendor_id=vendor.vendor_id) }}" method="post" data-confirm="Approve this vendor application? The applicant's account will immediately gain vendor access." class="m-0">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-success px-3 fw-bold" style="border-radius: 8px; font-size: 11px; height: 32px;" type="submit">Approve</button>
+                            </form>
+                            <button type="button" class="btn btn-sm btn-outline-danger px-3 fw-bold" style="border-radius: 8px; font-size: 11px; height: 32px;" data-vendor-reject-open data-action="{{ url_for('admin.vendor_reject', vendor_id=vendor.vendor_id) }}">Reject</button>
+                            {% endif %}
+                            
+                            {% if vendor.status != 'pending' and current_user.has_permission('vendors.edit') %}
+                            <button
+                                type="button"
+                                class="btn-action-edit"
+                                aria-label="Edit"
+                                data-vendor-modal-edit
+                                data-action="{{ url_for('admin.vendor_edit', vendor_id=vendor.vendor_id) }}"
+                                data-full-name="{{ vendor.user.full_name }}"
+                                data-email="{{ vendor.user.email }}"
+                                data-phone="{{ vendor.user.phone or '' }}"
+                                data-status="{{ vendor.user.status }}"
+                                data-business-name="{{ vendor.business_name }}"
+                                data-license-number="{{ vendor.license_number }}"
+                                data-license-expiry-date="{{ vendor.license_expiry_date.isoformat() if vendor.license_expiry_date else '' }}"
+                                data-national-id="{{ vendor.national_id or '' }}"
+                            ><i class="fa-solid fa-pen"></i></button>
+                            {% endif %}
+                            
+                            {% if current_user.has_permission('vendors.delete') %}
+                            <form action="{{ url_for('admin.vendor_delete', vendor_id=vendor.vendor_id) }}" method="post" data-confirm="Delete this vendor?" class="m-0">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn-action-delete" aria-label="Delete" data-done-label="" data-error-label=""><i class="fa-solid fa-trash"></i></button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% else %}<tr><td colspan="7" class="empty-state"><i class="fa-solid fa-store-slash" aria-hidden="true"></i>No vendors found.</td></tr>{% endfor %}
@@ -76,6 +144,38 @@
         </table>
     </div>
 </div>
+
+<style>
+/* Modern Admin Table Enhancements */
+.admin-table tbody tr {
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.admin-table tbody tr:hover {
+    background-color: #f8fafc !important;
+}
+.avatar-circle-sm {
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.12);
+}
+/* Search Bar & Action Button alignments */
+.search-bar {
+    border-radius: 10px;
+    border: 1px solid #dfe6ef;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    height: 40px;
+    margin-bottom: 0 !important;
+}
+.search-bar:focus-within {
+    border-color: #8179ed;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.09);
+}
+.action-button {
+    height: 40px;
+    border-radius: 10px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+</style>
 
 <div class="modal fade" id="vendorModal" tabindex="-1" aria-labelledby="vendorModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">

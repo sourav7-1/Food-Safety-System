@@ -247,10 +247,42 @@ def api_leaderboard():
 @login_required
 @role_required("customer", "consumer", "student")
 def api_risk_stalls(risk_level):
-    if risk_level not in ("low", "medium", "high", "critical"):
-        return jsonify({"stalls": []}), 400
+    if risk_level not in ("low", "medium", "high", "critical", "all", "complaints"):
+        return jsonify({"stalls": [], "complaints": []}), 400
 
-    if risk_level == "high":
+    if risk_level == "complaints":
+        records = Complaint.query.filter(
+            Complaint.submitted_by_user_id == current_user.user_id,
+            Complaint.status.in_(
+                ("submitted", "under_review", "investigation", "action_required")
+            )
+        ).order_by(Complaint.submitted_at.desc()).all()
+        complaints = []
+        for c in records:
+            complaints.append({
+                "complaint_id": c.complaint_id,
+                "title": c.title,
+                "status": c.status.replace("_", " ").title(),
+                "stall_name": c.stall.stall_name,
+                "detail_url": url_for("customer_portal.complaint_detail", complaint_id=c.complaint_id)
+            })
+        return jsonify({"complaints": complaints})
+
+    if risk_level == "all":
+        sql = text(
+            """
+            SELECT 
+              s.stall_id, s.stall_name, a.area_name, a.city,
+              lsi.overall_score, lsi.risk_level
+            FROM latest_stall_inspection AS lsi
+            INNER JOIN stalls AS s ON s.stall_id = lsi.stall_id
+            INNER JOIN areas AS a ON a.area_id = s.area_id
+            WHERE s.status = 'active'
+            ORDER BY lsi.overall_score DESC, s.stall_name
+            """
+        )
+        rows = db.session.execute(sql).mappings().all()
+    elif risk_level == "high":
         sql = text(
             """
             SELECT 
