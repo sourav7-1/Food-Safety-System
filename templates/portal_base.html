@@ -4,6 +4,8 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 {% endblock %}
 {% block main_class %}dashboard-viewport{% endblock %}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
 {% block navbar_actions %}{% endblock %}
 {% block flash_top_pad %}{% endblock %}
 
@@ -30,7 +32,15 @@
                     <p class="dashboard-subtitle">{% block dashboard_subtitle %}{% endblock %}</p>
                 </div>
             </div>
-            <div class="dashboard-topbar-extra">{% block dashboard_topbar_extra %}{% endblock %}</div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="dashboard-topbar-extra">{% block dashboard_topbar_extra %}{% endblock %}</div>
+                <a class="dashboard-notification-btn position-relative d-flex align-items-center justify-content-center text-decoration-none" href="{{ url_for('customer_portal.notifications') }}" aria-label="Notifications">
+                    <i class="fa-regular fa-bell"></i>
+                    {% if unread_notification_count > 0 %}
+                    <span class="notification-indicator-dot"></span>
+                    {% endif %}
+                </a>
+            </div>
         </header>
 
         <div class="dashboard-content">

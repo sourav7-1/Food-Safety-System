@@ -1,39 +1,254 @@
-.portal-shell{max-width:1180px;margin:0 auto}.portal-titlebar{display:flex;align-items:flex-end;justify-content:space-between;gap:25px;margin-bottom:28px}.portal-titlebar>div>span{color:#198754;font-size:9px;font-weight:800;letter-spacing:1.5px}.portal-titlebar h1{font-size:29px;font-weight:800;letter-spacing:-.7px;margin:6px 0 3px;color:#122033}.portal-titlebar p{color:#738196;font-size:12px;margin:0}.portal-titlebar nav{display:flex;gap:6px;background:#fff;border:1px solid #e4eaf1;border-radius:10px;padding:5px}.portal-titlebar nav a{color:#526175;text-decoration:none;font-size:10px;font-weight:700;padding:8px 10px;border-radius:7px}.portal-titlebar nav a:hover{background:#e9f7f0;color:#147b52}.portal-card{background:#fff;border:1px solid #e4eaf1;border-radius:14px;padding:20px;box-shadow:0 8px 26px rgba(25,45,70,.05)}.portal-card h2{font-size:18px;font-weight:800;margin:7px 0 4px}.portal-card h3{font-size:13px;font-weight:800;margin-bottom:17px}.portal-card p{font-size:11px;color:#718095}.portal-kpi{position:relative;background:#fff;border:1px solid #e3eaf1;border-radius:13px;padding:18px 18px 18px 56px}.portal-kpi i{position:absolute;left:17px;top:20px;color:#198754}.portal-kpi small{display:block;color:#8090a4;font-size:9px;text-transform:uppercase;letter-spacing:.6px}.portal-kpi strong{font-size:23px}.portal-kpi.warning i{color:#e59b16}.portal-kpi.danger i{color:#e54850}.code{color:#7c899b;font-size:9px;font-family:ui-monospace,monospace;text-transform:uppercase}.risk-badge{display:inline-flex;align-items:center;height:max-content;border-radius:30px;padding:5px 9px;font-size:8px;font-weight:800;text-transform:capitalize}.risk-low,.status-resolved,.status-completed,.status-verified{background:#e3f7ed;color:#128155}.risk-medium,.status-under_review,.status-in_progress,.status-pending,.status-investigation,.status-action_required{background:#fff4dc;color:#aa680d}.risk-high{background:#fff0df;color:#cd6412}.risk-critical,.status-open,.status-overdue,.status-submitted{background:#fee8ea;color:#d43d46}.risk-unrated,.status-rejected,.status-cancelled,.status-closed{background:#edf1f5;color:#68778b}.stall-metrics,.customer-score{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:#f8fafc;border-radius:10px;padding:12px;margin:17px 0}.stall-metrics small,.customer-score small{display:block;color:#8996a6;font-size:8px;text-transform:uppercase}.stall-metrics strong,.customer-score strong{font-size:17px}.stall-metrics strong.date,.customer-score strong.date{font-size:10px}.portal-link{display:flex;justify-content:space-between;color:#198754;text-decoration:none;font-size:10px;font-weight:700}.portal-dl{display:grid;grid-template-columns:1fr 1fr;font-size:10px;gap:12px;margin:17px 0 0}.portal-dl dt{color:#8794a5}.portal-dl dd{text-align:right;margin:0}.safety-score{display:flex;align-items:baseline;gap:10px}.safety-score strong{font-size:33px}.safety-score span{font-size:12px;color:#198754;font-weight:800}.reason-list>div{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #edf1f5}.reason-list i{color:#ed8a22;margin-top:3px}.reason-list p{margin:0}.reason-list strong,.reason-list span{display:block}.reason-list strong{color:#243247}.action-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,1fr);gap:18px;padding:15px 0;border-bottom:1px solid #edf1f5}.action-row>div>strong,.action-row>div>small{display:block;margin-top:7px}.action-row form{display:grid;gap:8px}.completed-evidence a{display:block;font-size:10px}.portal-table{font-size:11px}.portal-table th{color:#8290a3;font-size:8px;text-transform:uppercase;letter-spacing:.6px;background:#f8fafc}.portal-table td,.portal-table th{padding:12px;border-color:#edf1f5}.portal-table small{display:block;color:#8996a6}.portal-card label{font-size:9px;font-weight:700;color:#59687c;margin-bottom:5px}.portal-card .form-control,.portal-card .form-select{font-size:11px;border-color:#dfe6ee}.food-row{display:grid;grid-template-columns:2fr 1.4fr 1fr 1fr auto;gap:8px;align-items:center;padding:12px 0;border-bottom:1px solid #edf1f5}.delete-inline{text-align:right;margin-top:5px}.filter-grid{display:grid;grid-template-columns:2fr repeat(3,1fr) auto;gap:12px;align-items:end}.customer-stall h2{margin-top:14px}.customer-score{grid-template-columns:1fr 1fr}.customer-score.large{grid-template-columns:repeat(3,1fr);margin-top:20px}.category-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px}.category-chips span{background:#edf6f1;color:#287b59;border-radius:20px;padding:4px 7px;font-size:8px}.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.menu-grid>div{border:1px solid #e7ecf2;border-radius:9px;padding:10px}.menu-grid strong,.menu-grid span,.menu-grid b{display:block}.menu-grid strong{font-size:11px}.menu-grid span{font-size:8px;color:#8996a7}.menu-grid b{font-size:9px;color:#198754;margin-top:5px}.rating-summary{font-size:10px;color:#d89411}.review-row{padding:12px 0;border-bottom:1px solid #edf1f5}.review-row>div{display:flex;justify-content:space-between}.review-row strong{font-size:10px}.review-row span{color:#e8a514;font-size:11px}.review-row p{margin:5px 0 0}.complaint-timeline{display:grid;gap:12px;max-width:850px}.complaint-timeline h2{font-size:15px}.complaint-description{color:#45546a!important;margin:14px 0}.empty{text-align:center;color:#8a97a7;padding:40px}
-@media(max-width:991.98px){.filter-grid{grid-template-columns:1fr 1fr}.action-row{grid-template-columns:1fr}.portal-titlebar{align-items:flex-start;flex-direction:column}}@media(max-width:575.98px){.portal-titlebar h1{font-size:23px}.portal-titlebar nav{width:100%}.portal-titlebar nav a{flex:1;text-align:center}.filter-grid,.food-row{grid-template-columns:1fr}.stall-metrics,.customer-score.large{grid-template-columns:1fr}.menu-grid{grid-template-columns:1fr}}
+/* ==========================================================================
+   Shared Portal Styles (Vendor, Inspector, and Customer)
+   ========================================================================== */
 
-/* ---------- Portal Micro-interactions ---------- */
-.portal-titlebar nav a {
-    transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), background-color .2s ease, color .2s ease !important;
+:root {
+    --portal-primary: #059669;
+    --portal-primary-dark: #064e3b;
+    --portal-primary-light: #ecfdf5;
+    --portal-border: #e2e8f0;
+    --portal-surface: #ffffff;
+    --portal-bg: #f8fafc;
+    --portal-text: #0f172a;
+    --portal-muted: #64748b;
 }
+
+.portal-shell {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0.5rem 0 2rem;
+}
+
+/* Titlebar */
+.portal-titlebar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.portal-titlebar > div > span {
+    color: var(--portal-primary);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.portal-titlebar h1 {
+    font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0.35rem 0 0.2rem;
+    color: var(--portal-text);
+}
+
+.portal-titlebar p {
+    color: var(--portal-muted);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.portal-titlebar nav {
+    display: flex;
+    gap: 0.4rem;
+    background: var(--portal-surface);
+    border: 1px solid var(--portal-border);
+    border-radius: 12px;
+    padding: 0.35rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.portal-titlebar nav a {
+    color: #475569;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .portal-titlebar nav a:hover {
+    background: var(--portal-primary-light);
+    color: var(--portal-primary);
     transform: translateY(-1px);
 }
-.portal-titlebar nav a:active {
-    transform: translateY(0) scale(0.97);
+
+.portal-titlebar nav a.active {
+    background: var(--portal-primary);
+    color: #ffffff;
 }
 
+/* Cards */
 .portal-card {
-    transition: transform .25s cubic-bezier(.25, .8, .25, 1), box-shadow .25s ease !important;
-}
-.portal-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(25, 45, 70, 0.08) !important;
+    background: var(--portal-surface);
+    border: 1px solid var(--portal-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.02);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease !important;
 }
 
-.portal-kpi {
-    transition: transform .25s cubic-bezier(.25, .8, .25, 1), box-shadow .25s ease !important;
+.portal-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.08) !important;
 }
+
+.portal-card h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0.5rem 0 0.25rem;
+    color: var(--portal-text);
+}
+
+.portal-card h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--portal-text);
+}
+
+.portal-card p {
+    font-size: 0.9rem;
+    color: var(--portal-muted);
+}
+
+/* KPI Tiles */
+.portal-kpi {
+    position: relative;
+    background: var(--portal-surface);
+    border: 1px solid var(--portal-border);
+    border-radius: 14px;
+    padding: 1.25rem 1.25rem 1.25rem 4rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
 .portal-kpi:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 24px rgba(25, 45, 70, 0.08) !important;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.06) !important;
 }
 
-.menu-grid > div {
-    transition: transform .2s cubic-bezier(.25, .8, .25, 1), border-color .2s ease, box-shadow .2s ease !important;
-}
-.menu-grid > div:hover {
-    transform: translateY(-2px);
-    border-color: #287b59 !important;
-    box-shadow: 0 6px 16px rgba(40, 123, 89, 0.06) !important;
+.portal-kpi i {
+    position: absolute;
+    left: 1.25rem;
+    top: 1.25rem;
+    color: var(--portal-primary);
+    font-size: 1.5rem;
 }
 
+.portal-kpi small {
+    display: block;
+    color: var(--portal-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+}
+
+.portal-kpi strong {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: var(--portal-text);
+}
+
+.portal-kpi.warning i { color: #d97706; }
+.portal-kpi.danger i { color: #dc2626; }
+
+.code {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* Badges */
+.risk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: max-content;
+    border-radius: 9999px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.risk-low, .status-resolved, .status-completed, .status-verified, .status-approved {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.risk-medium, .status-under_review, .status-in_progress, .status-pending, .status-investigation, .status-action_required {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+}
+
+.risk-high {
+    background: #fff7ed;
+    color: #ea580c;
+    border: 1px solid #ffedd5;
+}
+
+.risk-critical, .status-open, .status-overdue, .status-submitted, .status-suspended, .status-rejected {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.risk-unrated, .status-cancelled, .status-closed, .status-inactive {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+/* Tables */
+.portal-table {
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+.portal-table th {
+    color: #64748b;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    background: #f8fafc;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--portal-border);
+}
+
+.portal-table td {
+    padding: 0.95rem 1rem;
+    border-color: #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.portal-table small {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    margin-top: 0.15rem;
+}
+
+.empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 3rem 1rem;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 991.98px) {
+    .portal-titlebar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

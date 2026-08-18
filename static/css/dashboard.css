@@ -30,6 +30,9 @@
     width: 258px;
     min-width: 258px;
     background: var(--dash-sidebar-bg);
+    position: sticky;
+    top: 0;
+    height: 100vh;
 }
 
 .dashboard-sidebar-inner {
@@ -126,7 +129,8 @@
     box-shadow: 0 8px 22px rgba(31, 122, 77, .32);
 }
 
-.dashboard-badge {
+.dashboard-badge,
+.notification-badge {
     margin-left: auto;
     min-width: 18px;
     height: 18px;
@@ -403,5 +407,70 @@
 .dashboard-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 32px rgba(15, 61, 38, 0.08) !important;
+}
+
+/* ---------- Animated Notification Button ---------- */
+.dashboard-notification-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1.5px solid var(--dash-line);
+    color: var(--dash-green);
+    font-size: 19px;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    box-shadow: var(--shadow-xs);
+}
+
+.dashboard-notification-btn:hover {
+    background: var(--brand-green-light);
+    border-color: var(--brand-accent);
+    color: var(--brand-green-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.dashboard-notification-btn:hover i {
+    animation: bell-ring 0.6s ease;
+}
+
+.notification-indicator-dot {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 0 8px #ef4444;
+    animation: indicator-pulse 2s infinite;
+}
+
+@keyframes bell-ring {
+    0% { transform: rotate(0); }
+    15% { transform: rotate(15deg); }
+    30% { transform: rotate(-12deg); }
+    45% { transform: rotate(10deg); }
+    60% { transform: rotate(-8deg); }
+    75% { transform: rotate(4deg); }
+    85% { transform: rotate(-2deg); }
+    100% { transform: rotate(0); }
+}
+
+@keyframes indicator-pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
 }
 

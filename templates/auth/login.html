@@ -14,7 +14,7 @@
         <span class="login-eyebrow">ONE SECURE LOGIN</span>
         <h1>Choose the account that was assigned to you</h1>
         <p>
-            Admin, inspector, vendor and customer accounts all use this same
+            Admin, inspector, vendor and student accounts all use this same
             login form. Your saved role automatically opens the correct portal.
         </p>
 
@@ -32,8 +32,8 @@
                 <div><strong>Vendor</strong><small>Stall profile, food items and corrective actions</small></div>
             </div>
             <div class="login-role-item role-customer">
-                <span class="role-symbol">C</span>
-                <div><strong>Customer</strong><small>Search stalls, reviews and complaint tracking</small></div>
+                <span class="role-symbol">S</span>
+                <div><strong>Student</strong><small>Search stalls, reviews and complaint tracking</small></div>
             </div>
         </div>
     </section>
@@ -83,8 +83,8 @@
         </div>
 
         <p class="text-center text-secondary mt-4 mb-0">
-            New customer?
-            <a href="{{ url_for('auth.register') }}">Create a customer account</a>
+            New student?
+            <a href="{{ url_for('auth.register') }}">Create a student account</a>
         </p>
         <p class="text-center text-secondary mt-2 mb-0">
             Didn't get a verification email?

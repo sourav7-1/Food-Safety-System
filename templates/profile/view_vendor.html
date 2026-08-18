@@ -1,0 +1,14 @@
+{% extends "vendor/base.html" %}
+
+{% block title %}My Profile · Vendor Portal{% endblock %}
+{% block portal_title %}My Profile{% endblock %}
+{% block portal_subtitle %}Manage your personal details and account settings{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block portal_content %}
+    {% include "profile/_view_content.html" %}
+{% endblock %}

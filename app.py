@@ -80,6 +80,16 @@ def create_app(config_class=Config):
 
     app.jinja_env.globals["csrf_token"] = csrf_token
 
+    @app.context_processor
+    def inject_unread_notification_count():
+        if not current_user.is_authenticated:
+            return {"unread_notification_count": 0}
+        from models import Notification
+        count = Notification.query.filter_by(
+            user_id=current_user.user_id, is_read=False
+        ).count()
+        return {"unread_notification_count": count}
+
     @app.before_request
     def enforce_session_security():
         if current_user.is_authenticated:

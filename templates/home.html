@@ -5,71 +5,95 @@
 
 {% block content %}
 
-<!-- Hero -->
+<!-- Apple-Style Hero Section -->
 <section class="hero-section" aria-labelledby="hero-heading">
-    <div class="hero-blob hero-blob--a" aria-hidden="true"></div>
-    <div class="hero-blob hero-blob--b" aria-hidden="true"></div>
-    <div class="hero-grid" aria-hidden="true"></div>
     <div class="container position-relative">
         <div class="row align-items-center g-5">
             <div class="col-lg-6">
-                <p class="eyebrow reveal">Inspection &amp; Risk Analysis Platform</p>
-                <h1 id="hero-heading" class="hero-heading reveal">Smart <span class="text-accent">Street Food Safety</span> Inspection and Risk Analysis System</h1>
+                <div class="apple-pill-announcement reveal">
+                    <span class="apple-pill-tag">Intelligence</span>
+                    <span>Proactive Campus Food Safety Platform</span>
+                </div>
+                <h1 id="hero-heading" class="hero-heading reveal">
+                    Food Safety. <br>
+                    <span class="apple-gradient-text">Reimagined for Campus.</span>
+                </h1>
                 <p class="hero-lead reveal">
-                    Street Food Safety helps city health teams register vendors, log on-site inspections,
-                    and automatically score risk &mdash; so inspectors, vendors, and officials all work from
-                    one accurate, up-to-date picture of food safety across the city.
+                    DIU Food Safety System empowers university health officers, campus vendors, and students with 
+                    live hygiene scoring, real-time risk alerts, and auditable inspections. Built for total safety and transparency.
                 </p>
                 <div class="hero-cta reveal">
                     {% if current_user.is_authenticated %}
-                        <a class="btn btn-success btn-lg" href="{{ url_for('auth.dashboard_redirect') }}">Open Dashboard</a>
+                        <a class="btn btn-success btn-lg" href="{{ url_for('auth.dashboard_redirect') }}">
+                            <span>Open Dashboard</span>
+                            <i class="bi bi-arrow-right-short fs-5"></i>
+                        </a>
                     {% else %}
-                        <a class="btn btn-success btn-lg" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">Sign In</a>
-                        <a class="btn btn-outline-success btn-lg" href="{{ url_for('auth.register') }}" aria-label="Create a new account">Create Account</a>
+                        <a class="btn btn-success btn-lg" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">
+                            <span>Sign In</span>
+                        </a>
+                        <a class="btn btn-outline-success btn-lg" href="{{ url_for('auth.register') }}" aria-label="Create a new account">
+                            <span>Create Account</span>
+                        </a>
                     {% endif %}
+                    <a class="apple-link ms-md-2 d-inline-flex" href="{{ url_for('customer_portal.search_stalls') }}">
+                        <span>Explore Campus Stalls</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
                 </div>
                 <div class="hero-trustline reveal">
                     <i class="bi bi-patch-check-fill" aria-hidden="true"></i>
-                    <span>Trusted by city health inspection teams for consistent, auditable records</span>
+                    <span>Trusted by university food safety inspection teams for verified hygiene</span>
                 </div>
             </div>
+            
+            <!-- Apple Glass Showcase with Ambient Glow Aura -->
             <div class="col-lg-6">
-                <div class="preview-card reveal reveal--right" role="img" aria-label="Preview of a vendor risk dashboard showing an overall safety score and recent inspection results">
-                    <div class="preview-card__header">
-                        <div class="preview-card__title">
-                            <span class="preview-dot preview-dot--live" aria-hidden="true"></span>
-                            <span>Vendor Risk Overview</span>
-                        </div>
-                        <span class="badge preview-badge">Live Preview</span>
-                    </div>
-                    <div class="preview-card__body">
-                        <div class="preview-score">
-                            <div class="preview-score__ring" style="--score: 82;">
-                                <span class="preview-score__value">82</span>
+                <div class="showcase-wrapper">
+                    <div class="ambient-glow-aura"></div>
+                    <div class="preview-card reveal reveal--right" role="img" aria-label="Preview of vendor risk dashboard">
+                        <div class="preview-card__header">
+                            <div class="preview-card__title">
+                                <span class="preview-dot preview-dot--live" aria-hidden="true"></span>
+                                <span>Campus Hygiene Overview</span>
                             </div>
-                            <div>
-                                <p class="preview-score__label">Overall Safety Score</p>
-                                <p class="preview-score__status"><i class="bi bi-shield-check" aria-hidden="true"></i> Low Risk</p>
-                            </div>
-                            <span class="preview-score__chip"><i class="bi bi-arrow-up-short" aria-hidden="true"></i>4 pts this week</span>
+                            <span class="preview-badge">Live System</span>
                         </div>
-                        <ul class="preview-list">
-                            <li>
-                                <span class="preview-list__dot preview-list__dot--low" aria-hidden="true"></span>
-                                <span class="preview-list__name">Golden Wok Noodles</span>
-                                <span class="badge preview-badge-low">Low</span>
-                            </li>
-                            <li>
-                                <span class="preview-list__dot preview-list__dot--medium" aria-hidden="true"></span>
-                                <span class="preview-list__name">Riverside Grill Cart</span>
-                                <span class="badge preview-badge-medium">Medium</span>
-                            </li>
-                            <li>
-                                <span class="preview-list__dot preview-list__dot--high" aria-hidden="true"></span>
-                                <span class="preview-list__name">Sunset BBQ Stall</span>
-                                <span class="badge preview-badge-high">High</span>
-                            </li>
-                        </ul>
+                        <div class="preview-card__body">
+                            <div class="preview-score">
+                                <div class="preview-score__ring" style="--score: 88;">
+                                    <span class="preview-score__value">88</span>
+                                </div>
+                                <div>
+                                    <p class="preview-score__label">Overall Safety Score</p>
+                                    <p class="preview-score__status"><i class="bi bi-shield-check me-1"></i> Grade A &middot; Low Risk</p>
+                                </div>
+                                <span class="preview-score__chip"><i class="bi bi-arrow-up-short"></i>+6 pts this month</span>
+                            </div>
+                            <ul class="preview-list">
+                                <li>
+                                    <div class="d-flex align-items-center">
+                                        <span class="preview-list__dot preview-list__dot--low" aria-hidden="true"></span>
+                                        <span class="preview-list__name">Main Cafeteria Cart</span>
+                                    </div>
+                                    <span class="badge preview-badge-low">Low Risk</span>
+                                </li>
+                                <li>
+                                    <div class="d-flex align-items-center">
+                                        <span class="preview-list__dot preview-list__dot--low" aria-hidden="true"></span>
+                                        <span class="preview-list__name">Green Lounge Coffee</span>
+                                    </div>
+                                    <span class="badge preview-badge-low">Low Risk</span>
+                                </li>
+                                <li>
+                                    <div class="d-flex align-items-center">
+                                        <span class="preview-list__dot preview-list__dot--medium" aria-hidden="true"></span>
+                                        <span class="preview-list__name">East Gate Snacks</span>
+                                    </div>
+                                    <span class="badge preview-badge-medium">Medium</span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -77,7 +101,7 @@
     </div>
 </section>
 
-<!-- Trust / stats strip -->
+<!-- Trust & Stats Strip -->
 <section class="stats-strip" aria-label="Platform statistics">
     <div class="container">
         <div class="row g-4 text-center">
@@ -85,7 +109,7 @@
                 <div class="stat-item reveal">
                     <i class="bi bi-shop-window stat-icon" aria-hidden="true"></i>
                     <p class="stat-number">{{ "{:,}".format(stats.vendors) }}</p>
-                    <p class="stat-label">Vendors Tracked</p>
+                    <p class="stat-label">Campus Stalls Tracked</p>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
@@ -99,105 +123,102 @@
                 <div class="stat-item reveal">
                     <i class="bi bi-shield-check stat-icon" aria-hidden="true"></i>
                     <p class="stat-number">{{ "{:,}".format(stats.risk_alerts_resolved) }}</p>
-                    <p class="stat-label">Risk Alerts Resolved</p>
+                    <p class="stat-label">Corrective Actions</p>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
                 <div class="stat-item reveal">
                     <i class="bi bi-geo-alt stat-icon" aria-hidden="true"></i>
                     <p class="stat-number">{{ "{:,}".format(stats.cities) }}</p>
-                    <p class="stat-label">Cities Covered</p>
+                    <p class="stat-label">Campus Zones</p>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Features -->
+<!-- Apple Bento Features Grid -->
 <section id="features" class="features-section" aria-labelledby="features-heading">
     <div class="container">
         <div class="section-heading reveal">
-            <p class="eyebrow">What You Can Do</p>
-            <h2 id="features-heading">One platform for the entire inspection workflow</h2>
+            <p class="eyebrow">Platform Capabilities</p>
+            <h2 id="features-heading">Designed for precision. Built for public health.</h2>
         </div>
         <div class="row g-4">
             <div class="col-md-6 col-lg-3">
                 <div class="feature-card reveal">
                     <div class="feature-icon"><i class="bi bi-clipboard2-pulse" aria-hidden="true"></i></div>
                     <h3>Inspection Records</h3>
-                    <p>Log and track the full inspection history for every vendor, with photos, notes, and outcomes in one place.</p>
+                    <p>Log and track full audit histories with photos, notes, and weighted checklist scoring in real time.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="feature-card reveal">
                     <div class="feature-icon"><i class="bi bi-shop" aria-hidden="true"></i></div>
-                    <h3>Vendor Profiles</h3>
-                    <p>Centralized vendor and location data, so every stall's history and status is a search away.</p>
+                    <h3>Stall Profiles</h3>
+                    <p>Centralized food vendor directories, licensing, menu catalogs, and safety verification badges.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="feature-card reveal">
                     <div class="feature-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></div>
-                    <h3>Risk Scoring</h3>
-                    <p>Automated risk classification per vendor, based on inspection findings and history &mdash; no manual guesswork.</p>
+                    <h3>Risk Engine</h3>
+                    <p>Automated database risk classification per vendor based on live MySQL weighted algorithms.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="feature-card reveal">
                     <div class="feature-icon"><i class="bi bi-bar-chart-line" aria-hidden="true"></i></div>
                     <h3>Reports &amp; Analytics</h3>
-                    <p>Dashboards and exportable reports that turn raw inspection data into clear, actionable insight.</p>
+                    <p>Comprehensive operational dashboards, compliance distribution charts, and reinspection schedules.</p>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- How it works -->
+<!-- Apple Keynote 3-Step Workflow -->
 <section id="how-it-works" class="how-section" aria-labelledby="how-heading">
     <div class="container">
         <div class="section-heading reveal">
-            <p class="eyebrow">How It Works</p>
-            <h2 id="how-heading">From registration to resolution, in three steps</h2>
+            <p class="eyebrow">Seamless Process</p>
+            <h2 id="how-heading">From registration to resolution in three steps.</h2>
         </div>
         <ol class="how-steps">
             <li class="how-step reveal">
                 <span class="how-step__number" aria-hidden="true">1</span>
                 <h3>Register Vendor</h3>
-                <p>Add a street food vendor's profile, stall location, and food category to the system.</p>
+                <p>Submit stall details, operating license, and food categories for administrative verification.</p>
             </li>
             <li class="how-step reveal">
                 <span class="how-step__number" aria-hidden="true">2</span>
-                <h3>Conduct Inspection &amp; Score Risk</h3>
-                <p>Inspectors record on-site findings; the platform automatically calculates a risk score.</p>
+                <h3>Conduct &amp; Score Audit</h3>
+                <p>Inspectors assess food prep and hygiene on-site; the risk engine computes a live safety grade.</p>
             </li>
             <li class="how-step reveal">
                 <span class="how-step__number" aria-hidden="true">3</span>
-                <h3>Review Reports &amp; Act on Alerts</h3>
-                <p>Officials review dashboards and reports, and follow up on high-risk alerts quickly.</p>
+                <h3>Track &amp; Resolve Alerts</h3>
+                <p>Vendors submit corrective proof; officials track resolution and public confidence stays high.</p>
             </li>
         </ol>
     </div>
 </section>
 
-<!-- About / why it matters -->
+<!-- About / Impact Section -->
 <section id="about" class="about-section" aria-labelledby="about-heading">
-    <div class="about-blob" aria-hidden="true"></div>
     <div class="container position-relative">
         <div class="row align-items-center g-5">
             <div class="col-lg-7">
                 <p class="eyebrow reveal">Why It Matters</p>
-                <h2 id="about-heading" class="reveal">Public health, backed by data</h2>
+                <h2 id="about-heading" class="reveal">Campus health, backed by transparent data.</h2>
                 <p class="about-lead reveal">
-                    Street food is a vital part of city life &mdash; and keeping it safe requires more than
-                    paper checklists. Street Food Safety brings transparency to the inspection process,
-                    gives vendors a clear path to compliance, and gives officials the data they need to
-                    act on risk before it becomes a public health incident.
+                    Healthy campus dining requires consistent, transparent standards. DIU Food Safety System gives 
+                    vendors clear guidance toward total hygiene compliance, gives health officers real-time operational data, 
+                    and empowers students to eat with confidence.
                 </p>
                 <p class="about-lead reveal">
-                    By centralizing inspection history and automating risk scoring, the platform helps
-                    cities enforce standards consistently and fairly, while building public trust in the
-                    food vendors that communities rely on every day.
+                    By centralizing inspection histories and automating risk classifications, we eliminate guesswork and maintain 
+                    the highest health standards across every campus food outlet.
                 </p>
             </div>
             <div class="col-lg-5">
@@ -205,22 +226,22 @@
                     <div class="about-panel__item">
                         <i class="bi bi-eye" aria-hidden="true"></i>
                         <div>
-                            <strong>Transparency</strong>
-                            <span>Open, consistent inspection records for every stall.</span>
+                            <strong>Total Transparency</strong>
+                            <span>Open, verifiable hygiene grades for every campus dining spot.</span>
                         </div>
                     </div>
                     <div class="about-panel__item">
                         <i class="bi bi-heart-pulse" aria-hidden="true"></i>
                         <div>
-                            <strong>Safer Food</strong>
-                            <span>Earlier detection of risk before it reaches the public.</span>
+                            <strong>Safer Dining</strong>
+                            <span>Early detection of safety risks before health issues arise.</span>
                         </div>
                     </div>
                     <div class="about-panel__item">
                         <i class="bi bi-cpu" aria-hidden="true"></i>
                         <div>
-                            <strong>Data-Driven Enforcement</strong>
-                            <span>Risk scores that prioritize where inspectors act next.</span>
+                            <strong>Data-Driven Auditing</strong>
+                            <span>Automated prioritization directing inspectors where they're needed most.</span>
                         </div>
                     </div>
                 </div>
@@ -229,16 +250,23 @@
     </div>
 </section>
 
-<!-- CTA banner -->
+<!-- Apple-Style Keynote CTA Banner -->
 <section class="cta-banner">
-    <div class="cta-banner__pattern" aria-hidden="true"></div>
     <div class="container text-center position-relative reveal">
-        <h2>Ready to get started?</h2>
-        <p>Create an account to register a vendor, schedule inspections, or track risk across the city.</p>
+        <h2>Experience safer dining today.</h2>
+        <p>Join the DIU Food Safety network to inspect, manage, or discover hygienic food on campus.</p>
         {% if current_user.is_authenticated %}
-            <a class="btn btn-light btn-lg" href="{{ url_for('auth.dashboard_redirect') }}">Open Dashboard</a>
+            <a class="btn btn-light btn-lg" href="{{ url_for('auth.dashboard_redirect') }}">
+                <span>Open Dashboard</span>
+                <i class="bi bi-arrow-right ms-1"></i>
+            </a>
         {% else %}
-            <a class="btn btn-light btn-lg" href="{{ url_for('auth.register') }}" aria-label="Create a new account">Create Account</a>
+            <a class="btn btn-light btn-lg me-2" href="{{ url_for('auth.register') }}" aria-label="Create a new account">
+                <span>Get Started</span>
+            </a>
+            <a class="btn btn-outline-light btn-lg" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">
+                <span>Sign In</span>
+            </a>
         {% endif %}
     </div>
 </section>

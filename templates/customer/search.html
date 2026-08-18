@@ -1,9 +1,231 @@
 {% extends "customer/base.html" %}
-{% block title %}Find Safe Food Stalls{% endblock %}
-{% block portal_title %}Find Food Stalls{% endblock %}
-{% block portal_subtitle %}Search verified stalls and compare their latest hygiene status.{% endblock %}
+{% block title %}Find Safe Food Stalls · DIU Food Safety System{% endblock %}
+{% block portal_title %}Find Safe Food Stalls{% endblock %}
+{% block portal_subtitle %}Search verified campus food stalls and compare live hygiene grades and inspection scores.{% endblock %}
+
 {% block portal_content %}
-<form class="portal-card search-bar filter-grid mb-4" method="get"><div class="field-icon"><label>Search</label><i class="fa-solid fa-magnifying-glass"></i><input class="form-control" name="q" value="{{ filters.q }}" placeholder="Stall name, code or address"></div><div><label>Area</label><select class="form-select" name="area_id"><option value="">All areas</option>{% for area in areas %}<option value="{{ area.area_id }}" {{ 'selected' if filters.area_id == area.area_id }}>{{ area.area_name }}</option>{% endfor %}</select></div><div><label>Food category</label><select class="form-select" name="category_id"><option value="">All categories</option>{% for category in categories %}<option value="{{ category.category_id }}" {{ 'selected' if filters.category_id == category.category_id }}>{{ category.category_name }}</option>{% endfor %}</select></div><div><label>Risk level</label><select class="form-select" name="risk_level"><option value="">All levels</option>{% for risk in ['low','medium','high','critical'] %}<option value="{{ risk }}" {{ 'selected' if filters.risk_level == risk }}>{{ risk|title }}</option>{% endfor %}</select></div><button class="btn btn-success"><i class="fa-solid fa-filter me-2"></i>Apply filters</button></form>
-<div class="result-count"><span><strong>{{ results|length }}</strong> stall{{ 's' if results|length != 1 }} found</span></div>
-<div class="row g-4">{% for result in results %}<div class="col-md-6 col-xl-4"><article class="portal-card customer-stall risk-accent-{{ result.risk or 'unrated' }}"><div class="stall-photo">{% if result.stall.photo_url %}<img src="{{ result.stall.photo_url }}" alt="{{ result.stall.stall_name }}" loading="lazy" onerror="this.closest('.stall-photo').classList.add('photo-error')">{% endif %}<div class="stall-photo-fallback"><i class="fa-solid fa-utensils"></i></div><div class="stall-preview"><div class="stall-preview-inner">{% if result.stall.vendor %}<span class="preview-vendor"><i class="fa-solid fa-store"></i>{{ result.stall.vendor.business_name }}</span>{% endif %}{% set preview_items = result.stall.food_items|selectattr('is_available')|list %}{% if preview_items %}<ul class="preview-menu">{% for item in preview_items[:3] %}<li><span>{{ item.item_name }}</span>{% if item.price is not none %}<b>{{ item.price }} BDT</b>{% endif %}</li>{% endfor %}</ul>{% endif %}<span class="preview-cta">Tap to view full details <i class="fa-solid fa-arrow-right"></i></span></div></div></div><div class="d-flex justify-content-between"><span class="code">{{ result.stall.stall_code }}</span><span class="risk-badge risk-{{ result.risk or 'unrated' }}">{{ result.risk or 'unrated' }}</span></div><h2>{{ result.stall.stall_name }}</h2><p><i class="fa-solid fa-location-dot me-1"></i>{{ result.stall.area.area_name }} · {{ result.stall.address }}</p><div class="customer-score"><div><small>Hygiene score</small><strong>{{ result.score ~ '%' if result.score is not none else '—' }}</strong></div><div><small>Grade</small><strong>{{ result.grade or '—' }}</strong></div></div><div class="category-chips">{% for item in result.stall.food_items %}<span>{{ item.category.category_name }}</span>{% endfor %}</div><a class="portal-link stretched-link" href="{{ url_for('customer_portal.stall_detail', stall_id=result.stall.stall_id) }}">View stall details <i class="fa-solid fa-arrow-right"></i></a></article></div>{% else %}<div class="col-12"><div class="portal-card empty-state"><i class="fa-solid fa-store-slash"></i><strong>No stalls match these filters</strong><span>Try clearing a filter or searching a different area.</span></div></div>{% endfor %}</div>
+
+<!-- Quick Risk Filter Pills -->
+<div class="quick-risk-filters mb-4">
+    <a href="{{ url_for('customer_portal.search_stalls', q=filters.q, area_id=filters.area_id, category_id=filters.category_id) }}" 
+       class="quick-pill {{ 'active' if not filters.risk_level }}">
+        <i class="fa-solid fa-layer-group"></i> All Stalls
+    </a>
+    <a href="{{ url_for('customer_portal.search_stalls', q=filters.q, area_id=filters.area_id, category_id=filters.category_id, risk_level='low') }}" 
+       class="quick-pill quick-pill-low {{ 'active' if filters.risk_level == 'low' }}">
+        <span class="pill-dot pill-dot-low"></span> Low Risk (Safest)
+    </a>
+    <a href="{{ url_for('customer_portal.search_stalls', q=filters.q, area_id=filters.area_id, category_id=filters.category_id, risk_level='medium') }}" 
+       class="quick-pill quick-pill-medium {{ 'active' if filters.risk_level == 'medium' }}">
+        <span class="pill-dot pill-dot-medium"></span> Medium Risk
+    </a>
+    <a href="{{ url_for('customer_portal.search_stalls', q=filters.q, area_id=filters.area_id, category_id=filters.category_id, risk_level='high') }}" 
+       class="quick-pill quick-pill-high {{ 'active' if filters.risk_level == 'high' }}">
+        <span class="pill-dot pill-dot-high"></span> High Risk
+    </a>
+    <a href="{{ url_for('customer_portal.search_stalls', q=filters.q, area_id=filters.area_id, category_id=filters.category_id, risk_level='critical') }}" 
+       class="quick-pill quick-pill-critical {{ 'active' if filters.risk_level == 'critical' }}">
+        <span class="pill-dot pill-dot-critical"></span> Critical Risk
+    </a>
+</div>
+
+<!-- Main Search & Filter Form -->
+<form class="portal-card modern-filter-card mb-4" method="get">
+    <div class="filter-inputs-grid">
+        <div class="filter-field filter-search">
+            <label class="filter-label"><i class="fa-solid fa-magnifying-glass me-1"></i> Search Stall</label>
+            <div class="input-with-icon">
+                <input class="form-control" name="q" value="{{ filters.q }}" placeholder="Stall name, code or street address...">
+            </div>
+        </div>
+
+        <div class="filter-field">
+            <label class="filter-label"><i class="fa-solid fa-location-dot me-1"></i> Area</label>
+            <select class="form-select" name="area_id">
+                <option value="">All Areas</option>
+                {% for area in areas %}
+                <option value="{{ area.area_id }}" {{ 'selected' if filters.area_id == area.area_id }}>{{ area.area_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-field">
+            <label class="filter-label"><i class="fa-solid fa-utensils me-1"></i> Food Category</label>
+            <select class="form-select" name="category_id">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category.category_id }}" {{ 'selected' if filters.category_id == category.category_id }}>{{ category.category_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-field">
+            <label class="filter-label"><i class="fa-solid fa-shield-halved me-1"></i> Risk Level</label>
+            <select class="form-select" name="risk_level">
+                <option value="">All Risk Levels</option>
+                {% for risk in ['low', 'medium', 'high', 'critical'] %}
+                <option value="{{ risk }}" {{ 'selected' if filters.risk_level == risk }}>{{ risk|title }} Risk</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-actions">
+            <button class="btn btn-success w-100" type="submit">
+                <i class="fa-solid fa-filter me-1"></i> Filter
+            </button>
+            {% if filters.q or filters.area_id or filters.category_id or filters.risk_level %}
+            <a class="btn btn-light w-100" href="{{ url_for('customer_portal.search_stalls') }}" title="Clear all filters">
+                <i class="fa-solid fa-rotate-left me-1"></i> Reset
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</form>
+
+<!-- Results Bar & Active Filter Chips -->
+<div class="results-header-bar mb-4">
+    <div class="results-count-pill">
+        <i class="fa-solid fa-store me-2 text-success"></i>
+        <span>Showing <strong>{{ results|length }}</strong> verified food stall{{ 's' if results|length != 1 }}</span>
+    </div>
+
+    {% if filters.q or filters.area_id or filters.category_id or filters.risk_level %}
+    <div class="active-chips-wrap">
+        <span class="active-chips-label">Active Filters:</span>
+        {% if filters.q %}
+        <span class="active-chip">
+            "{{ filters.q }}"
+            <a href="{{ url_for('customer_portal.search_stalls', area_id=filters.area_id, category_id=filters.category_id, risk_level=filters.risk_level) }}"><i class="fa-solid fa-xmark"></i></a>
+        </span>
+        {% endif %}
+        {% if filters.area_id %}
+        {% for area in areas if area.area_id == filters.area_id %}
+        <span class="active-chip">
+            Area: {{ area.area_name }}
+            <a href="{{ url_for('customer_portal.search_stalls', q=filters.q, category_id=filters.category_id, risk_level=filters.risk_level) }}"><i class="fa-solid fa-xmark"></i></a>
+        </span>
+        {% endfor %}
+        {% endif %}
+        {% if filters.category_id %}
+        {% for cat in categories if cat.category_id == filters.category_id %}
+        <span class="active-chip">
+            Category: {{ cat.category_name }}
+            <a href="{{ url_for('customer_portal.search_stalls', q=filters.q, area_id=filters.area_id, risk_level=filters.risk_level) }}"><i class="fa-solid fa-xmark"></i></a>
+        </span>
+        {% endfor %}
+        {% endif %}
+        {% if filters.risk_level %}
+        <span class="active-chip">
+            Risk: {{ filters.risk_level|title }}
+            <a href="{{ url_for('customer_portal.search_stalls', q=filters.q, area_id=filters.area_id, category_id=filters.category_id) }}"><i class="fa-solid fa-xmark"></i></a>
+        </span>
+        {% endif %}
+        <a class="clear-all-link" href="{{ url_for('customer_portal.search_stalls') }}">Clear all</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Stalls Grid -->
+<div class="row g-4">
+    {% for result in results %}
+    <div class="col-md-6 col-xl-4">
+        <article class="portal-card customer-stall modern-stall-card risk-border-{{ result.risk or 'unrated' }}">
+            <!-- Photo & Overlay -->
+            <div class="stall-photo">
+                {% if result.stall.photo_url %}
+                <img src="{{ result.stall.photo_url }}" alt="{{ result.stall.stall_name }}" loading="lazy" onerror="this.closest('.stall-photo').classList.add('photo-error')">
+                {% endif %}
+                <div class="stall-photo-fallback">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                
+                <!-- Floating Glassy Risk Badge -->
+                <div class="floating-risk-badge risk-badge-{{ result.risk or 'unrated' }}">
+                    <span class="status-indicator-dot dot-{{ result.risk or 'unrated' }}"></span>
+                    {{ (result.risk or 'Unrated')|title }} Risk
+                </div>
+
+                <!-- Hover Quick Preview -->
+                <div class="stall-preview">
+                    <div class="stall-preview-inner">
+                        {% if result.stall.vendor %}
+                        <span class="preview-vendor"><i class="fa-solid fa-store me-1"></i>{{ result.stall.vendor.business_name }}</span>
+                        {% endif %}
+                        {% set preview_items = result.stall.food_items|selectattr('is_available')|list %}
+                        {% if preview_items %}
+                        <ul class="preview-menu">
+                            {% for item in preview_items[:3] %}
+                            <li>
+                                <span>{{ item.item_name }}</span>
+                                {% if item.price is not none %}<b>{{ item.price }} BDT</b>{% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        <span class="preview-cta">Tap to view full details <i class="fa-solid fa-arrow-right ms-1"></i></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stall Header -->
+            <div class="stall-card-header">
+                <span class="stall-code-chip">{{ result.stall.stall_code }}</span>
+                {% if result.grade %}
+                <span class="grade-badge-sm grade-{{ result.grade|lower }}">
+                    Grade {{ result.grade }}
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Stall Title & Location -->
+            <h2 class="stall-card-title">{{ result.stall.stall_name }}</h2>
+            <p class="stall-location-text">
+                <i class="fa-solid fa-location-dot me-1 text-danger"></i>{{ result.stall.area.area_name }} &middot; {{ result.stall.address }}
+            </p>
+
+            <!-- Hygiene Scorecard -->
+            <div class="customer-score modern-score-card">
+                <div class="score-col">
+                    <small>HYGIENE SCORE</small>
+                    <strong class="score-text">{{ result.score ~ '%' if result.score is not none else '—' }}</strong>
+                </div>
+                <div class="score-divider"></div>
+                <div class="score-col">
+                    <small>RATING GRADE</small>
+                    <strong class="grade-text grade-text-{{ (result.grade or 'unknown')|lower }}">{{ result.grade or 'N/A' }}</strong>
+                </div>
+            </div>
+
+            <!-- Category Chips -->
+            <div class="category-chips">
+                {% for item in result.stall.food_items %}
+                <span class="category-chip"><i class="fa-solid fa-tag me-1"></i>{{ item.category.category_name }}</span>
+                {% endfor %}
+            </div>
+
+            <!-- Card Bottom CTA -->
+            <div class="stall-card-footer mt-auto pt-3 border-top">
+                <a class="btn btn-outline-success btn-sm w-100 rounded-pill stretched-link" href="{{ url_for('customer_portal.stall_detail', stall_id=result.stall.stall_id) }}">
+                    <span>View Stall Details</span>
+                    <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </article>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="portal-card empty-search-card text-center py-5">
+            <div class="empty-icon-wrap mb-3">
+                <i class="fa-solid fa-store-slash fa-3x text-muted"></i>
+            </div>
+            <h3 class="h5 fw-bold mb-2">No food stalls match your criteria</h3>
+            <p class="text-secondary mb-4">Try adjusting your search terms, selecting a different area, or clearing filters.</p>
+            <a class="btn btn-success px-4" href="{{ url_for('customer_portal.search_stalls') }}">
+                <i class="fa-solid fa-rotate-left me-1"></i> Reset All Filters
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
 {% endblock %}

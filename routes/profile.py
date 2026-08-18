@@ -14,7 +14,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from extensions import db
-from models import Area, AuthAuditLog, Complaint, Review, User
+from models import Area, AuthAuditLog, Complaint, Review, User, Notification
 from services.account_classification import is_valid_student_email
 from services.email_verification import send_verification_email
 from services.profile_photo import (
@@ -25,6 +25,17 @@ from services.profile_photo import (
 
 
 profile_bp = Blueprint("profile", __name__, url_prefix="/profile")
+
+
+@profile_bp.context_processor
+def _inject_unread_notification_count():
+    if not current_user.is_authenticated:
+        return {"unread_notification_count": 0}
+    count = Notification.query.filter_by(
+        user_id=current_user.user_id, is_read=False
+    ).count()
+    return {"unread_notification_count": count}
+
 
 _MIN_PASSWORD_LENGTH = 8
 
@@ -55,14 +66,24 @@ def view():
         .limit(10)
         .all()
     )
+    if is_admin_tier:
+        template_name = "profile/view_admin.html"
+    elif current_user.role_name in ("customer", "consumer", "student"):
+        template_name = "profile/view_student.html"
+    elif current_user.role_name == "vendor":
+        template_name = "profile/view_vendor.html"
+    elif current_user.role_name == "inspector":
+        template_name = "profile/view_inspector.html"
+    else:
+        template_name = "profile/view_default.html"
+
     return render_template(
-        "profile/view.html",
+        template_name,
         areas=Area.query.order_by(Area.area_name).all(),
         reviews=reviews,
         complaints=complaints,
         recent_logins=recent_logins,
         today=date.today(),
-        base_template="admin/base.html" if is_admin_tier else "base.html",
         page_title="My Profile",
     )
 

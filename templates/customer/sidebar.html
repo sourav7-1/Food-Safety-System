@@ -1,7 +1,7 @@
 <div class="dashboard-sidebar-inner">
     <a class="dashboard-brand" href="{{ url_for('home') }}">
-        <img class="brand-logo" src="{{ url_for('static', filename='images/food-safety-logo.png') }}" alt="Street Food Safety logo">
-        <span><strong>FoodSafe</strong><small>CUSTOMER PORTAL</small></span>
+        <img class="brand-logo" src="{{ url_for('static', filename='images/food-safety-logo.png') }}" alt="DIU Food Safety System logo">
+        <span><strong>DIU FoodSafe</strong><small>STUDENT PORTAL</small></span>
     </a>
 
     <a class="dashboard-user" href="{{ url_for('profile.view') }}">
@@ -31,7 +31,7 @@
         </a>
         <a class="dashboard-link {{ 'active' if request.endpoint == 'customer_portal.notifications' }}" href="{{ url_for('customer_portal.notifications') }}">
             <i class="fa-regular fa-bell"></i><span>Notifications</span>
-            {% if unread_notification_count > 0 %}<span class="dashboard-badge">{{ unread_notification_count }}</span>{% endif %}
+            {% if unread_notification_count > 0 %}<span class="notification-badge">{{ unread_notification_count }}</span>{% endif %}
         </a>
         <a class="dashboard-link {{ 'active' if request.endpoint and request.endpoint.startswith('profile.') }}" href="{{ url_for('profile.view') }}">
             <i class="fa-solid fa-id-card"></i><span>Profile</span>
