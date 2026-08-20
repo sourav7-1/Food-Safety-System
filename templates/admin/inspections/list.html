@@ -1,15 +1,96 @@
 {% extends "admin/base.html" %}
 {% block content %}
-<div class="list-heading">
-  <div><p class="eyebrow mb-1">FIELD OPERATIONS</p><h2>Inspections</h2><p>Review submitted scores, risk decisions and reinspection dates.</p></div>
-  <form class="search-form" method="get">
-    <select class="form-select" name="status"><option value="">All statuses</option>{% for value in ['draft','submitted','approved','rejected'] %}<option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|replace('_',' ')|title }}</option>{% endfor %}</select>
-    <select class="form-select" name="risk"><option value="">All risks</option>{% for value in ['low','medium','high','critical'] %}<option value="{{ value }}" {{ 'selected' if selected_risk == value }}>{{ value|title }}</option>{% endfor %}</select>
-    <button class="btn btn-primary">Filter</button>
-  </form>
+<div class="page-actionbar">
+    <div>
+        <p class="eyebrow mb-1">FIELD OPERATIONS</p>
+        <h2 class="h3 fw-bold mb-1">Inspections</h2>
+        <p class="text-secondary mb-0">Review submitted audit scores, risk decisions, and approve reinspection dates.</p>
+    </div>
+    <form class="d-flex gap-2 flex-wrap" method="get">
+        <select class="form-select form-select-sm" name="status" style="width: auto;">
+            <option value="">All statuses</option>
+            {% for value in ['draft','submitted','approved','rejected'] %}
+            <option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|replace('_',' ')|title }}</option>
+            {% endfor %}
+        </select>
+        <select class="form-select form-select-sm" name="risk" style="width: auto;">
+            <option value="">All risks</option>
+            {% for value in ['low','medium','high','critical'] %}
+            <option value="{{ value }}" {{ 'selected' if selected_risk == value }}>{{ value|title }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-primary action-button px-3">
+            <i class="fa-solid fa-filter me-1"></i> Filter
+        </button>
+    </form>
 </div>
-<div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0">
-  <thead><tr><th>ID</th><th>Stall</th><th>Inspector</th><th>Date</th><th>Score</th><th>Risk</th><th>Reinspection</th><th>Status</th><th>Review</th></tr></thead>
-  <tbody>{% for inspection in inspections %}<tr><td>#{{ inspection.inspection_id }}</td><td><a class="entity-link" href="{{ url_for('admin.stalls', q=inspection.stall.stall_code) }}"><strong>{{ inspection.stall.stall_name }}</strong></a><small>{{ inspection.stall.stall_code }}</small></td><td>{{ inspection.inspector.user.full_name }}</td><td>{{ inspection.inspection_date.strftime('%d %b %Y, %H:%M') }}</td><td>{{ inspection.overall_score if inspection.overall_score is not none else '—' }}{% if inspection.overall_score is not none %}%{% endif %}</td><td><span class="status-pill risk-{{ inspection.risk_level or 'unrated' }}">{{ inspection.risk_level or 'unrated' }}</span></td><td>{{ inspection.reinspection_date.strftime('%d %b %Y') if inspection.reinspection_date else '—' }}</td><td><span class="status-pill status-{{ inspection.status }}">{{ inspection.status }}</span></td><td>{% if inspection.status == 'submitted' %}<form class="d-inline" method="post" action="{{ url_for('admin.inspection_approve', inspection_id=inspection.inspection_id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-success" type="submit">Approve</button></form> <form class="d-inline" method="post" action="{{ url_for('admin.inspection_reject', inspection_id=inspection.inspection_id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Reject</button></form>{% else %}—{% endif %}</td></tr>{% else %}<tr><td colspan="9" class="empty-state">No inspections found.</td></tr>{% endfor %}</tbody>
-</table></div></div>
+
+<div class="panel-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Stall</th>
+                    <th>Inspector</th>
+                    <th>Audit Date</th>
+                    <th>Hygiene Score</th>
+                    <th>Risk</th>
+                    <th>Next Reinspection</th>
+                    <th>Status</th>
+                    <th class="text-end">Decision</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for inspection in inspections %}
+                <tr>
+                    <td class="text-nowrap">
+                        <button type="button" class="btn btn-sm btn-light text-primary border me-1" title="View Details" style="border-radius: 8px; width: 28px; height: 28px; display: inline-grid; place-items: center;" onclick="openEntityDetailModal('inspection', {{ inspection.inspection_id }})"><i class="fa-solid fa-eye"></i></button>
+                        <span class="code-chip">#{{ inspection.inspection_id }}</span>
+                    </td>
+                    <td>
+                        <a class="entity-link" href="{{ url_for('admin.stalls', q=inspection.stall.stall_code) }}">
+                            <strong class="text-primary">{{ inspection.stall.stall_name }}</strong>
+                        </a>
+                        <small class="text-secondary"><i class="fa-solid fa-hashtag me-1"></i>{{ inspection.stall.stall_code }}</small>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-dark">{{ inspection.inspector.user.full_name }}</div>
+                        <small class="text-muted">{{ inspection.inspector.employee_code }}</small>
+                    </td>
+                    <td>{{ inspection.inspection_date.strftime('%d %b %Y, %I:%M %p') }}</td>
+                    <td>
+                        <span class="score-value">
+                            {{ (inspection.overall_score ~ '%') if inspection.overall_score is not none else '—' }}
+                        </span>
+                    </td>
+                    <td><span class="status-pill risk-{{ inspection.risk_level or 'unrated' }}">{{ inspection.risk_level or 'unrated' }}</span></td>
+                    <td>{{ inspection.reinspection_date.strftime('%d %b %Y') if inspection.reinspection_date else '—' }}</td>
+                    <td><span class="status-pill status-{{ inspection.status }}">{{ inspection.status }}</span></td>
+                    <td class="text-end">
+                        {% if inspection.status == 'submitted' %}
+                        <form class="d-inline" method="post" action="{{ url_for('admin.inspection_approve', inspection_id=inspection.inspection_id) }}">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-success px-3 fw-bold rounded-pill shadow-sm" type="submit">
+                                <i class="fa-solid fa-check me-1"></i> Approve
+                            </button>
+                        </form>
+                        <form class="d-inline ms-1" method="post" action="{{ url_for('admin.inspection_reject', inspection_id=inspection.inspection_id) }}">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-outline-danger px-3 fw-semibold rounded-pill" type="submit">
+                                <i class="fa-solid fa-xmark me-1"></i> Reject
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted small">Completed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="9" class="empty-state"><i class="fa-solid fa-clipboard-check mb-2"></i>No inspections found matching criteria.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

@@ -6,6 +6,7 @@ from flask import (
     abort,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -26,6 +27,8 @@ from models import (
     FoodCategory,
     Inspection,
     InspectionCriterion,
+    InspectionDispute,
+    InspectionDisputeEvidence,
     Inspector,
     Notification,
     Permission,
@@ -39,7 +42,7 @@ from models import (
 )
 from routes import permission_required, super_admin_required
 from services.auth_audit import record_auth_event
-from services.evidence import record_audit, serve_complaint_evidence
+from services.evidence import record_audit, serve_complaint_evidence, serve_dispute_evidence
 from services.registration_import import cache_photo
 from services.role_audit import record_role_change
 from services.role_requests import (
@@ -76,6 +79,13 @@ COMPLAINT_TRANSITIONS = {
     "resolved": {"resolved", "closed", "under_review"},
     "rejected": {"rejected", "closed", "under_review"},
     "closed": {"closed", "under_review"},
+}
+DISPUTE_STATUSES = {"submitted", "under_review", "resolved", "rejected"}
+DISPUTE_TRANSITIONS = {
+    "submitted": {"submitted", "under_review", "resolved", "rejected"},
+    "under_review": {"under_review", "resolved", "rejected"},
+    "resolved": {"resolved", "under_review"},
+    "rejected": {"rejected", "under_review"},
 }
 EVIDENCE_VERIFICATION_STATUSES = {"under_review", "verified", "rejected"}
 EVIDENCE_ACTION_BY_STATUS = {
@@ -236,6 +246,251 @@ def _render_vendors_list(search="", reopen_modal=None, status_code=200):
         ),
         status_code,
     )
+
+
+@admin_bp.route("/api/dashboard-details/<category>")
+@login_required
+def api_dashboard_details(category):
+    category = category.lower().strip()
+    if category in ("total_vendors", "vendors"):
+        records = Vendor.query.join(Vendor.user).order_by(Vendor.created_at.desc()).limit(30).all()
+        return jsonify({
+            "title": "Registered Vendors",
+            "category_badge": "VENDORS",
+            "badge_class": "bg-primary-subtle text-primary",
+            "type": "vendors",
+            "items": [
+                {
+                    "id": v.vendor_id,
+                    "entity_type": "vendor",
+                    "name": v.user.full_name,
+                    "email": v.user.email,
+                    "business": v.business_name or "—",
+                    "license": v.license_number,
+                    "status": v.status,
+                    "account_status": v.user.status,
+                }
+                for v in records
+            ]
+        })
+    elif category in ("total_stalls", "stalls"):
+        records = Stall.query.join(Stall.area).order_by(Stall.created_at.desc()).limit(30).all()
+        return jsonify({
+            "title": "Tracked Food Stalls",
+            "category_badge": "ALL STALLS",
+            "badge_class": "bg-info-subtle text-info",
+            "type": "stalls",
+            "items": [
+                {
+                    "id": s.stall_id,
+                    "entity_type": "stall",
+                    "stall_name": s.stall_name,
+                    "code": s.stall_code,
+                    "area": s.area.area_name if s.area else "—",
+                    "status": s.status,
+                    "score": float(s.overall_score) if s.overall_score is not None else None,
+                    "risk": s.risk_level or "unrated",
+                }
+                for s in records
+            ]
+        })
+    elif category in ("todays_inspections", "inspections"):
+        records = Inspection.query.join(Inspection.stall).order_by(Inspection.inspection_date.desc()).limit(30).all()
+        return jsonify({
+            "title": "Recent Inspections",
+            "category_badge": "INSPECTIONS",
+            "badge_class": "bg-success-subtle text-success",
+            "type": "inspections",
+            "items": [
+                {
+                    "id": i.inspection_id,
+                    "entity_type": "inspection",
+                    "stall_name": i.stall.stall_name,
+                    "date": i.inspection_date.strftime('%d %b %Y, %I:%M %p') if i.inspection_date else "—",
+                    "score": float(i.overall_score) if i.overall_score is not None else None,
+                    "risk": i.risk_level or "unknown",
+                    "status": i.status,
+                }
+                for i in records
+            ]
+        })
+    elif category in ("high_risk_stalls", "high", "critical", "risk_high", "risk_critical"):
+        records = Stall.query.join(Stall.area).filter(or_(Stall.risk_level == "high", Stall.risk_level == "critical")).order_by(Stall.created_at.desc()).limit(30).all()
+        return jsonify({
+            "title": "High & Critical Risk Stalls",
+            "category_badge": "HIGH RISK",
+            "badge_class": "bg-danger-subtle text-danger",
+            "type": "stalls",
+            "items": [
+                {
+                    "id": s.stall_id,
+                    "entity_type": "stall",
+                    "stall_name": s.stall_name,
+                    "code": s.stall_code,
+                    "area": s.area.area_name if s.area else "—",
+                    "status": s.status,
+                    "score": float(s.overall_score) if s.overall_score is not None else None,
+                    "risk": s.risk_level or "high",
+                }
+                for s in records
+            ]
+        })
+    elif category in ("risk_low", "low"):
+        records = Stall.query.join(Stall.area).filter(Stall.risk_level == "low").order_by(Stall.created_at.desc()).limit(30).all()
+        return jsonify({
+            "title": "Low Risk (Safest) Stalls",
+            "category_badge": "LOW RISK",
+            "badge_class": "bg-success-subtle text-success",
+            "type": "stalls",
+            "items": [
+                {
+                    "id": s.stall_id,
+                    "entity_type": "stall",
+                    "stall_name": s.stall_name,
+                    "code": s.stall_code,
+                    "area": s.area.area_name if s.area else "—",
+                    "status": s.status,
+                    "score": float(s.overall_score) if s.overall_score is not None else None,
+                    "risk": s.risk_level or "low",
+                }
+                for s in records
+            ]
+        })
+    elif category in ("risk_medium", "medium"):
+        records = Stall.query.join(Stall.area).filter(Stall.risk_level == "medium").order_by(Stall.created_at.desc()).limit(30).all()
+        return jsonify({
+            "title": "Medium Risk Stalls",
+            "category_badge": "MEDIUM RISK",
+            "badge_class": "bg-warning-subtle text-warning",
+            "type": "stalls",
+            "items": [
+                {
+                    "id": s.stall_id,
+                    "entity_type": "stall",
+                    "stall_name": s.stall_name,
+                    "code": s.stall_code,
+                    "area": s.area.area_name if s.area else "—",
+                    "status": s.status,
+                    "score": float(s.overall_score) if s.overall_score is not None else None,
+                    "risk": s.risk_level or "medium",
+                }
+                for s in records
+            ]
+        })
+    elif category in ("pending_complaints", "complaints"):
+        records = Complaint.query.join(Complaint.stall).filter(Complaint.status.in_(["submitted", "under_review", "investigation", "action_required"])).order_by(Complaint.submitted_at.desc()).limit(30).all()
+        return jsonify({
+            "title": "Pending Complaints",
+            "category_badge": "COMPLAINTS",
+            "badge_class": "bg-warning-subtle text-warning",
+            "type": "complaints",
+            "items": [
+                {
+                    "id": c.complaint_id,
+                    "entity_type": "complaint",
+                    "title": c.title,
+                    "stall_name": c.stall.stall_name,
+                    "status": c.status,
+                    "date": c.submitted_at.strftime('%d %b %Y') if c.submitted_at else "—",
+                }
+                for c in records
+            ]
+        })
+    elif category == "average_hygiene_score":
+        records = Stall.query.join(Stall.area).filter(Stall.overall_score.isnot(None)).order_by(Stall.overall_score.desc()).limit(30).all()
+        return jsonify({
+            "title": "Stall Hygiene Scores",
+            "category_badge": "HYGIENE SCORES",
+            "badge_class": "bg-info-subtle text-info",
+            "type": "stalls",
+            "items": [
+                {
+                    "id": s.stall_id,
+                    "entity_type": "stall",
+                    "stall_name": s.stall_name,
+                    "code": s.stall_code,
+                    "area": s.area.area_name if s.area else "—",
+                    "status": s.status,
+                    "score": float(s.overall_score) if s.overall_score is not None else None,
+                    "risk": s.risk_level or "unrated",
+                }
+                for s in records
+            ]
+        })
+    else:
+        return jsonify({"title": "Details", "category_badge": "INFO", "badge_class": "bg-secondary-subtle text-secondary", "type": "empty", "items": []})
+
+
+@admin_bp.route("/api/entity-detail/<entity_type>/<int:entity_id>")
+@login_required
+def api_entity_detail(entity_type, entity_id):
+    entity_type = entity_type.lower().strip()
+    if entity_type == "vendor":
+        vendor = db.get_or_404(Vendor, entity_id)
+        stalls_count = Stall.query.filter_by(vendor_id=vendor.vendor_id).count()
+        return jsonify({
+            "type": "vendor",
+            "title": vendor.business_name or vendor.user.full_name,
+            "name": vendor.user.full_name,
+            "email": vendor.user.email,
+            "phone": vendor.user.phone or "Not provided",
+            "business": vendor.business_name or "—",
+            "license": vendor.license_number,
+            "license_expiry": vendor.license_expiry_date.strftime('%d %b %Y') if vendor.license_expiry_date else "—",
+            "status": vendor.status.title(),
+            "account_status": vendor.user.status.title(),
+            "national_id": vendor.national_id or "—",
+            "stalls_count": stalls_count,
+            "created_at": vendor.created_at.strftime('%d %b %Y') if vendor.created_at else "—"
+        })
+    elif entity_type == "stall":
+        stall = db.get_or_404(Stall, entity_id)
+        inspections_count = Inspection.query.filter_by(stall_id=stall.stall_id).count()
+        complaints_count = Complaint.query.filter_by(stall_id=stall.stall_id).count()
+        latest_insp = Inspection.query.filter_by(stall_id=stall.stall_id).order_by(Inspection.inspection_date.desc()).first()
+        risk_level = (latest_insp.risk_level if (latest_insp and latest_insp.risk_level) else "Unrated").title()
+        score = float(latest_insp.overall_score) if (latest_insp and latest_insp.overall_score is not None) else None
+        return jsonify({
+            "type": "stall",
+            "title": stall.stall_name,
+            "code": stall.stall_code,
+            "area": stall.area.area_name if stall.area else "—",
+            "address": stall.address or "Campus Area",
+            "status": stall.status.title(),
+            "risk": risk_level,
+            "score": score,
+            "vendor_name": stall.vendor.user.full_name if stall.vendor and stall.vendor.user else "—",
+            "vendor_business": stall.vendor.business_name if stall.vendor else "—",
+            "inspections_count": inspections_count,
+            "complaints_count": complaints_count,
+            "photo_url": stall.photo_url or None
+        })
+    elif entity_type == "inspection":
+        inspection = db.get_or_404(Inspection, entity_id)
+        return jsonify({
+            "type": "inspection",
+            "title": f"Inspection #{inspection.inspection_id}",
+            "stall_name": inspection.stall.stall_name if inspection.stall else "—",
+            "inspector_name": inspection.inspector.user.full_name if inspection.inspector and inspection.inspector.user else "Inspector",
+            "date": inspection.inspection_date.strftime('%d %b %Y, %I:%M %p') if inspection.inspection_date else "—",
+            "score": float(inspection.overall_score) if inspection.overall_score is not None else None,
+            "risk": (inspection.risk_level or "Unknown").title(),
+            "status": inspection.status.title(),
+            "notes": inspection.notes or "No additional notes provided for this inspection."
+        })
+    elif entity_type == "complaint":
+        complaint = db.get_or_404(Complaint, entity_id)
+        return jsonify({
+            "type": "complaint",
+            "title": complaint.title,
+            "stall_name": complaint.stall.stall_name if complaint.stall else "—",
+            "status": complaint.status.replace("_", " ").title(),
+            "date": complaint.submitted_at.strftime('%d %b %Y') if complaint.submitted_at else "—",
+            "description": complaint.description or "No detailed description.",
+            "response": complaint.admin_response or "No admin response recorded yet."
+        })
+    else:
+        return jsonify({"error": "Unknown entity type"}), 400
 
 
 @admin_bp.route("/vendors")
@@ -717,6 +972,93 @@ def evidence_download(evidence_id):
     evidence = db.get_or_404(ComplaintEvidence, evidence_id)
     record_audit(evidence, current_user, "viewed")
     return serve_complaint_evidence(evidence)
+
+
+@admin_bp.route("/inspection-disputes")
+@login_required
+@permission_required("inspection_disputes.view")
+def inspection_disputes():
+    status = request.args.get("status", "").strip()
+    query = InspectionDispute.query.join(InspectionDispute.vendor)
+    if status in DISPUTE_STATUSES:
+        query = query.filter(InspectionDispute.status == status)
+    records = query.order_by(InspectionDispute.submitted_at.desc()).all()
+    return render_template(
+        "admin/inspection_disputes/list.html",
+        page_title="Inspection Disputes",
+        disputes=records,
+        selected_status=status,
+    )
+
+
+def _render_dispute(dispute, status_code=200):
+    if _wants_partial():
+        return (
+            render_template(
+                "admin/inspection_disputes/_panel.html",
+                dispute=dispute,
+                standalone=True,
+            ),
+            status_code,
+        )
+    return (
+        render_template(
+            "admin/inspection_disputes/detail.html",
+            page_title="Manage Inspection Dispute",
+            dispute=dispute,
+        ),
+        status_code,
+    )
+
+
+@admin_bp.route("/inspection-disputes/<int:dispute_id>", methods=["GET", "POST"])
+@login_required
+@permission_required("inspection_disputes.view")
+def inspection_dispute_manage(dispute_id):
+    dispute = db.get_or_404(InspectionDispute, dispute_id)
+    if request.method == "POST":
+        if not current_user.has_permission("inspection_disputes.respond"):
+            abort(403)
+        status = request.form.get("status", "")
+        if status not in DISPUTE_STATUSES:
+            flash("Select a valid dispute status.", "danger")
+            return _render_dispute(dispute, 400)
+        current_status = dispute.status
+        if status not in DISPUTE_TRANSITIONS.get(current_status, set()):
+            flash(
+                f"Dispute cannot move from '{current_status}' to "
+                f"'{status}' directly.",
+                "danger",
+            )
+            return _render_dispute(dispute, 400)
+
+        dispute.status = status
+        dispute.admin_response = request.form.get("admin_response", "").strip() or None
+        dispute.resolved_at = (
+            datetime.now() if status in {"resolved", "rejected"} else None
+        )
+
+        _commit(
+            "Inspection dispute updated successfully.",
+            "Inspection dispute could not be updated.",
+        )
+        if not _wants_partial():
+            return redirect(
+                url_for(
+                    "admin.inspection_dispute_manage",
+                    dispute_id=dispute.dispute_id,
+                )
+            )
+
+    return _render_dispute(dispute)
+
+
+@admin_bp.route("/inspection-disputes/evidence/<int:evidence_id>")
+@login_required
+@permission_required("inspection_disputes.view")
+def inspection_dispute_evidence_download(evidence_id):
+    evidence = db.get_or_404(InspectionDisputeEvidence, evidence_id)
+    return serve_dispute_evidence(evidence)
 
 
 @admin_bp.route("/evidence/<int:evidence_id>/status", methods=["POST"])

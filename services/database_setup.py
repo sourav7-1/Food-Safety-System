@@ -52,6 +52,8 @@ DEFAULT_PERMISSIONS = {
     "inspections.view": "View submitted inspections",
     "inspections.approve": "Approve submitted inspections",
     "inspections.reject": "Reject submitted inspections",
+    "inspection_disputes.view": "View vendor-filed inspection disputes",
+    "inspection_disputes.respond": "Resolve or reject an inspection dispute",
     "reviews.view": "View customer reviews",
     "reviews.moderate": "Hide, flag, or restore customer reviews",
     "risk_engine.view": "View the risk engine dashboard",

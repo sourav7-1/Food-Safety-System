@@ -1,7 +1,76 @@
 {% extends "admin/base.html" %}
 {% block content %}
-<div class="list-heading"><div><p class="eyebrow mb-1">STUDENT FEEDBACK</p><h2>Reviews</h2><p>Moderate ratings and student comments.</p></div><form class="search-form" method="get"><select class="form-select" name="status"><option value="">All statuses</option>{% for value in ['visible','hidden','flagged'] %}<option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|title }}</option>{% endfor %}</select><button class="btn btn-primary">Filter</button></form></div>
-<div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>Student</th><th>Stall</th><th>Rating</th><th>Review</th><th>Status</th><th>Moderation</th></tr></thead><tbody>
-{% for review in reviews %}<tr><td><strong>{{ review.user.full_name }}</strong><small>{{ review.user.email }}</small></td><td><a class="entity-link" href="{{ url_for('admin.stalls', q=review.stall.stall_code) }}">{{ review.stall.stall_name }}</a></td><td>{{ review.rating }}/5</td><td>{{ review.review_text or '—' }}</td><td><span class="status-pill status-{{ review.status }}">{{ review.status }}</span></td><td><form class="d-flex gap-2" method="post" action="{{ url_for('admin.review_status', review_id=review.review_id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><select class="form-select form-select-sm" name="status">{% for value in ['visible','hidden','flagged'] %}<option value="{{ value }}" {{ 'selected' if review.status == value }}>{{ value|title }}</option>{% endfor %}</select><button class="btn btn-sm btn-soft">Save</button></form></td></tr>{% else %}<tr><td colspan="6" class="empty-state">No reviews found.</td></tr>{% endfor %}
-</tbody></table></div></div>
+<div class="page-actionbar">
+    <div>
+        <p class="eyebrow mb-1">STUDENT FEEDBACK</p>
+        <h2 class="h3 fw-bold mb-1">Reviews &amp; Ratings</h2>
+        <p class="text-secondary mb-0">Moderate student comments, ratings, and feedback visibility for stalls.</p>
+    </div>
+    <form class="d-flex gap-2" method="get">
+        <select class="form-select form-select-sm" name="status" style="width: auto;">
+            <option value="">All statuses</option>
+            {% for value in ['visible','hidden','flagged'] %}
+            <option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|title }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-primary action-button px-3">
+            <i class="fa-solid fa-filter me-1"></i> Filter
+        </button>
+    </form>
+</div>
+
+<div class="panel-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Stall</th>
+                    <th>Rating</th>
+                    <th>Review Content</th>
+                    <th>Status</th>
+                    <th class="text-end">Moderation</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for review in reviews %}
+                <tr>
+                    <td>
+                        <strong class="text-dark">{{ review.user.full_name }}</strong>
+                        <small class="text-muted">{{ review.user.email }}</small>
+                    </td>
+                    <td>
+                        <a class="entity-link" href="{{ url_for('admin.stalls', q=review.stall.stall_code) }}">
+                            <strong>{{ review.stall.stall_name }}</strong>
+                        </a>
+                    </td>
+                    <td>
+                        <div class="d-inline-flex align-items-center gap-1 bg-warning-subtle text-dark border border-warning-subtle px-2 py-1 rounded-pill fw-bold" style="font-size: 11.5px;">
+                            <i class="fa-solid fa-star text-warning"></i>
+                            <span>{{ review.rating }} / 5</span>
+                        </div>
+                    </td>
+                    <td style="max-width: 320px;">
+                        <span class="text-dark">{{ review.review_text or '—' }}</span>
+                    </td>
+                    <td><span class="status-pill status-{{ review.status }}">{{ review.status }}</span></td>
+                    <td class="text-end">
+                        <form class="d-inline-flex gap-2 justify-content-end align-items-center" method="post" action="{{ url_for('admin.review_status', review_id=review.review_id) }}">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <select class="form-select form-select-sm" name="status" style="width: auto;">
+                                {% for value in ['visible','hidden','flagged'] %}
+                                <option value="{{ value }}" {{ 'selected' if review.status == value }}>{{ value|title }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-sm btn-soft px-3 fw-bold">Save</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-star mb-2"></i>No reviews found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

@@ -112,6 +112,8 @@
                             <button type="button" class="btn btn-sm btn-outline-danger px-3 fw-bold" style="border-radius: 8px; font-size: 11px; height: 32px;" data-vendor-reject-open data-action="{{ url_for('admin.vendor_reject', vendor_id=vendor.vendor_id) }}">Reject</button>
                             {% endif %}
                             
+                            <button type="button" class="btn btn-sm btn-light text-primary border me-1" title="View Profile" style="border-radius: 8px; width: 32px; height: 32px; display: grid; place-items: center;" onclick="openEntityDetailModal('vendor', {{ vendor.vendor_id }})"><i class="fa-solid fa-eye"></i></button>
+                            
                             {% if vendor.status != 'pending' and current_user.has_permission('vendors.edit') %}
                             <button
                                 type="button"

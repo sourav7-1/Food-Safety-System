@@ -1,22 +1,23 @@
 {% extends "vendor/base.html" %}
 {% block title %}{{ stall.stall_name }} · Vendor Portal{% endblock %}
 {% block portal_title %}{{ stall.stall_name }}{% endblock %}
-{% block portal_subtitle %}{{ stall.stall_code }} · {{ stall.address }}{% endblock %}
+{% block portal_subtitle %}Code: {{ stall.stall_code }} &middot; Located at {{ stall.address }} ({{ stall.area.area_name }}){% endblock %}
+
 {% block portal_content %}
-<div class="d-flex gap-2 flex-wrap mb-4"><a class="btn btn-success btn-sm" href="{{ url_for('vendor_portal.food_items', stall_id=stall.stall_id) }}"><i class="fa-solid fa-utensils me-2"></i>Manage Food Items</a><a class="btn btn-light border btn-sm" href="{{ url_for('vendor_portal.complaints') }}">View Complaints</a></div>
-<div class="row g-4">
-<div class="col-lg-4"><section class="portal-card">
-    <h3>Current safety status</h3>
-    {% if latest %}<div class="safety-score"><strong>{{ latest.overall_score }}%</strong><span>Grade {{ grade }}</span></div><dl class="portal-dl"><dt>Risk</dt><dd><span class="risk-badge risk-{{ latest.risk_level }}">{{ latest.risk_level }}</span></dd><dt>Last inspection</dt><dd>{{ latest.inspection_date.strftime('%d %b %Y') }}</dd><dt>Next reinspection</dt><dd>{{ latest.reinspection_date.strftime('%d %b %Y') if latest.reinspection_date else 'Not scheduled' }}</dd></dl>{% else %}<p class="text-secondary">No completed inspection yet.</p>{% endif %}
-</section></div>
-<div class="col-lg-8"><section class="portal-card"><h3>Risk reasons and observations</h3>
-    <div class="reason-list">{% for reason in risk_reasons %}<div><i class="fa-solid fa-circle-exclamation"></i><p><strong>{{ reason.criterion }}</strong><span>{% if reason.score is not none %}{{ reason.score }}/{{ reason.maximum }}{% endif %}{% if reason.comments %}{{ ' · ' if reason.score is not none }}{{ reason.comments }}{% endif %}</span></p></div>{% else %}<p class="text-secondary mb-0">No adverse criterion observations or unresolved high-severity complaints.</p>{% endfor %}</div>
-</section></div>
+<!-- Action Toolbar -->
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <a class="btn btn-outline-secondary btn-sm px-3 rounded-pill" href="{{ url_for('vendor_portal.dashboard') }}">
+        <i class="fa-solid fa-arrow-left me-1"></i> All Stalls
+    </a>
+    <div class="d-flex gap-2">
+        <a class="btn btn-success btn-sm px-3 rounded-pill fw-bold shadow-sm" href="{{ url_for('vendor_portal.food_items', stall_id=stall.stall_id) }}">
+            <i class="fa-solid fa-utensils me-1"></i> Manage Food Items
+        </a>
+        <a class="btn btn-light border btn-sm px-3 rounded-pill fw-semibold" href="{{ url_for('vendor_portal.complaints') }}">
+            <i class="fa-regular fa-message me-1"></i> Complaints
+        </a>
+    </div>
 </div>
-<section class="portal-card mt-4"><h3>Corrective actions</h3>
-{% for action in actions %}<div class="action-row"><div><span class="risk-badge status-{{ action.status }}">{{ action.status }}</span><strong>{{ action.action_description }}</strong><small>Due {{ action.due_date.strftime('%d %b %Y') }}</small></div>
-{% if action.status != 'completed' %}<form method="post" enctype="multipart/form-data" action="{{ url_for('vendor_portal.submit_corrective_action', action_id=action.action_id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><textarea class="form-control form-control-sm" name="completion_notes" placeholder="Describe the completed correction..." required></textarea><input class="form-control form-control-sm" type="file" name="evidence" accept=".png,.jpg,.jpeg,.pdf" required><button class="btn btn-success btn-sm">Submit evidence</button></form>{% else %}<div class="completed-evidence"><span>{{ action.completion_notes }}</span>{% if action.evidence_path %}<a href="{{ url_for('vendor_portal.corrective_evidence', action_id=action.action_id) }}">Download evidence</a>{% endif %}</div>{% endif %}</div>
-{% else %}<p class="text-secondary mb-0">No corrective actions assigned.</p>{% endfor %}
-</section>
-<section class="portal-card mt-4"><h3>Inspection history</h3><div class="table-responsive"><table class="table portal-table mb-0"><thead><tr><th>Date</th><th>Score</th><th>Risk</th><th>Status</th><th>Remarks</th></tr></thead><tbody>{% for item in history %}<tr><td>{{ item.inspection_date.strftime('%d %b %Y') }}</td><td>{{ item.overall_score if item.overall_score is not none else '—' }}</td><td><span class="risk-badge risk-{{ item.risk_level or 'unrated' }}">{{ item.risk_level or 'unrated' }}</span></td><td>{{ item.status }}</td><td>{{ item.remarks or '—' }}</td></tr>{% else %}<tr><td colspan="5" class="text-center text-secondary">No history available.</td></tr>{% endfor %}</tbody></table></div></section>
+
+{% include "vendor/_stall_profile_content.html" %}
 {% endblock %}

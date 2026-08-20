@@ -8,6 +8,19 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <script>
+    // Applied synchronously, before the sidebar paints, so a returning
+    // visitor with the sidebar collapsed never sees it flash open first.
+    (function () {
+        try {
+            if (localStorage.getItem("adminSidebarCollapsed") === "1") {
+                document.documentElement.classList.add("sidebar-collapsed");
+            }
+        } catch (e) {}
+    })();
+    </script>
     {% block head %}{% endblock %}
 </head>
 <body class="admin-body">
@@ -16,6 +29,9 @@
         <aside class="admin-sidebar d-none d-lg-flex">
             {% include "admin/sidebar.html" %}
         </aside>
+        <button type="button" class="sidebar-collapse-toggle d-none d-lg-flex" id="sidebarCollapseToggle" aria-label="Collapse sidebar">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
 
         <div class="offcanvas offcanvas-start admin-offcanvas" tabindex="-1" id="adminSidebar">
             <div class="offcanvas-body p-0">
@@ -66,6 +82,33 @@
                 {% endwith %}
                 {% block content %}{% endblock %}
             </main>
+        </div>
+    </div>
+
+    <!-- Global Entity Profile Detail Modal -->
+    <div class="modal fade" id="adminItemDetailModal" tabindex="-1" aria-labelledby="adminItemDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-bottom-0 pb-0 pt-4 px-4 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-light rounded-circle d-none" id="adminItemBackBtn" style="width: 32px; height: 32px; display: grid; place-items: center;" onclick="backToAdminListModal()"><i class="fa-solid fa-arrow-left"></i></button>
+                        <h5 class="modal-title fw-bold mb-0" id="adminItemDetailModalLabel">Entity Profile</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="adminItemSpinner" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div id="adminItemBody"></div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
+                    <button type="button" class="btn btn-secondary px-3 fw-semibold d-none" id="adminItemBackFooterBtn" style="border-radius: 10px;" onclick="backToAdminListModal()">Back</button>
+                    <button type="button" class="btn btn-light px-4 fw-semibold" style="border-radius: 10px;" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -138,18 +181,139 @@
             link.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
         }
 
+        function executeScriptsFromDoc(doc, currentContent) {
+            // Find scripts inside the main content or scripts block in doc
+            var scripts = doc.querySelectorAll(".admin-content script, body > script");
+            scripts.forEach(function (oldScript) {
+                var src = oldScript.getAttribute("src");
+                if (src) {
+                    if (!document.querySelector('script[src="' + src + '"]')) {
+                        var newScript = document.createElement("script");
+                        newScript.src = src;
+                        document.body.appendChild(newScript);
+                    }
+                } else if (oldScript.innerHTML.trim().length > 0) {
+                    var newScript = document.createElement("script");
+                    newScript.text = oldScript.innerHTML;
+                    document.body.appendChild(newScript);
+                }
+            });
+        }
+
+        function updateActiveSidebar(targetUrl) {
+            try {
+                var targetPath = new URL(targetUrl, window.location.origin).pathname;
+                document.querySelectorAll(".sidebar-link").forEach(function (link) {
+                    var href = link.getAttribute("href");
+                    if (!href) return;
+                    var linkPath = new URL(href, window.location.origin).pathname;
+                    if (linkPath === targetPath) {
+                        link.classList.add("active");
+                    } else if (linkPath !== "/" && linkPath !== "/dashboard/admin" && targetPath.startsWith(linkPath)) {
+                        link.classList.add("active");
+                    } else {
+                        link.classList.remove("active");
+                    }
+                });
+            } catch (e) {}
+        }
+
+        function loadAdminPage(url, pushState) {
+            if (pushState === undefined) pushState = true;
+            showProgress();
+            var contentEl = document.querySelector(CONTENT_SELECTOR);
+            if (contentEl) {
+                contentEl.classList.add("is-loading");
+            }
+
+            return fetch(url, {
+                headers: { "X-Requested-With": "XMLHttpRequest" }
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        window.location.href = url;
+                        return;
+                    }
+                    return response.text();
+                })
+                .then(function (html) {
+                    if (!html) return;
+                    var doc = new DOMParser().parseFromString(html, "text/html");
+                    var nextContent = doc.querySelector(CONTENT_SELECTOR);
+                    var currentContent = document.querySelector(CONTENT_SELECTOR);
+                    if (!nextContent || !currentContent) {
+                        window.location.href = url;
+                        return;
+                    }
+                    cleanupModalArtifacts();
+
+                    // Update topbar title
+                    var nextTitle = doc.querySelector(".admin-topbar h1") || doc.querySelector("h1, h2");
+                    var currentTitle = document.querySelector(".admin-topbar h1");
+                    if (currentTitle) {
+                        if (nextTitle && nextTitle.textContent.trim()) {
+                            currentTitle.textContent = nextTitle.textContent.trim();
+                        } else if (doc.title) {
+                            currentTitle.textContent = doc.title.split("·")[0].trim();
+                        }
+                    }
+
+                    // Update document title
+                    var titleTag = doc.querySelector("title");
+                    if (titleTag) {
+                        document.title = titleTag.textContent;
+                    }
+
+                    // Swap content
+                    currentContent.innerHTML = nextContent.innerHTML;
+                    currentContent.classList.remove("is-loading");
+
+                    // Execute scripts from new page
+                    executeScriptsFromDoc(doc, currentContent);
+
+                    // Update active sidebar menu item
+                    updateActiveSidebar(url);
+
+                    // Close offcanvas if mobile sidebar open
+                    var offcanvasEl = document.getElementById("adminSidebar");
+                    if (offcanvasEl && window.bootstrap) {
+                        var bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                        if (bsOffcanvas) bsOffcanvas.hide();
+                    }
+
+                    if (pushState) {
+                        history.pushState({ url: url }, "", url);
+                    }
+
+                    document.dispatchEvent(new CustomEvent("admin:content-updated"));
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                })
+                .catch(function () {
+                    window.location.href = url;
+                })
+                .finally(function () {
+                    hideProgress();
+                });
+        }
+
+        // Initialize history state on load
+        if (window.history && history.replaceState) {
+            history.replaceState({ url: window.location.href }, "", window.location.href);
+        }
+
+        // Intercept link clicks across sidebar, topbar, and main content
         document.addEventListener("click", function (event) {
             if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
                 return;
             }
-            var link = event.target.closest("a.btn");
+            var link = event.target.closest("a");
             if (!link) {
                 return;
             }
             var href = link.getAttribute("href") || "";
             if (
                 link.classList.contains("btn-loading") ||
-                link.hasAttribute("data-no-loading") ||
+                link.hasAttribute("data-no-ajax") ||
                 link.hasAttribute("data-bs-toggle") ||
                 link.hasAttribute("download") ||
                 link.target ||
@@ -157,11 +321,33 @@
                 href.charAt(0) === "#" ||
                 href.indexOf("mailto:") === 0 ||
                 href.indexOf("tel:") === 0 ||
-                href.indexOf("javascript:") === 0
+                href.indexOf("javascript:") === 0 ||
+                href.indexOf("/logout") !== -1
             ) {
                 return;
             }
-            setLinkLoading(link);
+
+            try {
+                var targetUrl = new URL(href, window.location.origin);
+                if (targetUrl.origin !== window.location.origin) {
+                    return;
+                }
+
+                // Check if link is inside admin UI shell
+                if (link.closest(".admin-sidebar") || link.closest(".admin-offcanvas") || link.closest(".admin-topbar") || link.closest(CONTENT_SELECTOR)) {
+                    event.preventDefault();
+                    if (link.classList.contains("btn")) {
+                        setLinkLoading(link);
+                    }
+                    loadAdminPage(targetUrl.href, true);
+                }
+            } catch (e) {}
+        });
+
+        // Browser Back & Forward buttons
+        window.addEventListener("popstate", function (event) {
+            var url = (event.state && event.state.url) ? event.state.url : window.location.href;
+            loadAdminPage(url, false);
         });
 
         // A back/forward navigation can restore this page from the
@@ -253,7 +439,158 @@
             if (title) {
                 document.title = title.textContent;
             }
+            executeScriptsFromDoc(doc, current);
             document.dispatchEvent(new CustomEvent("admin:content-updated"));
+        }
+
+        window.openEntityDetailModal = function (entityType, entityId, fromListModal) {
+            var detailModalEl = document.getElementById("adminItemDetailModal");
+            if (!detailModalEl || !window.bootstrap) return;
+            var detailModal = bootstrap.Modal.getInstance(detailModalEl) || new bootstrap.Modal(detailModalEl);
+
+            var listModalEl = document.getElementById("adminDashboardModal");
+            if (fromListModal && listModalEl && window.bootstrap) {
+                var listModal = bootstrap.Modal.getInstance(listModalEl);
+                if (listModal) listModal.hide();
+                var backBtn1 = document.getElementById("adminItemBackBtn");
+                var backBtn2 = document.getElementById("adminItemBackFooterBtn");
+                if (backBtn1) backBtn1.classList.remove("d-none");
+                if (backBtn2) backBtn2.classList.remove("d-none");
+            } else {
+                var backBtn1 = document.getElementById("adminItemBackBtn");
+                var backBtn2 = document.getElementById("adminItemBackFooterBtn");
+                if (backBtn1) backBtn1.classList.add("d-none");
+                if (backBtn2) backBtn2.classList.add("d-none");
+            }
+
+            var titleEl = document.getElementById("adminItemDetailModalLabel");
+            var spinner = document.getElementById("adminItemSpinner");
+            var bodyEl = document.getElementById("adminItemBody");
+
+            spinner.classList.remove("d-none");
+            bodyEl.innerHTML = "";
+            detailModal.show();
+
+            fetch("/admin/api/entity-detail/" + encodeURIComponent(entityType) + "/" + encodeURIComponent(entityId))
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    spinner.classList.add("d-none");
+                    titleEl.textContent = data.title || "Details";
+
+                    var html = "";
+                    if (data.type === "vendor") {
+                        html = (
+                            '<div class="text-center mb-4">' +
+                            '  <div class="avatar-circle-lg mx-auto mb-2" style="background: linear-gradient(135deg, #4f46e5, #8b5cf6); color: white; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 20px; box-shadow: 0 6px 16px rgba(79,70,229,0.25);">' + escapeHtml(data.name.substring(0, 2).toUpperCase()) + '</div>' +
+                            '  <h5 class="fw-bold text-dark mb-1">' + escapeHtml(data.name) + '</h5>' +
+                            '  <span class="badge bg-primary-subtle text-primary border px-3 py-1.5 rounded-pill">' + escapeHtml(data.business) + '</span>' +
+                            '</div>' +
+                            '<div class="card border-0 bg-light p-3 rounded-3 mb-3" style="font-size: 13px;">' +
+                            '  <div class="row g-2">' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Email</span><strong class="text-dark">' + escapeHtml(data.email) + '</strong></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Phone</span><strong class="text-dark">' + escapeHtml(data.phone) + '</strong></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Licence No.</span><strong class="text-dark">' + escapeHtml(data.license) + '</strong></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Licence Expiry</span><strong class="text-dark">' + escapeHtml(data.license_expiry) + '</strong></div>' +
+                            '  </div>' +
+                            '</div>' +
+                            '<div class="d-flex justify-content-between align-items-center p-2 border rounded-3 text-muted" style="font-size: 12px;">' +
+                            '  <span><i class="fa-solid fa-shop me-1 text-primary"></i>Active Stalls: <strong>' + data.stalls_count + '</strong></span>' +
+                            '  <span>Status: <strong class="text-success">' + escapeHtml(data.status) + '</strong></span>' +
+                            '</div>'
+                        );
+                    } else if (data.type === "stall") {
+                        var scoreText = data.score != null ? data.score + "%" : "Unrated";
+                        var riskBadge = "bg-success-subtle text-success";
+                        if (data.risk.toLowerCase() === "medium") riskBadge = "bg-warning-subtle text-warning";
+                        else if (data.risk.toLowerCase() === "high" || data.risk.toLowerCase() === "critical") riskBadge = "bg-danger-subtle text-danger";
+
+                        html = (
+                            '<div class="text-center mb-4">' +
+                            '  <div class="badge-circle mx-auto mb-2 bg-info-subtle text-info d-grid place-items-center rounded-circle" style="width: 50px; height: 50px; font-size: 22px;"><i class="fa-solid fa-shop"></i></div>' +
+                            '  <h5 class="fw-bold text-dark mb-1">' + escapeHtml(data.title) + '</h5>' +
+                            '  <span class="badge bg-light text-dark border px-2.5 py-1" style="font-family: monospace;">' + escapeHtml(data.code) + '</span>' +
+                            '</div>' +
+                            '<div class="card border-0 bg-light p-3 rounded-3 mb-3" style="font-size: 13px;">' +
+                            '  <div class="row g-2">' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Area</span><strong class="text-dark">' + escapeHtml(data.area) + '</strong></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Address</span><strong class="text-dark">' + escapeHtml(data.address) + '</strong></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Operator/Vendor</span><strong class="text-dark">' + escapeHtml(data.vendor_name) + ' (' + escapeHtml(data.vendor_business) + ')</strong></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Hygiene Score</span><strong class="text-primary fs-6">' + scoreText + '</strong></div>' +
+                            '  </div>' +
+                            '</div>' +
+                            '<div class="d-flex justify-content-between align-items-center p-2 border rounded-3" style="font-size: 12px;">' +
+                            '  <span>Risk Classification: <span class="badge ' + riskBadge + '">' + escapeHtml(data.risk) + '</span></span>' +
+                            '  <span>Inspections: <strong>' + data.inspections_count + '</strong></span>' +
+                            '</div>'
+                        );
+                    } else if (data.type === "inspection") {
+                        html = (
+                            '<div class="text-center mb-3">' +
+                            '  <div class="badge-circle mx-auto mb-2 bg-success-subtle text-success d-grid place-items-center rounded-circle" style="width: 50px; height: 50px; font-size: 22px;"><i class="fa-solid fa-clipboard-check"></i></div>' +
+                            '  <h5 class="fw-bold text-dark mb-1">' + escapeHtml(data.title) + '</h5>' +
+                            '  <span class="text-muted small"><i class="fa-regular fa-clock me-1"></i>' + escapeHtml(data.date) + '</span>' +
+                            '</div>' +
+                            '<div class="card border-0 bg-light p-3 rounded-3 mb-3" style="font-size: 13px;">' +
+                            '  <div class="row g-2">' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Stall Name</span><strong class="text-dark">' + escapeHtml(data.stall_name) + '</strong></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Inspector</span><strong class="text-dark">' + escapeHtml(data.inspector_name) + '</strong></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Score</span><strong class="text-primary">' + (data.score != null ? data.score + "%" : "—") + '</strong></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Status</span><strong class="text-success">' + escapeHtml(data.status) + '</strong></div>' +
+                            '  </div>' +
+                            '</div>' +
+                            '<div class="p-3 border rounded-3 bg-white" style="font-size: 12.5px;">' +
+                            '  <strong class="d-block text-dark mb-1">Inspector Notes:</strong>' +
+                            '  <p class="text-muted mb-0">' + escapeHtml(data.notes) + '</p>' +
+                            '</div>'
+                        );
+                    } else if (data.type === "complaint") {
+                        html = (
+                            '<div class="text-center mb-3">' +
+                            '  <div class="badge-circle mx-auto mb-2 bg-warning-subtle text-warning d-grid place-items-center rounded-circle" style="width: 50px; height: 50px; font-size: 22px;"><i class="fa-solid fa-message"></i></div>' +
+                            '  <h5 class="fw-bold text-dark mb-1">' + escapeHtml(data.title) + '</h5>' +
+                            '  <span class="badge bg-warning-subtle text-warning border px-3 py-1 rounded-pill">' + escapeHtml(data.status) + '</span>' +
+                            '</div>' +
+                            '<div class="card border-0 bg-light p-3 rounded-3 mb-3" style="font-size: 13px;">' +
+                            '  <div class="row g-2">' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Stall Name</span><strong class="text-dark">' + escapeHtml(data.stall_name) + '</strong></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Submitted Date</span><strong class="text-dark">' + escapeHtml(data.date) + '</strong></div>' +
+                            '  </div>' +
+                            '</div>' +
+                            '<div class="p-3 border rounded-3 bg-white mb-2" style="font-size: 12.5px;">' +
+                            '  <strong class="d-block text-dark mb-1">Description:</strong>' +
+                            '  <p class="text-muted mb-0">' + escapeHtml(data.description) + '</p>' +
+                            '</div>' +
+                            '<div class="p-3 border rounded-3 bg-light" style="font-size: 12.5px;">' +
+                            '  <strong class="d-block text-primary mb-1">Admin Response:</strong>' +
+                            '  <p class="text-muted mb-0">' + escapeHtml(data.response) + '</p>' +
+                            '</div>'
+                        );
+                    }
+                    bodyEl.innerHTML = html;
+                });
+        };
+
+        window.backToAdminListModal = function() {
+            var detailModalEl = document.getElementById("adminItemDetailModal");
+            if (detailModalEl && window.bootstrap) {
+                var detailModal = bootstrap.Modal.getInstance(detailModalEl);
+                if (detailModal) detailModal.hide();
+            }
+
+            var listModalEl = document.getElementById("adminDashboardModal");
+            if (listModalEl && window.bootstrap) {
+                var listModal = bootstrap.Modal.getInstance(listModalEl) || new bootstrap.Modal(listModalEl);
+                listModal.show();
+            }
+        };
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
         }
 
         // Exposed so pages with their own bespoke AJAX flow (e.g. the
@@ -265,6 +602,7 @@
             showProgress: showProgress,
             hideProgress: hideProgress,
             setButtonLoading: setButtonLoading,
+            loadAdminPage: loadAdminPage,
             refresh: function (url) {
                 showProgress();
                 return fetch(url || window.location.href, {
@@ -342,6 +680,28 @@
 
         autoDismissAlerts();
         document.addEventListener("admin:content-updated", autoDismissAlerts);
+    })();
+    </script>
+    <script>
+    (function () {
+        "use strict";
+        var toggle = document.getElementById("sidebarCollapseToggle");
+        if (!toggle) return;
+
+        function applyTitles() {
+            document.querySelectorAll(".sidebar-link, .sidebar-logout button").forEach(function (el) {
+                var span = el.querySelector("span");
+                if (span) el.setAttribute("title", span.textContent.trim());
+            });
+        }
+        applyTitles();
+
+        toggle.addEventListener("click", function () {
+            var collapsed = document.documentElement.classList.toggle("sidebar-collapsed");
+            try {
+                localStorage.setItem("adminSidebarCollapsed", collapsed ? "1" : "0");
+            } catch (e) {}
+        });
     })();
     </script>
     {% block scripts %}{% endblock %}

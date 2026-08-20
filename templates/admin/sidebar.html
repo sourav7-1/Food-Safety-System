@@ -1,62 +1,94 @@
 <div class="sidebar-inner">
     <a class="sidebar-brand" href="{{ url_for('dashboard.admin') }}">
-        <img class="brand-logo" src="{{ url_for('static', filename='images/food-safety-logo.png') }}" alt="Smart Food Safety Inspection logo">
-        <span><strong>FoodSafe</strong><small>ADMIN PORTAL</small></span>
+        <img class="brand-logo" src="{{ url_for('static', filename='images/food-safety-logo.png') }}" alt="DIU Food Safety System">
+        <div>
+            <strong>DIU FoodSafe</strong>
+            <small>ADMIN PORTAL</small>
+        </div>
     </a>
 
     <nav class="sidebar-nav">
-        <p class="sidebar-label">MAIN MENU</p>
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'dashboard.admin' }}" href="{{ url_for('dashboard.admin') }}">
-            <i class="fa-solid fa-table-columns"></i><span>Dashboard</span>
+        <p class="sidebar-label">MAIN OPERATIONS</p>
+        <a class="sidebar-link nav-dashboard {{ 'active' if request.endpoint == 'dashboard.admin' }}" href="{{ url_for('dashboard.admin') }}">
+            <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
         </a>
         {% if current_user.has_permission('vendors.view') %}
-        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.vendor') }}" href="{{ url_for('admin.vendors') }}">
+        <a class="sidebar-link nav-vendors {{ 'active' if request.endpoint and request.endpoint.startswith('admin.vendor') }}" href="{{ url_for('admin.vendors') }}">
             <i class="fa-solid fa-store"></i><span>Vendors</span>
         </a>
         {% endif %}
         {% if current_user.has_permission('stalls.view') %}
-        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.stall') }}" href="{{ url_for('admin.stalls') }}">
+        <a class="sidebar-link nav-stalls {{ 'active' if request.endpoint and request.endpoint.startswith('admin.stall') }}" href="{{ url_for('admin.stalls') }}">
             <i class="fa-solid fa-shop"></i><span>Stalls</span>
         </a>
         {% endif %}
         {% if current_user.has_permission('inspections.view') %}
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.inspections' }}" href="{{ url_for('admin.inspections') }}"><i class="fa-solid fa-clipboard-check"></i><span>Inspections</span></a>
+        <a class="sidebar-link nav-inspections {{ 'active' if request.endpoint == 'admin.inspections' }}" href="{{ url_for('admin.inspections') }}">
+            <i class="fa-solid fa-clipboard-check"></i><span>Inspections</span>
+        </a>
         {% endif %}
         {% if current_user.has_permission('complaints.view') %}
-        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.complaint') }}" href="{{ url_for('admin.complaints') }}"><i class="fa-solid fa-message"></i><span>Complaints</span></a>
+        <a class="sidebar-link nav-complaints {{ 'active' if request.endpoint and request.endpoint.startswith('admin.complaint') }}" href="{{ url_for('admin.complaints') }}">
+            <i class="fa-solid fa-message"></i><span>Complaints</span>
+        </a>
+        {% endif %}
+        {% if current_user.has_permission('inspection_disputes.view') %}
+        <a class="sidebar-link nav-inspections {{ 'active' if request.endpoint and request.endpoint.startswith('admin.inspection_dispute') }}" href="{{ url_for('admin.inspection_disputes') }}">
+            <i class="fa-solid fa-scale-balanced"></i><span>Inspection Disputes</span>
+        </a>
         {% endif %}
         {% if current_user.has_permission('reviews.view') %}
-        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.review') }}" href="{{ url_for('admin.reviews') }}"><i class="fa-solid fa-star"></i><span>Reviews</span></a>
+        <a class="sidebar-link nav-reviews {{ 'active' if request.endpoint and request.endpoint.startswith('admin.review') }}" href="{{ url_for('admin.reviews') }}">
+            <i class="fa-solid fa-star"></i><span>Reviews</span>
+        </a>
         {% endif %}
 
         {% if current_user.has_permission('risk_engine.view') or current_user.has_permission('reports.view') %}
-        <p class="sidebar-label mt-4">INTELLIGENCE</p>
+        <p class="sidebar-label">INTELLIGENCE &amp; ANALYTICS</p>
         {% if current_user.has_permission('risk_engine.view') %}
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.risk_engine' }}" href="{{ url_for('admin.risk_engine') }}"><i class="fa-solid fa-triangle-exclamation"></i><span>Risk Engine</span></a>
+        <a class="sidebar-link nav-risk {{ 'active' if request.endpoint == 'admin.risk_engine' }}" href="{{ url_for('admin.risk_engine') }}">
+            <i class="fa-solid fa-triangle-exclamation"></i><span>Risk Engine</span>
+        </a>
         {% endif %}
         {% if current_user.has_permission('reports.view') %}
-        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('reports.') }}" href="{{ url_for('reports.dashboard') }}"><i class="fa-solid fa-chart-line"></i><span>Reports & Analytics</span></a>
+        <a class="sidebar-link nav-reports {{ 'active' if request.endpoint and request.endpoint.startswith('reports.') }}" href="{{ url_for('reports.dashboard') }}">
+            <i class="fa-solid fa-chart-line"></i><span>Reports &amp; Analytics</span>
+        </a>
         {% endif %}
         {% endif %}
 
-        <p class="sidebar-label mt-4">SYSTEM</p>
-        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('profile.') }}" href="{{ url_for('profile.view') }}"><i class="fa-solid fa-id-card"></i><span>My Profile</span></a>
+        <p class="sidebar-label">SYSTEM &amp; SECURITY</p>
+        <a class="sidebar-link nav-users {{ 'active' if request.endpoint and request.endpoint.startswith('profile.') }}" href="{{ url_for('profile.view') }}">
+            <i class="fa-solid fa-id-card"></i><span>My Profile</span>
+        </a>
         {% if current_user.has_permission('users.view') %}
-        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.user') }}" href="{{ url_for('admin.users') }}"><i class="fa-solid fa-users"></i><span>Users</span></a>
+        <a class="sidebar-link nav-users {{ 'active' if request.endpoint and request.endpoint.startswith('admin.user') }}" href="{{ url_for('admin.users') }}">
+            <i class="fa-solid fa-users"></i><span>Users &amp; Staff</span>
+        </a>
         {% endif %}
         {% if current_user.is_super_admin %}
-        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.role') }}" href="{{ url_for('admin.roles') }}"><i class="fa-solid fa-user-shield"></i><span>Roles & Permissions</span></a>
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.audit_log' }}" href="{{ url_for('admin.audit_log') }}"><i class="fa-solid fa-clock-rotate-left"></i><span>Audit Log</span></a>
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.login_audit_log' }}" href="{{ url_for('admin.login_audit_log') }}"><i class="fa-solid fa-right-to-bracket"></i><span>Login Activity</span></a>
-        <a class="sidebar-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.access_request') }}" href="{{ url_for('admin.access_requests') }}"><i class="fa-solid fa-user-shield"></i><span>Access Requests</span></a>
+        <a class="sidebar-link nav-roles {{ 'active' if request.endpoint and request.endpoint.startswith('admin.role') }}" href="{{ url_for('admin.roles') }}">
+            <i class="fa-solid fa-user-shield"></i><span>Roles &amp; Perms</span>
+        </a>
+        <a class="sidebar-link nav-dashboard {{ 'active' if request.endpoint == 'admin.audit_log' }}" href="{{ url_for('admin.audit_log') }}">
+            <i class="fa-solid fa-clock-rotate-left"></i><span>Audit Log</span>
+        </a>
+        <a class="sidebar-link nav-dashboard {{ 'active' if request.endpoint == 'admin.login_audit_log' }}" href="{{ url_for('admin.login_audit_log') }}">
+            <i class="fa-solid fa-right-to-bracket"></i><span>Login Activity</span>
+        </a>
+        <a class="sidebar-link nav-inspections {{ 'active' if request.endpoint and request.endpoint.startswith('admin.access_request') }}" href="{{ url_for('admin.access_requests') }}">
+            <i class="fa-solid fa-shield-halved"></i><span>Access Requests</span>
+        </a>
         {% endif %}
         {% if current_user.has_permission('settings.view') %}
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'admin.settings' }}" href="{{ url_for('admin.settings') }}"><i class="fa-solid fa-gear"></i><span>Settings</span></a>
+        <a class="sidebar-link nav-settings {{ 'active' if request.endpoint == 'admin.settings' }}" href="{{ url_for('admin.settings') }}">
+            <i class="fa-solid fa-gear"></i><span>Settings</span>
+        </a>
         {% endif %}
     </nav>
 
-    <form action="{{ url_for('auth.logout') }}" method="post" class="sidebar-logout">
+    <form action="{{ url_for('auth.logout') }}" method="post" class="sidebar-logout" data-no-ajax>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <button type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span></button>
+        <button type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Sign Out</span></button>
     </form>
 </div>

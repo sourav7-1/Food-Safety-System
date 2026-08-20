@@ -1,7 +1,54 @@
 {% extends "admin/base.html" %}
 {% block content %}
-<div class="list-heading"><div><p class="eyebrow mb-1">MYSQL RISK ENGINE</p><h2>Current Stall Risk</h2><p>Latest database-calculated inspection score, classification and follow-up schedule.</p></div></div>
-<div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>Stall</th><th>Area</th><th>Latest score</th><th>Risk</th><th>Reinspection</th><th>Inspection</th></tr></thead><tbody>
-{% for stall, inspection_id, inspection_date, overall_score, risk_level, reinspection_date in records %}<tr><td><a class="entity-link" href="{{ url_for('admin.stalls', q=stall.stall_code) }}"><strong>{{ stall.stall_name }}</strong></a><small>{{ stall.stall_code }}</small></td><td>{{ stall.area.area_name }}</td><td>{{ overall_score ~ '%' if overall_score is not none else 'Not inspected' }}</td><td><span class="status-pill risk-{{ risk_level or 'unrated' }}">{{ risk_level or 'unrated' }}</span></td><td>{{ reinspection_date.strftime('%d %b %Y') if reinspection_date else '—' }}</td><td>{{ inspection_date.strftime('%d %b %Y') if inspection_date else '—' }}</td></tr>{% else %}<tr><td colspan="6" class="empty-state">No active stalls found.</td></tr>{% endfor %}
-</tbody></table></div></div>
+<div class="page-actionbar">
+    <div>
+        <p class="eyebrow mb-1">MYSQL INTELLIGENCE ENGINE</p>
+        <h2 class="h3 fw-bold mb-1">Current Stall Risk</h2>
+        <p class="text-secondary mb-0">Database-calculated risk classification, safety metrics, and follow-up schedules across active food stalls.</p>
+    </div>
+</div>
+
+<div class="panel-card p-0 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Stall &amp; Code</th>
+                    <th>Campus Area</th>
+                    <th>Latest Hygiene Score</th>
+                    <th>Risk Classification</th>
+                    <th>Reinspection Due</th>
+                    <th>Last Inspected</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for stall, inspection_id, inspection_date, overall_score, risk_level, reinspection_date in records %}
+                <tr>
+                    <td>
+                        <a class="entity-link" href="{{ url_for('admin.stalls', q=stall.stall_code) }}">
+                            <strong class="text-primary">{{ stall.stall_name }}</strong>
+                        </a>
+                        <small class="text-secondary"><i class="fa-solid fa-hashtag me-1"></i>{{ stall.stall_code }}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border"><i class="fa-solid fa-location-dot text-danger me-1"></i>{{ stall.area.area_name }}</span>
+                    </td>
+                    <td>
+                        {% if overall_score is not none %}
+                        <span class="score-value">{{ overall_score }}%</span>
+                        {% else %}
+                        <span class="text-muted small">Not inspected</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="status-pill risk-{{ risk_level or 'unrated' }}">{{ risk_level or 'unrated' }}</span></td>
+                    <td>{{ reinspection_date.strftime('%d %b %Y') if reinspection_date else '—' }}</td>
+                    <td>{{ inspection_date.strftime('%d %b %Y') if inspection_date else '—' }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-triangle-exclamation mb-2"></i>No active stalls found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

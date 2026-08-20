@@ -1,0 +1,203 @@
+<div class="row g-4">
+    <!-- Left Column: Safety Scorecard -->
+    <div class="col-lg-4">
+        <section class="portal-card h-100">
+            <h3 class="portal-card-header mb-3 pb-2">
+                <span><i class="fa-solid fa-clipboard-check text-success me-2"></i>Safety Scorecard</span>
+            </h3>
+            {% if latest %}
+            <div class="stall-scorecard">
+                <div class="scorecard-circle">
+                    <strong>{{ latest.overall_score }}%</strong>
+                    <small>Score</small>
+                </div>
+                <div class="grade-badge-lg">
+                    Grade {{ grade or '—' }}
+                </div>
+                <dl class="portal-dl">
+                    <dt><i class="fa-solid fa-triangle-exclamation me-1 text-secondary"></i>Risk Level</dt>
+                    <dd><span class="risk-badge risk-{{ latest.risk_level }}">{{ latest.risk_level }}</span></dd>
+                    <dt><i class="fa-regular fa-calendar-check me-1 text-secondary"></i>Last Inspection</dt>
+                    <dd>{{ latest.inspection_date.strftime('%d %b %Y') }}</dd>
+                    <dt><i class="fa-solid fa-rotate-right me-1 text-secondary"></i>Reinspection</dt>
+                    <dd>{{ latest.reinspection_date.strftime('%d %b %Y') if latest.reinspection_date else 'Not scheduled' }}</dd>
+                </dl>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-secondary">
+                <i class="fa-solid fa-clipboard-question fs-1 mb-2 text-muted"></i>
+                <p class="mb-0">No completed inspection records yet for this stall.</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <!-- Right Column: Criteria Observations -->
+    <div class="col-lg-8">
+        <section class="portal-card h-100">
+            <div class="portal-card-header">
+                <h3 class="mb-0"><i class="fa-solid fa-circle-exclamation text-warning me-2"></i>Risk Observations &amp; Feedback</h3>
+                <span class="badge bg-light text-secondary border px-3 py-1 rounded-pill">{{ risk_reasons|length }} Note{{ 's' if risk_reasons|length != 1 }}</span>
+            </div>
+
+            <div class="reason-list mt-3">
+                {% for reason in risk_reasons %}
+                <div class="reason-item {{ 'reason-danger' if reason.score is not none and (reason.score / (reason.maximum or 1)) < 0.5 else '' }}">
+                    <div class="reason-item-icon">
+                        <i class="fa-solid {{ 'fa-circle-xmark' if reason.score is not none and (reason.score / (reason.maximum or 1)) < 0.5 else 'fa-triangle-exclamation' }}"></i>
+                    </div>
+                    <div class="reason-item-content">
+                        <strong>{{ reason.criterion }}</strong>
+                        <span>
+                            {% if reason.score is not none %}
+                            <span class="badge bg-white text-dark border me-1 fw-bold">{{ reason.score }} / {{ reason.maximum }} pts</span>
+                            {% endif %}
+                            {% if reason.comments %}{{ reason.comments }}{% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-success bg-success-subtle rounded-3 border border-success-subtle">
+                    <i class="fa-solid fa-circle-check fs-2 mb-2 d-block text-success"></i>
+                    <strong class="d-block mb-1">Excellent Performance!</strong>
+                    <p class="small text-secondary mb-0">No adverse criterion observations or high-severity complaints recorded.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Corrective Actions Section -->
+<section class="portal-card mt-4">
+    <div class="portal-card-header">
+        <h3 class="mb-0"><i class="fa-solid fa-list-check text-primary me-2"></i>Required Corrective Actions</h3>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fw-bold">{{ actions|length }} Action{{ 's' if actions|length != 1 }}</span>
+    </div>
+
+    <div class="mt-3">
+    {% for action in actions %}
+    <div class="action-card-item">
+        <div class="action-header">
+            <div>
+                <span class="risk-badge status-{{ action.status }} me-2">{{ action.status|replace('_', ' ') }}</span>
+                <strong>{{ action.action_description }}</strong>
+            </div>
+            <span class="action-due-badge">
+                <i class="fa-regular fa-clock me-1"></i>Due {{ action.due_date.strftime('%d %b %Y') }}
+            </span>
+        </div>
+
+        {% if action.status != 'completed' %}
+        <div class="evidence-form-box">
+            <h4 class="h6 fw-bold text-dark mb-2"><i class="fa-solid fa-upload text-success me-1"></i>Submit Correction &amp; Photographic Evidence</h4>
+            <form method="post" enctype="multipart/form-data" action="{{ url_for('vendor_portal.submit_corrective_action', action_id=action.action_id) }}" data-no-ajax>
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="row g-2">
+                    <div class="col-12 col-md-7">
+                        <textarea class="form-control form-control-sm" name="completion_notes" placeholder="Describe how the issue was fixed..." rows="2" required></textarea>
+                    </div>
+                    <div class="col-12 col-md-5 d-flex flex-column justify-content-between gap-2">
+                        <input class="form-control form-control-sm" type="file" name="evidence" accept=".png,.jpg,.jpeg,.pdf" required>
+                        <button class="btn btn-success btn-sm w-100 fw-bold">
+                            <i class="fa-solid fa-check me-1"></i> Submit Evidence
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="p-3 bg-light rounded-3 border mt-2">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="text-secondary small">
+                    <i class="fa-solid fa-circle-check text-success me-1"></i>
+                    <strong>Resolution Note:</strong> {{ action.completion_notes }}
+                </div>
+                {% if action.evidence_path %}
+                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('vendor_portal.corrective_evidence', action_id=action.action_id) }}" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-paperclip me-1"></i> View Submitted Evidence
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-secondary">
+        <i class="fa-solid fa-clipboard-check text-success fs-3 mb-2 d-block"></i>
+        <p class="mb-0">No corrective actions assigned for this stall. Great job!</p>
+    </div>
+    {% endfor %}
+    </div>
+</section>
+
+<!-- Inspection History Section -->
+<section class="portal-card mt-4">
+    <div class="portal-card-header">
+        <h3 class="mb-0"><i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Inspection History</h3>
+        <span class="badge bg-light text-secondary border px-3 py-1 rounded-pill">{{ history|length }} Records</span>
+    </div>
+    <div class="table-responsive mt-3">
+        <table class="table portal-table mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Score</th>
+                    <th>Risk Classification</th>
+                    <th>Status</th>
+                    <th>Inspector Remarks</th>
+                    <th>Dispute</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in history %}
+                <tr>
+                    <td class="text-nowrap fw-semibold">{{ item.inspection_date.strftime('%d %b %Y') }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark border px-2 py-1 fw-bold fs-6">
+                            {{ (item.overall_score ~ '%') if item.overall_score is not none else '—' }}
+                        </span>
+                    </td>
+                    <td><span class="risk-badge risk-{{ item.risk_level or 'unrated' }}">{{ item.risk_level or 'unrated' }}</span></td>
+                    <td><span class="risk-badge status-{{ item.status }}">{{ item.status }}</span></td>
+                    <td class="text-secondary">{{ item.remarks or '—' }}</td>
+                    <td>
+                        {% if item.disputes %}
+                        <div class="d-flex flex-column gap-1">
+                        {% for dispute in item.disputes %}
+                            <span class="risk-badge status-{{ dispute.status }}" title="{{ dispute.reason }}">
+                                {{ dispute.status|replace('_',' ') }}
+                            </span>
+                            {% if dispute.admin_response %}
+                            <small class="text-secondary">{{ dispute.admin_response }}</small>
+                            {% endif %}
+                        {% endfor %}
+                        </div>
+                        {% else %}
+                        <details class="dispute-details">
+                            <summary class="btn btn-sm btn-outline-danger">Report Mismatch</summary>
+                            <form method="post" enctype="multipart/form-data" class="dispute-form mt-2"
+                                  action="{{ url_for('vendor_portal.dispute_inspection', stall_id=stall.stall_id, inspection_id=item.inspection_id) }}"
+                                  data-no-ajax>
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <textarea class="form-control form-control-sm mb-2" name="reason" rows="2"
+                                          placeholder="Describe the mismatch in this report..." required></textarea>
+                                <input class="form-control form-control-sm mb-2" type="file" name="evidence"
+                                       accept=".png,.jpg,.jpeg,.webp,.mp4,.webm,.mov,.mp3,.wav,.m4a,.pdf" multiple>
+                                <button class="btn btn-sm btn-danger w-100" type="submit">
+                                    <i class="fa-solid fa-flag me-1"></i> Submit Dispute
+                                </button>
+                            </form>
+                        </details>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-secondary py-4">No past inspection records found.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>

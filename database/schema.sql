@@ -412,6 +412,60 @@ create table inspection_scores (
 create index idx_inspection_scores_inspection_id on inspection_scores (inspection_id);
 create index idx_inspection_scores_criteria_id on inspection_scores (criteria_id);
 
+create table inspection_disputes (
+  dispute_id int not null auto_increment,
+  inspection_id int not null,
+  vendor_id int not null,
+  reason text not null,
+  status enum('submitted', 'under_review', 'resolved', 'rejected') not null default 'submitted',
+  submitted_at timestamp not null default current_timestamp,
+  resolved_at timestamp null,
+  admin_response text null,
+  primary key (dispute_id),
+  constraint chk_inspection_disputes_reason_not_blank check (char_length(trim(reason)) > 0),
+  constraint fk_inspection_disputes_inspection_id
+    foreign key (inspection_id) references inspections (inspection_id)
+    on update cascade
+    on delete cascade,
+  constraint fk_inspection_disputes_vendor_id
+    foreign key (vendor_id) references vendors (vendor_id)
+    on update cascade
+    on delete cascade
+) engine=innodb;
+
+create index idx_inspection_disputes_inspection_id on inspection_disputes (inspection_id);
+create index idx_inspection_disputes_vendor_id on inspection_disputes (vendor_id);
+create index idx_inspection_disputes_status on inspection_disputes (status);
+create index idx_inspection_disputes_submitted_at on inspection_disputes (submitted_at);
+
+create table inspection_dispute_evidence (
+  evidence_id int not null auto_increment,
+  dispute_id int not null,
+  uploaded_by int null,
+  file_name varchar(255) not null,
+  stored_file_name varchar(255) not null,
+  file_type enum('image', 'video', 'audio', 'document') not null,
+  mime_type varchar(150) not null,
+  file_size int unsigned not null,
+  storage_path varchar(500) not null,
+  file_hash char(64) not null,
+  uploaded_at timestamp not null default current_timestamp,
+  primary key (evidence_id),
+  constraint chk_inspection_dispute_evidence_file_name_not_blank check (char_length(trim(file_name)) > 0),
+  constraint chk_inspection_dispute_evidence_file_size_positive check (file_size > 0),
+  constraint chk_inspection_dispute_evidence_file_hash_length check (char_length(file_hash) = 64),
+  constraint fk_inspection_dispute_evidence_dispute_id
+    foreign key (dispute_id) references inspection_disputes (dispute_id)
+    on update cascade
+    on delete cascade,
+  constraint fk_inspection_dispute_evidence_uploaded_by
+    foreign key (uploaded_by) references users (user_id)
+    on update cascade
+    on delete set null
+) engine=innodb;
+
+create index idx_inspection_dispute_evidence_dispute_id on inspection_dispute_evidence (dispute_id);
+
 create table complaint_types (
   complaint_type_id int not null auto_increment,
   type_name varchar(100) not null,

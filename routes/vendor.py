@@ -13,7 +13,7 @@ from flask import (
 )
 from flask_login import current_user, login_required
 from sqlalchemy import text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from extensions import db
 from models import (
@@ -22,6 +22,8 @@ from models import (
     FoodCategory,
     FoodItem,
     Inspection,
+    InspectionDispute,
+    InspectionDisputeEvidence,
     Stall,
     Vendor,
 )
@@ -29,8 +31,11 @@ from routes import role_required
 from services.evidence import (
     EvidenceValidationError,
     delete_corrective_evidence_file,
+    delete_stored_complaint_files,
     serve_corrective_evidence,
+    serve_dispute_evidence,
     validate_and_store_corrective_evidence,
+    validate_and_store_dispute_evidence,
 )
 
 
@@ -184,8 +189,13 @@ def stall_profile(stall_id):
         if history or stall.complaints
         else []
     )
+    template = (
+        "vendor/_stall_profile_content.html"
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        else "vendor/stall_profile.html"
+    )
     return render_template(
-        "vendor/stall_profile.html",
+        template,
         vendor=vendor,
         stall=stall,
         latest=latest,
@@ -366,6 +376,96 @@ def submit_corrective_action(action_id):
 
     flash("Corrective action and evidence submitted.", "success")
     return redirect(request.referrer or url_for("vendor_portal.dashboard"))
+
+
+@vendor_bp.route(
+    "/stalls/<int:stall_id>/inspections/<int:inspection_id>/dispute",
+    methods=["POST"],
+)
+@login_required
+@role_required("vendor")
+def dispute_inspection(stall_id, inspection_id):
+    vendor = _vendor()
+    stall = _owned_stall(vendor, stall_id)
+    inspection = Inspection.query.filter_by(
+        inspection_id=inspection_id, stall_id=stall.stall_id
+    ).first_or_404()
+
+    reason = request.form.get("reason", "").strip()
+    if not reason:
+        flash("Describe the mismatch you're disputing.", "danger")
+        return redirect(
+            url_for("vendor_portal.stall_profile", stall_id=stall.stall_id)
+        )
+
+    evidence_files = [
+        item for item in request.files.getlist("evidence") if item and item.filename
+    ]
+    max_files = current_app.config.get("EVIDENCE_MAX_FILES_PER_COMPLAINT", 5)
+    if len(evidence_files) > max_files:
+        flash(
+            f"You can attach at most {max_files} proof files per dispute.",
+            "danger",
+        )
+        return redirect(
+            url_for("vendor_portal.stall_profile", stall_id=stall.stall_id)
+        )
+
+    dispute = InspectionDispute(
+        inspection_id=inspection.inspection_id,
+        vendor_id=vendor.vendor_id,
+        reason=reason,
+        status="submitted",
+    )
+    db.session.add(dispute)
+
+    saved_relative_paths = []
+    try:
+        db.session.flush()  # assigns dispute.dispute_id for storage_path
+        for uploaded_file in evidence_files:
+            metadata = validate_and_store_dispute_evidence(
+                uploaded_file, dispute.dispute_id
+            )
+            saved_relative_paths.append(metadata["storage_path"])
+            db.session.add(
+                InspectionDisputeEvidence(
+                    dispute_id=dispute.dispute_id,
+                    uploaded_by=current_user.user_id,
+                    **metadata,
+                )
+            )
+        db.session.commit()
+    except EvidenceValidationError as error:
+        db.session.rollback()
+        delete_stored_complaint_files(saved_relative_paths)
+        flash(str(error), "danger")
+        return redirect(
+            url_for("vendor_portal.stall_profile", stall_id=stall.stall_id)
+        )
+    except SQLAlchemyError:
+        db.session.rollback()
+        delete_stored_complaint_files(saved_relative_paths)
+        current_app.logger.exception("Inspection dispute submission failed")
+        flash("Dispute could not be submitted. Please try again.", "danger")
+        return redirect(
+            url_for("vendor_portal.stall_profile", stall_id=stall.stall_id)
+        )
+
+    flash("Dispute submitted. An administrator will review it.", "success")
+    return redirect(
+        url_for("vendor_portal.stall_profile", stall_id=stall.stall_id)
+    )
+
+
+@vendor_bp.route("/dispute-evidence/<int:evidence_id>")
+@login_required
+@role_required("vendor")
+def dispute_evidence(evidence_id):
+    vendor = _vendor()
+    evidence = db.get_or_404(InspectionDisputeEvidence, evidence_id)
+    if evidence.dispute.vendor_id != vendor.vendor_id:
+        abort(403)
+    return serve_dispute_evidence(evidence)
 
 
 @vendor_bp.route("/corrective-actions/<int:action_id>/evidence")

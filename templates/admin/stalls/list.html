@@ -27,6 +27,7 @@
 <tbody>{% for stall in stalls %}<tr>
 <td><strong>{{ stall.stall_name }}</strong><small>{{ stall.stall_code }}</small></td><td><a class="entity-link" href="{{ url_for('admin.vendors', q=stall.vendor.license_number) }}">{{ stall.vendor.business_name }}</a></td><td>{{ stall.area.area_name }}<small>{{ stall.area.city }}</small></td><td class="address-cell">{{ stall.address }}</td><td><span class="status-pill status-{{ stall.status }}">{{ stall.status }}</span></td>
 <td class="text-end table-actions">
+    <button type="button" class="btn btn-sm btn-light text-primary border me-1" title="View Stall Profile" style="border-radius: 8px; width: 32px; height: 32px; display: inline-grid; place-items: center;" onclick="openEntityDetailModal('stall', {{ stall.stall_id }})"><i class="fa-solid fa-eye"></i></button>
     {% if current_user.has_permission('stalls.edit') %}
     <button
         type="button"

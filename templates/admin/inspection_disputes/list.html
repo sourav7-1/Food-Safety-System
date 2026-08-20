@@ -1,0 +1,80 @@
+{% extends "admin/base.html" %}{% block content %}
+<div class="page-actionbar"><div><p class="eyebrow mb-1">INSPECTION OVERSIGHT</p><h2 class="h3 fw-bold mb-1">Inspection Disputes</h2><p class="text-secondary mb-0">Review mismatches vendors have flagged on their inspection reports, with any proof they attached.</p></div></div>
+<form class="search-bar" method="get"><i class="fa-solid fa-filter"></i><select name="status" class="border-0 flex-grow-1"><option value="">All statuses</option>{% for value in ['submitted','under_review','resolved','rejected'] %}<option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|replace('_',' ')|title }}</option>{% endfor %}</select><button>Filter</button></form>
+<div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>ID</th><th>Vendor</th><th>Inspection</th><th>Reason</th><th>Evidence</th><th>Submitted</th><th>Status</th><th></th></tr></thead><tbody>{% for dispute in disputes %}<tr><td>#{{ dispute.dispute_id }}</td><td><a class="entity-link" href="{{ url_for('admin.vendors', q=dispute.vendor.license_number) }}"><strong>{{ dispute.vendor.business_name }}</strong></a></td><td><a class="entity-link" href="{{ url_for('admin.stalls', q=dispute.inspection.stall.stall_code) }}">{{ dispute.inspection.stall.stall_name }}</a><small>{{ dispute.inspection.inspection_date.strftime('%d %b %Y') }} &middot; {{ (dispute.inspection.overall_score ~ '%') if dispute.inspection.overall_score is not none else '—' }}</small></td><td style="max-width: 280px;"><span class="text-truncate d-block" style="max-width: 280px;">{{ dispute.reason }}</span></td><td>{{ dispute.evidence|length or '—' }}</td><td>{{ dispute.submitted_at.strftime('%d %b %Y') }}</td><td><span class="status-pill status-{{ dispute.status }}">{{ dispute.status|replace('_',' ') }}</span></td><td><button type="button" class="btn btn-sm btn-soft" data-dispute-modal-open data-dispute-id="{{ dispute.dispute_id }}" data-url="{{ url_for('admin.inspection_dispute_manage', dispute_id=dispute.dispute_id) }}">Manage</button></td></tr>{% else %}<tr><td colspan="8" class="empty-state">No inspection disputes found.</td></tr>{% endfor %}</tbody></table></div></div>
+
+<div class="modal fade" id="disputeModal" tabindex="-1" aria-labelledby="disputeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="disputeModalLabel">Inspection Dispute</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="disputeModalBody"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+    function initDisputeModal() {
+    var modalEl = document.getElementById("disputeModal");
+    if (!modalEl) { return; }
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    var body = document.getElementById("disputeModalBody");
+    var titleEl = document.getElementById("disputeModalLabel");
+    var needsListRefresh = false;
+
+    function loadPanel(url, options) {
+        window.AdminAjax.showProgress();
+        body.innerHTML = '<div class="admin-panel-spinner"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+        return fetch(url, Object.assign({ headers: { "X-Requested-With": "XMLHttpRequest", "X-Panel-Request": "1" } }, options || {}))
+            .then(function (response) {
+                needsListRefresh = true;
+                return response.text();
+            })
+            .then(function (html) {
+                body.innerHTML = html;
+            })
+            .catch(function () {
+                body.innerHTML = '<div class="alert alert-danger">Could not load this dispute. Please try again.</div>';
+            })
+            .finally(window.AdminAjax.hideProgress);
+    }
+
+    document.querySelectorAll("[data-dispute-modal-open]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            titleEl.textContent = "Inspection Dispute #" + button.getAttribute("data-dispute-id");
+            needsListRefresh = false;
+            modal.show();
+            loadPanel(button.getAttribute("data-url"));
+        });
+    });
+
+    body.addEventListener("submit", function (event) {
+        var form = event.target;
+        if (!(form instanceof HTMLFormElement)) { return; }
+        event.preventDefault();
+        window.AdminAjax.setButtonLoading(event.submitter);
+        loadPanel(form.getAttribute("action"), {
+            method: form.getAttribute("method") || "POST",
+            body: new FormData(form),
+        });
+    });
+
+    modalEl.addEventListener("hidden.bs.modal", function () {
+        body.innerHTML = "";
+        if (needsListRefresh) {
+            window.AdminAjax.refresh();
+        }
+    });
+    }
+
+    initDisputeModal();
+    document.addEventListener("admin:content-updated", initDisputeModal);
+})();
+</script>
+{% endblock %}

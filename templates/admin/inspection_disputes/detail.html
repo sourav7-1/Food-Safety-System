@@ -1,0 +1,4 @@
+{% extends "admin/base.html" %}{% block content %}
+<div class="form-heading"><a href="{{ url_for('admin.inspection_disputes') }}"><i class="fa-solid fa-arrow-left"></i></a><div><p class="eyebrow mb-1">DISPUTE #{{ dispute.dispute_id }}</p><h2>{{ dispute.inspection.stall.stall_name }}</h2><p><a class="entity-link" href="{{ url_for('admin.vendors', q=dispute.vendor.license_number) }}">{{ dispute.vendor.business_name }}</a> &middot; Inspection dated {{ dispute.inspection.inspection_date.strftime('%d %b %Y') }}</p></div></div>
+{% include "admin/inspection_disputes/_panel.html" %}
+{% endblock %}

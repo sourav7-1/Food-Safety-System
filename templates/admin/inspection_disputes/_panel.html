@@ -1,0 +1,41 @@
+{% if standalone %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+{% endif %}
+<div class="dispute-panel" data-dispute-panel data-dispute-id="{{ dispute.dispute_id }}">
+<div class="row g-4"><div class="col-lg-7"><section class="panel-card"><h3 class="h6 fw-bold">Vendor's reported mismatch</h3><p class="text-secondary">{{ dispute.reason }}</p><dl class="row small mb-0"><dt class="col-4">Stall</dt><dd class="col-8"><a class="entity-link" href="{{ url_for('admin.stalls', q=dispute.inspection.stall.stall_code) }}">{{ dispute.inspection.stall.stall_name }}</a></dd><dt class="col-4">Inspection date</dt><dd class="col-8">{{ dispute.inspection.inspection_date.strftime('%d %b %Y') }}</dd><dt class="col-4">Reported score</dt><dd class="col-8">{{ (dispute.inspection.overall_score ~ '%') if dispute.inspection.overall_score is not none else '—' }} &middot; {{ dispute.inspection.risk_level or 'unrated' }}</dd><dt class="col-4">Submitted</dt><dd class="col-8">{{ dispute.submitted_at.strftime('%d %b %Y, %I:%M %p') }}</dd></dl></section></div>
+<div class="col-lg-5"><form method="post" class="panel-card entity-form" action="{{ url_for('admin.inspection_dispute_manage', dispute_id=dispute.dispute_id) }}"><input type="hidden" name="_csrf_token" value="{{ csrf_token() }}"><h3>Resolution</h3><label>Status</label><select class="form-select mb-3" name="status" {{ 'disabled' if not current_user.has_permission('inspection_disputes.respond') }}>{% for value in ['submitted','under_review','resolved','rejected'] %}<option value="{{ value }}" {{ 'selected' if dispute.status == value }}>{{ value|replace('_',' ')|title }}</option>{% endfor %}</select><label>Response to vendor <span class="text-secondary">(optional)</span></label><textarea class="form-control mb-3" name="admin_response" rows="4" placeholder="Explain the decision -- visible to the vendor" {{ 'disabled' if not current_user.has_permission('inspection_disputes.respond') }}>{{ dispute.admin_response or '' }}</textarea>{% if current_user.has_permission('inspection_disputes.respond') %}<button class="btn btn-primary w-100">Save dispute</button>{% endif %}</form></div></div>
+
+<div class="row g-4 mt-1"><div class="col-12"><section class="panel-card">
+<h3 class="h6 fw-bold mb-2">Proof submitted by vendor</h3>
+{% if dispute.evidence %}
+<div class="evidence-grid">
+{% for item in dispute.evidence %}
+<div class="evidence-card">
+    {% if item.file_type == 'image' %}
+    <img src="{{ url_for('admin.inspection_dispute_evidence_download', evidence_id=item.evidence_id) }}" alt="{{ item.file_name }}" loading="lazy">
+    {% elif item.file_type == 'video' %}
+    <video controls preload="metadata" src="{{ url_for('admin.inspection_dispute_evidence_download', evidence_id=item.evidence_id) }}"></video>
+    {% elif item.file_type == 'audio' %}
+    <audio controls preload="metadata" src="{{ url_for('admin.inspection_dispute_evidence_download', evidence_id=item.evidence_id) }}"></audio>
+    {% else %}
+    <a class="btn btn-sm btn-outline-secondary w-100 mb-2" href="{{ url_for('admin.inspection_dispute_evidence_download', evidence_id=item.evidence_id) }}" data-no-loading><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>
+    {% endif %}
+    <span class="evidence-name">{{ item.file_name }}</span>
+    <span class="evidence-meta">{{ (item.file_size / 1024)|round(0, 'floor')|int }} KB &middot; uploaded {{ item.uploaded_at.strftime('%d %b %Y') }}{% if item.uploader %} by {{ item.uploader.full_name }}{% endif %}</span>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<p class="text-secondary mb-0">No proof files were attached to this dispute.</p>
+{% endif %}
+</section></div></div>
+</div>

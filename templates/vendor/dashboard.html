@@ -1,20 +1,203 @@
 {% extends "vendor/base.html" %}
-{% block title %}Vendor Dashboard · Street Food Safety{% endblock %}
+{% block title %}Vendor Dashboard · DIU Food Safety{% endblock %}
 {% block portal_title %}{{ vendor.business_name }}{% endblock %}
-{% block portal_subtitle %}Monitor your stalls, safety performance and required actions.{% endblock %}
+{% block portal_subtitle %}Monitor your food stalls, hygiene ratings, corrective actions, and customer feedback in real-time.{% endblock %}
+
 {% block portal_content %}
+<!-- KPI Stats Row -->
 <div class="row g-3 mb-4">
-    <div class="col-sm-4"><div class="portal-kpi"><i class="fa-solid fa-shop"></i><small>Stalls</small><strong>{{ snapshots|length }}</strong></div></div>
-    <div class="col-sm-4"><div class="portal-kpi warning"><i class="fa-solid fa-list-check"></i><small>Pending actions</small><strong>{{ pending_actions }}</strong></div></div>
-    <div class="col-sm-4"><div class="portal-kpi danger"><i class="fa-regular fa-message"></i><small>Open complaints</small><strong>{{ open_complaints }}</strong></div></div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="portal-kpi kpi-blue">
+            <div class="portal-kpi-icon">
+                <i class="fa-solid fa-shop"></i>
+            </div>
+            <div class="portal-kpi-data">
+                <small>Assigned Stalls</small>
+                <strong>{{ snapshots|length }}</strong>
+                <div class="kpi-subtext">Active dining points</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="portal-kpi {{ 'warning' if pending_actions > 0 else 'kpi-amber' }}">
+            <div class="portal-kpi-icon">
+                <i class="fa-solid fa-list-check"></i>
+            </div>
+            <div class="portal-kpi-data">
+                <small>Pending Actions</small>
+                <strong>{{ pending_actions }}</strong>
+                <div class="kpi-subtext">{{ 'Attention required' if pending_actions > 0 else 'All tasks clear' }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="portal-kpi {{ 'danger' if open_complaints > 0 else 'kpi-rose' }}">
+            <div class="portal-kpi-icon">
+                <i class="fa-regular fa-message"></i>
+            </div>
+            <div class="portal-kpi-data">
+                <small>Open Complaints</small>
+                <strong>{{ open_complaints }}</strong>
+                <div class="kpi-subtext">{{ 'Unresolved concerns' if open_complaints > 0 else 'No open issues' }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="portal-kpi">
+            <div class="portal-kpi-icon">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="portal-kpi-data">
+                <small>Licence Status</small>
+                <strong style="font-size: 1.35rem; color: #059669; text-transform: capitalize;">{{ vendor.status }}</strong>
+                <div class="kpi-subtext">No: {{ vendor.license_number or 'Standard' }}</div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Stalls Section -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="h5 fw-bold text-dark mb-0"><i class="fa-solid fa-store text-success me-2"></i>My Food Stalls</h2>
+        <p class="text-secondary small mb-0">Overview of food safety performance across your locations.</p>
+    </div>
+</div>
+
 <div class="row g-4">
 {% for snapshot in snapshots %}
-<div class="col-md-6"><article class="portal-card stall-card">
-    <div class="d-flex justify-content-between gap-3"><div><span class="code">{{ snapshot.stall.stall_code }}</span><h2>{{ snapshot.stall.stall_name }}</h2><p><i class="fa-solid fa-location-dot me-1"></i>{{ snapshot.stall.area.area_name }}</p></div><span class="risk-badge risk-{{ snapshot.inspection.risk_level if snapshot.inspection else 'unrated' }}">{{ snapshot.inspection.risk_level if snapshot.inspection else 'unrated' }}</span></div>
-    <div class="stall-metrics"><div><small>Hygiene score</small><strong>{{ snapshot.inspection.overall_score ~ '%' if snapshot.inspection and snapshot.inspection.overall_score is not none else '—' }}</strong></div><div><small>Grade</small><strong>{{ snapshot.grade or '—' }}</strong></div><div><small>Reinspection</small><strong class="date">{{ snapshot.inspection.reinspection_date.strftime('%d %b %Y') if snapshot.inspection and snapshot.inspection.reinspection_date else 'Not set' }}</strong></div></div>
-    <a class="portal-link" href="{{ url_for('vendor_portal.stall_profile', stall_id=snapshot.stall.stall_id) }}">Open stall profile <i class="fa-solid fa-arrow-right"></i></a>
-</article></div>
-{% else %}<div class="col-12"><div class="portal-card empty">No stalls are assigned to this vendor.</div></div>{% endfor %}
+<div class="col-12 col-md-6 col-xl-4">
+    <article class="stall-card" role="button" tabindex="0"
+             data-stall-modal-open
+             data-url="{{ url_for('vendor_portal.stall_profile', stall_id=snapshot.stall.stall_id) }}"
+             data-title="{{ snapshot.stall.stall_name }}"
+             data-subtitle="Code: {{ snapshot.stall.stall_code }} &middot; {{ snapshot.stall.area.area_name }}">
+        <div class="stall-card-banner {{ 'risk-' ~ snapshot.inspection.risk_level if snapshot.inspection else 'risk-unrated' }}">
+            <div>
+                <span class="stall-code-tag"><i class="fa-solid fa-hashtag me-1"></i>{{ snapshot.stall.stall_code }}</span>
+                <h2>{{ snapshot.stall.stall_name }}</h2>
+                <p><i class="fa-solid fa-location-dot me-1"></i>{{ snapshot.stall.area.area_name }} &middot; {{ snapshot.stall.area.city }}</p>
+            </div>
+            <span class="risk-badge risk-{{ snapshot.inspection.risk_level if snapshot.inspection else 'unrated' }}">
+                {{ snapshot.inspection.risk_level if snapshot.inspection else 'unrated' }}
+            </span>
+        </div>
+        
+        <div class="stall-card-body">
+            <div class="stall-metrics-grid">
+                <div class="stall-metric-item">
+                    <small>Hygiene Score</small>
+                    <strong class="score-highlight">
+                        {{ (snapshot.inspection.overall_score ~ '%') if snapshot.inspection and snapshot.inspection.overall_score is not none else '—' }}
+                    </strong>
+                </div>
+                <div class="stall-metric-item">
+                    <small>Grade</small>
+                    <strong>{{ snapshot.grade or '—' }}</strong>
+                </div>
+                <div class="stall-metric-item">
+                    <small>Reinspection</small>
+                    <strong class="date-val">
+                        {{ snapshot.inspection.reinspection_date.strftime('%d %b %Y') if snapshot.inspection and snapshot.inspection.reinspection_date else 'Not set' }}
+                    </strong>
+                </div>
+            </div>
+            
+            <div class="stall-card-footer">
+                <button type="button" class="btn-stall-open"
+                        data-stall-modal-open
+                        data-url="{{ url_for('vendor_portal.stall_profile', stall_id=snapshot.stall.stall_id) }}"
+                        data-title="{{ snapshot.stall.stall_name }}"
+                        data-subtitle="Code: {{ snapshot.stall.stall_code }} &middot; {{ snapshot.stall.area.area_name }}">
+                    <span>View Details</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <a class="btn-stall-menu" href="{{ url_for('vendor_portal.food_items', stall_id=snapshot.stall.stall_id) }}" title="Manage Menu" onclick="event.stopPropagation()">
+                    <i class="fa-solid fa-utensils"></i>
+                    <span>Menu</span>
+                </a>
+            </div>
+        </div>
+    </article>
 </div>
+{% else %}
+<div class="col-12">
+    <div class="portal-card text-center py-5">
+        <i class="fa-solid fa-shop text-muted mb-3" style="font-size: 3rem; opacity: 0.5;"></i>
+        <h3 class="fw-bold text-dark">No Stalls Assigned Yet</h3>
+        <p class="text-secondary mx-auto" style="max-width: 450px;">Your vendor account does not have any active food stalls assigned at this moment. Contact university safety administration if this is unexpected.</p>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+<!-- Stall Detail Modal -->
+<div class="modal fade" id="stallDetailModal" tabindex="-1" aria-labelledby="stallDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="stallDetailModalLabel">Stall Details</h5>
+                    <p class="text-secondary small mb-0" id="stallDetailModalSubtitle"></p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="stallDetailModalBody">
+                <div class="text-center py-5 text-secondary">
+                    <i class="fa-solid fa-circle-notch fa-spin fs-2 mb-2 d-block"></i>
+                    Loading stall details&hellip;
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    var modalEl = document.getElementById("stallDetailModal");
+    if (!modalEl) return;
+    var modal = new bootstrap.Modal(modalEl);
+    var bodyEl = document.getElementById("stallDetailModalBody");
+    var titleEl = document.getElementById("stallDetailModalLabel");
+    var subtitleEl = document.getElementById("stallDetailModalSubtitle");
+    var loadingHtml = bodyEl.innerHTML;
+
+    document.querySelectorAll("[data-stall-modal-open]").forEach(function (trigger) {
+        trigger.addEventListener("click", function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            var url = trigger.getAttribute("data-url");
+            titleEl.textContent = trigger.getAttribute("data-title") || "Stall Details";
+            subtitleEl.innerHTML = trigger.getAttribute("data-subtitle") || "";
+            bodyEl.innerHTML = loadingHtml;
+            modal.show();
+
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (response) {
+                    if (!response.ok) throw new Error("Request failed");
+                    return response.text();
+                })
+                .then(function (html) {
+                    bodyEl.innerHTML = html;
+                })
+                .catch(function () {
+                    bodyEl.innerHTML =
+                        '<div class="text-center py-5 text-danger">' +
+                        '<i class="fa-solid fa-triangle-exclamation fs-2 mb-2 d-block"></i>' +
+                        "Could not load stall details. Please try again." +
+                        "</div>";
+                });
+        });
+
+        trigger.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                trigger.click();
+            }
+        });
+    });
+})();
+</script>
 {% endblock %}

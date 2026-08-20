@@ -227,6 +227,48 @@ def validate_and_store_corrective_evidence(file_storage):
     return stored_name
 
 
+def validate_and_store_dispute_evidence(file_storage, dispute_id):
+    """Same validation approach as complaint evidence (image/video/audio/
+    document), scoped to inspection-dispute proof files. Returns a dict of
+    InspectionDisputeEvidence column values. Raises EvidenceValidationError
+    (nothing written to disk) if any check fails."""
+    if file_storage is None or not file_storage.filename:
+        raise EvidenceValidationError("No file was provided.")
+
+    original_name, extension = _split_extension(file_storage.filename)
+    if extension in _EXPLICITLY_DENIED_EXTENSIONS or extension not in EVIDENCE_RULES:
+        raise EvidenceValidationError(
+            f"'{original_name}' is not an allowed evidence type. Allowed: "
+            "JPG, JPEG, PNG, WEBP, MP4, WEBM, MOV, MP3, WAV, M4A, PDF."
+        )
+    category, size_config_key, signature_check = EVIDENCE_RULES[extension]
+
+    file_hash, header, size = _hash_and_sniff(file_storage.stream)
+    _validate_size(original_name, size, size_config_key)
+
+    if not signature_check(header):
+        raise EvidenceValidationError(
+            f"'{original_name}' does not look like a valid .{extension} "
+            "file."
+        )
+
+    stored_name = f"{uuid.uuid4().hex}.{extension}"
+    relative_path = str(
+        Path("inspection_disputes") / str(dispute_id) / stored_name
+    )
+    _save_stream(file_storage.stream, _storage_root() / relative_path)
+
+    return {
+        "file_name": original_name,
+        "stored_file_name": stored_name,
+        "file_type": category,
+        "mime_type": _MIME_TYPES[extension],
+        "file_size": size,
+        "storage_path": relative_path,
+        "file_hash": file_hash,
+    }
+
+
 def delete_stored_complaint_files(relative_paths):
     """Best-effort cleanup used when a complaint submission fails partway
     through -- never leave orphan files behind for rows that never made it
@@ -253,6 +295,19 @@ def delete_corrective_evidence_file(stored_file_name):
 
 
 def serve_complaint_evidence(evidence, as_attachment=False):
+    path = _storage_root() / evidence.storage_path
+    if not path.is_file():
+        abort(404)
+    return send_file(
+        path,
+        mimetype=evidence.mime_type,
+        as_attachment=as_attachment,
+        download_name=evidence.file_name,
+        conditional=True,
+    )
+
+
+def serve_dispute_evidence(evidence, as_attachment=False):
     path = _storage_root() / evidence.storage_path
     if not path.is_file():
         abort(404)

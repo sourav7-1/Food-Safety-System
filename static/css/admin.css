@@ -1,62 +1,871 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap");
 
 :root {
-    --navy: #081529;
-    --navy-soft: #12223a;
-    --page: #f4f7fb;
-    --ink: #111827;
+    --navy: #0b132b;
+    --navy-surface: #111d40;
+    --navy-soft: #1c2a54;
+    --page: #f6f8fc;
+    --ink: #0f172a;
     --muted: #64748b;
-    --line: #e7edf5;
+    --line: #e2e8f0;
+    
+    /* Vibrant Theme Palette */
     --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+    --primary-glow: rgba(79, 70, 229, 0.35);
+    
+    --purple-grad: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    --blue-grad: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    --green-grad: linear-gradient(135deg, #10b981 0%, #047857 100%);
+    --red-grad: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+    --orange-grad: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+    --teal-grad: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
 }
 
 * { box-sizing: border-box; }
-body.admin-body { margin: 0; background: var(--page); color: var(--ink); font-family: "Inter", system-ui, sans-serif; }
-.admin-shell { min-height: 100vh; display: flex; }
-.admin-sidebar { width: 250px; min-width: 250px; background: var(--navy); color: #fff; position: fixed; inset: 0 auto 0 0; z-index: 1030; }
-.sidebar-inner { width: 100%; height: 100%; display: flex; flex-direction: column; padding: 24px 16px 18px; background: var(--navy); color: #fff; }
-.sidebar-brand { display: flex; align-items: center; gap: 12px; padding: 0 10px 25px; color: #fff; text-decoration: none; }
-.brand-logo { width: 46px; height: 46px; flex: 0 0 46px; border: 2px solid rgba(255,255,255,.82); border-radius: 50%; object-fit: cover; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.28); }
-.sidebar-brand strong { display: block; font-size: 18px; letter-spacing: -.4px; }.sidebar-brand small { display: block; color: #7690b2; font-size: 9px; letter-spacing: 1.8px; margin-top: 2px; }
-.sidebar-nav { flex: 1; overflow-y: auto; scrollbar-width: thin; }
-.sidebar-label { color: #5f789b; font-size: 9px; font-weight: 800; letter-spacing: 1.6px; padding: 0 12px; margin: 6px 0 8px; }
-.sidebar-link { display: flex; align-items: center; gap: 13px; min-height: 42px; color: #a9bad0; text-decoration: none; padding: 0 13px; margin: 3px 0; border-radius: 9px; font-size: 13px; font-weight: 500; transition: .2s ease; }
-.sidebar-link i { width: 18px; text-align: center; font-size: 14px; }.sidebar-link:hover { color: #fff; background: #132943; }.sidebar-link.active { color: #fff; background: linear-gradient(90deg,#4f46e5,#5b67eb); box-shadow: 0 8px 22px rgba(79,70,229,.25); }
-.sidebar-logout { border-top: 1px solid #1c304b; padding-top: 14px; }.sidebar-logout button { width: 100%; border: 0; background: transparent; color: #9eb1ca; text-align: left; padding: 10px 13px; display: flex; gap: 13px; align-items: center; font-size: 13px; }.sidebar-logout button:hover { color: #ff8a91; }
-.admin-offcanvas { width: 250px !important; border: 0 !important; }.admin-main { width: calc(100% - 250px); margin-left: 250px; min-height: 100vh; }
-.admin-topbar { height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 1020; }
-.admin-profile { display: flex; align-items: center; gap: 10px; text-decoration: none; }.profile-avatar { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; background: linear-gradient(135deg,#4f46e5,#8b5cf6); overflow: hidden; }.profile-avatar-photo img { width: 100%; height: 100%; object-fit: cover; }.profile-role { color: #94a3b8; font-size: 10px; }
-.notification-button { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: #526078; position: relative; }.notification-button span { width: 7px; height: 7px; border-radius: 50%; background: #ef4444; position: absolute; top: 6px; right: 7px; border: 1px solid #fff; }
-.admin-content { padding: 28px 32px 40px; max-width: 1800px; width: 100%; margin: 0 auto; }.eyebrow { color: #4f46e5; font-size: 10px; font-weight: 800; letter-spacing: 1.6px; }.date-chip { background: #fff; border: 1px solid var(--line); color: #56657a; border-radius: 9px; padding: 9px 13px; font-size: 12px; font-weight: 600; }
-.kpi-card { height: 100%; min-height: 154px; padding: 19px; border-radius: 14px; position: relative; overflow: hidden; background: #fff; border: 1px solid var(--line); box-shadow: 0 7px 24px rgba(25,42,70,.05); }.kpi-card::after { content:""; position:absolute; width:80px; height:80px; border-radius:50%; right:-32px; top:-34px; background: currentColor; opacity:.06; }.kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; margin-bottom: 13px; }.kpi-value { font-size: 25px; line-height: 1; font-weight: 800; letter-spacing: -.7px; }.kpi-label { font-size: 12px; font-weight: 700; margin-top: 7px; }.kpi-note { color: #94a3b8; font-size: 9px; margin-top: 4px; }.kpi-purple { color:#6d5ce8 }.kpi-purple .kpi-icon{background:#eeeafd}.kpi-blue{color:#1686e8}.kpi-blue .kpi-icon{background:#e6f4ff}.kpi-green{color:#14a46c}.kpi-green .kpi-icon{background:#e4f8f0}.kpi-red{color:#e5484d}.kpi-red .kpi-icon{background:#ffebec}.kpi-orange{color:#ed8a22}.kpi-orange .kpi-icon{background:#fff2df}.kpi-teal{color:#0aa6a6}.kpi-teal .kpi-icon{background:#e3f8f7}
-.panel-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 20px; box-shadow: 0 7px 24px rgba(25,42,70,.045); }.panel-header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 18px; }.panel-header h3 { font-size: 14px; font-weight: 800; margin: 0 0 3px; }.panel-header p { font-size: 10px; color: #94a3b8; margin: 0; }.panel-badge { font-size: 8px; letter-spacing: 1px; color: #16a36a; background: #e7f8f1; border-radius: 20px; padding: 5px 8px; font-weight: 800; }.chart-wrap { position: relative; }.chart-wide { height: 260px; }.chart-doughnut { height: 260px; }
-.admin-table { --bs-table-bg: transparent; font-size: 12px; }.admin-table thead th { background: #f8fafc; color: #8390a3; font-size: 9px; letter-spacing: .7px; text-transform: uppercase; font-weight: 800; border-bottom: 1px solid var(--line); padding: 12px 18px; white-space: nowrap; }.admin-table tbody td { padding: 14px 18px; border-color: #edf1f6; color: #4b586c; }.admin-table strong { display:block; color:#1d2939; font-size:12px }.admin-table small { display:block; color:#98a4b5; font-size:9px; margin-top:2px }.score-value { font-size: 13px; font-weight: 800; color: #25334a; }.status-pill { display:inline-flex; align-items:center; border-radius:20px; padding:4px 8px; font-size:9px; font-weight:700; text-transform:capitalize; }.risk-low,.status-active,.status-approved,.status-submitted,.status-verified{background:#e5f8ef;color:#13875c}.risk-medium,.status-draft,.status-pending,.status-under_review,.status-investigation{background:#fff4dd;color:#b36b08}.risk-high{background:#fff0df;color:#d46613}.risk-critical,.status-suspended,.status-rejected,.status-action_required{background:#fee9eb;color:#d8424a}.risk-unknown,.status-inactive,.status-closed{background:#edf1f6;color:#64748b}.empty-state { text-align:center; color:#94a3b8 !important; padding:38px !important; }.btn-soft { background:#f0efff;color:#4f46e5;font-weight:700;border:0 }.code-chip { font-family: ui-monospace, monospace; font-size:10px; background:#eef2f7; color:#41506a; padding:4px 7px; border-radius:5px; }
-.page-actionbar { display:flex; justify-content:space-between; align-items:end; gap:20px; margin-bottom:22px }.action-button { background:#4f46e5;border-color:#4f46e5;font-size:12px;font-weight:700;padding:10px 15px }.search-bar { max-width:600px; height:44px; display:flex; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:10px; padding-left:14px; margin-bottom:18px }.search-bar i{color:#9aa6b7}.search-bar input{flex:1;border:0;outline:0;font-size:12px;min-width:0}.search-bar a{color:#9aa6b7}.search-bar button{align-self:stretch;border:0;border-radius:0 9px 9px 0;background:#eef0ff;color:#4f46e5;font-size:11px;font-weight:700;padding:0 16px}.table-actions{white-space:nowrap}.table-actions a,.table-actions button{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:7px;background:#f1f3ff;color:#4f46e5;border:0;text-decoration:none;margin-left:4px}.table-actions form{display:inline}.table-actions button.danger{background:#fff0f1;color:#dc3d48}.address-cell{max-width:260px}
-.form-heading{display:flex;align-items:flex-start;gap:15px;margin-bottom:22px}.form-heading>a{width:38px;height:38px;display:grid;place-items:center;border-radius:9px;background:#fff;border:1px solid var(--line);color:#4f46e5;text-decoration:none}.form-heading h2{font-size:24px;font-weight:800;margin:0 0 3px}.form-heading p:last-child{font-size:12px;color:#7b8799;margin:0}.entity-form{max-width:1050px}.entity-form h3{font-size:13px;font-weight:800;margin-bottom:15px}.entity-form label{display:block;color:#526078;font-size:10px;font-weight:700;margin-bottom:6px}.entity-form .form-control,.entity-form .form-select{border-color:#dfe6ef;font-size:12px;min-height:42px}.entity-form .form-control:focus,.entity-form .form-select:focus{border-color:#8179ed;box-shadow:0 0 0 3px rgba(79,70,229,.09)}.entity-form hr{border-color:#e9edf3;margin:25px 0}.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:25px;padding-top:20px;border-top:1px solid #edf1f5}.form-actions .btn{font-size:12px;font-weight:700;padding:9px 18px}.form-actions .btn-primary{background:#4f46e5;border-color:#4f46e5}
-@media (min-width: 1400px) and (max-aspect-ratio: 17/9) { .kpi-grid .col-xxl-2 { width: 33.333%; } }
-@media (min-width: 1550px) { .kpi-card { min-height: 164px; } }
-@media (max-width: 991.98px) { .admin-main{width:100%;margin-left:0}.admin-topbar{padding:0 20px}.admin-content{padding:24px 20px 35px}.admin-offcanvas .sidebar-inner{min-height:100vh} }
-@media (max-width: 575.98px) { .admin-topbar{height:68px;padding:0 14px}.admin-content{padding:20px 14px 30px}.page-actionbar{align-items:stretch;flex-direction:column}.action-button{align-self:flex-start}.kpi-card{min-height:140px}.chart-wide,.chart-doughnut{height:220px}.panel-card{padding:16px}.form-heading h2{font-size:20px} }
-.report-chart{position:relative;height:285px}.report-wide{height:310px}
-@media(max-width:575.98px){.report-chart,.report-wide{height:240px}}
+body.admin-body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
 
-/* ---------- Evidence review (complaint detail) ---------- */
-.evidence-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
-.evidence-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #fff; }
-.evidence-card img, .evidence-card video { width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; background: var(--page); }
-.evidence-card audio { width: 100%; margin-bottom: 8px; }
-.evidence-card .evidence-name { display: block; font-size: 12px; font-weight: 700; word-break: break-word; margin-bottom: 4px; }
-.evidence-card .evidence-meta { display: block; font-size: 10.5px; color: var(--muted); margin-bottom: 8px; }
-.evidence-card form { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.evidence-card .evidence-rejection-form { width: 100%; margin-top: 8px; }
-.evidence-card .evidence-rejection-note { display: block; margin-top: 6px; font-size: 11px; color: #d8424a; }
-.evidence-summary-counts { display: flex; gap: 16px; flex-wrap: wrap; margin: 6px 0 16px; font-size: 12px; color: var(--muted); }
-.evidence-summary-counts strong { color: var(--ink); }
+.admin-shell {
+    min-height: 100vh;
+    display: flex;
+}
 
-/* ---------- Roles & Permissions ---------- */
-.permission-group-label { color: #8390a3; font-size: 9px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; margin: 10px 0 6px; }
+/* ==========================================================================
+   Sidebar
+   ========================================================================== */
+.admin-sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: linear-gradient(180deg, #0b132b 0%, #111d40 60%, #0b132b 100%);
+    color: #fff;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1030;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+}
 
-/* ---------- Loading animation (admin-wide AJAX layer) ---------- */
+.sidebar-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px 20px;
+    background: transparent;
+    color: #fff;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px 24px;
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 16px;
+}
+
+.brand-logo {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    object-fit: cover;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-brand strong {
+    display: block;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    color: #ffffff;
+}
+
+.sidebar-brand small {
+    display: block;
+    color: #818cf8;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+    margin-top: 2px;
+}
+
+.sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    padding-right: 4px;
+}
+
+.sidebar-label {
+    color: #64748b;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    padding: 0 12px;
+    margin: 14px 0 8px;
+    text-transform: uppercase;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 42px;
+    color: #94a3b8;
+    text-decoration: none;
+    padding: 0 14px;
+    margin: 3px 0;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+
+.sidebar-link i {
+    width: 20px;
+    text-align: center;
+    font-size: 15px;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-link:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(3px);
+}
+
+.sidebar-link:hover i {
+    transform: scale(1.15);
+    color: #818cf8;
+}
+
+.sidebar-link.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
+    font-weight: 700;
+}
+
+.sidebar-link.active i {
+    color: #ffffff;
+}
+
+/* Sidebar Specific Nav Icon Colors */
+.sidebar-link.nav-dashboard i { color: #818cf8; }
+.sidebar-link.nav-vendors i { color: #c084fc; }
+.sidebar-link.nav-stalls i { color: #38bdf8; }
+.sidebar-link.nav-inspections i { color: #34d399; }
+.sidebar-link.nav-complaints i { color: #fb923c; }
+.sidebar-link.nav-reviews i { color: #facc15; }
+.sidebar-link.nav-risk i { color: #f87171; }
+.sidebar-link.nav-reports i { color: #22d3ee; }
+.sidebar-link.nav-users i { color: #a78bfa; }
+.sidebar-link.nav-roles i { color: #60a5fa; }
+.sidebar-link.nav-settings i { color: #2dd4bf; }
+
+.sidebar-logout {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 14px;
+    margin-top: 10px;
+}
+
+.sidebar-logout button {
+    width: 100%;
+    border: 0;
+    background: rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
+    text-align: left;
+    padding: 10px 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.sidebar-logout button:hover {
+    color: #ffffff;
+    background: #ef4444;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.admin-offcanvas {
+    width: 260px !important;
+    border: 0 !important;
+    background: #0b132b !important;
+}
+
+.admin-main {
+    width: calc(100% - 260px);
+    margin-left: 260px;
+    min-height: 100vh;
+}
+
+.admin-sidebar, .admin-main {
+    transition: width 0.25s ease, margin-left 0.25s ease;
+}
+
+.sidebar-collapse-toggle {
+    position: fixed;
+    top: 80px;
+    left: 260px;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: #fff;
+    color: var(--muted);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    align-items: center;
+    justify-content: center;
+    z-index: 1031;
+    cursor: pointer;
+    padding: 0;
+    transition: left 0.25s ease, color 0.2s ease;
+}
+
+.sidebar-collapse-toggle:hover {
+    color: var(--primary);
+}
+
+.sidebar-collapse-toggle i {
+    font-size: 11px;
+    transition: transform 0.25s ease;
+}
+
+/* Collapsed sidebar -- icon rail only, no labels. State lives on <html>
+   (see templates/admin/base.html) so it can be applied before first
+   paint and survives across page loads via localStorage. Width/margin
+   overrides are scoped to the same >=992px breakpoint the fixed sidebar
+   itself only exists above (d-lg-flex) -- otherwise their higher
+   specificity than the max-width:991.98px reset further down would win
+   on mobile despite the sidebar being hidden there. */
+@media (min-width: 992px) {
+    html.sidebar-collapsed .admin-sidebar {
+        width: 76px;
+        min-width: 76px;
+    }
+
+    html.sidebar-collapsed .admin-main {
+        width: calc(100% - 76px);
+        margin-left: 76px;
+    }
+
+    html.sidebar-collapsed .sidebar-collapse-toggle {
+        left: 76px;
+    }
+}
+
+html.sidebar-collapsed .sidebar-collapse-toggle i {
+    transform: rotate(180deg);
+}
+
+/* Scoped to the fixed desktop sidebar only -- the offcanvas mobile menu
+   reuses the same sidebar.html markup and always keeps its labels. */
+html.sidebar-collapsed .admin-sidebar .sidebar-brand {
+    justify-content: center;
+    gap: 0;
+}
+
+html.sidebar-collapsed .admin-sidebar .sidebar-brand div,
+html.sidebar-collapsed .admin-sidebar .sidebar-label,
+html.sidebar-collapsed .admin-sidebar .sidebar-link span,
+html.sidebar-collapsed .admin-sidebar .sidebar-logout button span {
+    display: none;
+}
+
+html.sidebar-collapsed .admin-sidebar .sidebar-link {
+    justify-content: center;
+    padding: 0;
+}
+
+html.sidebar-collapsed .admin-sidebar .sidebar-link i {
+    width: auto;
+}
+
+html.sidebar-collapsed .admin-sidebar .sidebar-logout button {
+    justify-content: center;
+    padding: 10px;
+}
+
+/* ==========================================================================
+   Topbar
+   ========================================================================== */
+.admin-topbar {
+    height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 36px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.admin-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 12px;
+    transition: background 0.2s ease;
+}
+
+.admin-profile:hover {
+    background: #f1f5f9;
+}
+
+.profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-weight: 800;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    overflow: hidden;
+}
+
+.profile-avatar-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-role {
+    color: #6366f1;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.notification-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: #475569;
+    position: relative;
+    display: grid;
+    place-items: center;
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+}
+
+.notification-button:hover {
+    background: #f8fafc;
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.notification-button span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+/* ==========================================================================
+   Main Content Area
+   ========================================================================== */
+.admin-content {
+    padding: 32px 36px 48px;
+    max-width: 1800px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.eyebrow {
+    color: #6366f1;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+}
+
+.date-chip {
+    background: #ffffff;
+    border: 1px solid var(--line);
+    color: #475569;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ==========================================================================
+   Radiant KPI Cards
+   ========================================================================== */
+.kpi-card {
+    height: 100%;
+    min-height: 156px;
+    padding: 22px;
+    border-radius: 18px;
+    position: relative;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    cursor: pointer;
+}
+
+.kpi-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary);
+    border-radius: 18px 18px 0 0;
+}
+
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 32px -4px rgba(15, 23, 42, 0.12) !important;
+    border-color: #cbd5e1;
+}
+
+.kpi-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 1.35rem;
+    margin-bottom: 14px;
+}
+
+.kpi-value {
+    font-size: 28px;
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.8px;
+    color: #0f172a;
+}
+
+.kpi-label {
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 6px;
+    color: #334155;
+}
+
+.kpi-note {
+    color: #94a3b8;
+    font-size: 10.5px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+/* KPI Color Variations */
+.kpi-purple::before { background: var(--purple-grad); }
+.kpi-purple .kpi-icon {
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    color: #7c3aed;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.18);
+}
+
+.kpi-blue::before { background: var(--blue-grad); }
+.kpi-blue .kpi-icon {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    color: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
+}
+
+.kpi-green::before { background: var(--green-grad); }
+.kpi-green .kpi-icon {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    color: #059669;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.18);
+}
+
+.kpi-red::before { background: var(--red-grad); }
+.kpi-red .kpi-icon {
+    background: linear-gradient(135deg, #ffe4e6, #fecdd3);
+    color: #e11d48;
+    box-shadow: 0 4px 12px rgba(225, 29, 72, 0.18);
+}
+
+.kpi-orange::before { background: var(--orange-grad); }
+.kpi-orange .kpi-icon {
+    background: linear-gradient(135deg, #ffedd5, #fed7aa);
+    color: #ea580c;
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.18);
+}
+
+.kpi-teal::before { background: var(--teal-grad); }
+.kpi-teal .kpi-icon {
+    background: linear-gradient(135deg, #ccfbf1, #99f6e4);
+    color: #0d9488;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.18);
+}
+
+/* ==========================================================================
+   Panel Cards & Headers
+   ========================================================================== */
+.panel-card {
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+    transition: all 0.25s ease;
+}
+
+.panel-card:hover {
+    box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.08);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.panel-header h3 {
+    font-size: 15px;
+    font-weight: 800;
+    margin: 0 0 3px;
+    color: #0f172a;
+}
+
+.panel-header p {
+    font-size: 11px;
+    color: #64748b;
+    margin: 0;
+}
+
+.panel-badge {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #059669;
+    background: #dcfce7;
+    border: 1px solid #bbf7d0;
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.chart-wrap { position: relative; }
+.chart-wide { height: 270px; }
+.chart-doughnut { height: 270px; }
+
+/* ==========================================================================
+   Admin Tables
+   ========================================================================== */
+.admin-table {
+    --bs-table-bg: transparent;
+    font-size: 12.5px;
+}
+
+.admin-table thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 9.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-weight: 800;
+    border-bottom: 1px solid var(--line);
+    padding: 14px 20px;
+    white-space: nowrap;
+}
+
+.admin-table tbody td {
+    padding: 15px 20px;
+    border-color: #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.admin-table strong {
+    display: block;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.admin-table small {
+    display: block;
+    color: #64748b;
+    font-size: 10.5px;
+    margin-top: 2px;
+}
+
+.score-value {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+/* Status Pills */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: capitalize;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.risk-low, .status-active, .status-approved, .status-submitted, .status-verified, .status-resolved {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.risk-medium, .status-draft, .status-pending, .status-under_review, .status-investigation {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+}
+
+.risk-high {
+    background: #fff7ed;
+    color: #ea580c;
+    border: 1px solid #ffedd5;
+}
+
+.risk-critical, .status-suspended, .status-rejected, .status-action_required {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.risk-unknown, .status-inactive, .status-closed {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.empty-state {
+    text-align: center;
+    color: #94a3b8 !important;
+    padding: 44px !important;
+}
+
+.btn-soft {
+    background: #eef2ff;
+    color: #4f46e5;
+    font-weight: 700;
+    border: 0;
+    transition: all 0.2s ease;
+}
+
+.btn-soft:hover {
+    background: #4f46e5;
+    color: #ffffff;
+}
+
+.code-chip {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10.5px;
+    font-weight: 700;
+    background: #f1f5f9;
+    color: #334155;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+/* ==========================================================================
+   Action Bar & Search
+   ========================================================================== */
+.page-actionbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.action-button {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border-color: #4f46e5;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+    color: #ffffff;
+}
+
+.search-bar {
+    max-width: 600px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding-left: 14px;
+    margin-bottom: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+.search-bar:focus-within {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.search-bar i { color: #94a3b8; }
+.search-bar input { flex: 1; border: 0; outline: 0; font-size: 12.5px; min-width: 0; font-weight: 500; }
+.search-bar a { color: #94a3b8; }
+.search-bar button {
+    align-self: stretch;
+    border: 0;
+    border-radius: 0 11px 11px 0;
+    background: #eef2ff;
+    color: #4f46e5;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 0 18px;
+    transition: all 0.2s ease;
+}
+
+.search-bar button:hover {
+    background: #4f46e5;
+    color: #ffffff;
+}
+
+.table-actions { white-space: nowrap; }
+.table-actions a, .table-actions button {
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #4f46e5;
+    border: 0;
+    text-decoration: none;
+    margin-left: 4px;
+    transition: all 0.2s ease;
+}
+
+.table-actions a:hover, .table-actions button:hover {
+    background: #4f46e5;
+    color: #ffffff;
+    transform: scale(1.08);
+}
+
+.table-actions form { display: inline; }
+.table-actions button.danger {
+    background: #fff1f2;
+    color: #e11d48;
+}
+
+.table-actions button.danger:hover {
+    background: #e11d48;
+    color: #ffffff;
+}
+
+.btn-action-edit {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-grid;
+    place-items: center;
+    border: 0;
+    font-size: 13px;
+    background-color: #eef2ff;
+    color: #4f46e5;
+    transition: all 0.2s ease;
+}
+
+.btn-action-edit:hover {
+    background-color: #4f46e5;
+    color: #ffffff;
+    transform: scale(1.08);
+}
+
+.btn-action-delete {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-grid;
+    place-items: center;
+    border: 0;
+    font-size: 13px;
+    background-color: #fff1f2;
+    color: #e11d48;
+    transition: all 0.2s ease;
+}
+
+.btn-action-delete:hover {
+    background-color: #e11d48;
+    color: #ffffff;
+    transform: scale(1.08);
+}
+
+/* Modals */
+.modal-content {
+    border-radius: 20px;
+    border: 0;
+    box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.modal-header {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 20px 26px;
+    background: #ffffff;
+}
+
+.modal-body { padding: 26px; }
+.modal-footer {
+    border-top: 1px solid #f1f5f9;
+    padding: 16px 26px;
+    background: #f8fafc;
+}
+
+/* Loading animations & micro-interactions */
 .admin-progress-bar {
     position: fixed;
     top: 0;
@@ -67,26 +876,28 @@ body.admin-body { margin: 0; background: var(--page); color: var(--ink); font-fa
     pointer-events: none;
     opacity: 0;
     overflow: hidden;
-    transition: opacity .18s ease;
+    transition: opacity 0.18s ease;
 }
+
 .admin-progress-bar.active { opacity: 1; }
 .admin-progress-bar::before {
     content: "";
     display: block;
     height: 100%;
     width: 40%;
-    background: linear-gradient(90deg, var(--primary), #8b5cf6);
+    background: linear-gradient(90deg, #6366f1, #a855f7);
     border-radius: 0 3px 3px 0;
-    box-shadow: 0 0 8px rgba(79, 70, 229, .5);
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
     animation: admin-progress-slide 1.1s ease-in-out infinite;
 }
+
 @keyframes admin-progress-slide {
     0% { transform: translateX(-100%); }
     100% { transform: translateX(350%); }
 }
 
-.admin-content { transition: opacity .18s ease, filter .18s ease; }
-.admin-content.is-loading { opacity: .55; filter: saturate(65%); pointer-events: none; }
+.admin-content { transition: opacity 0.18s ease, filter 0.18s ease; }
+.admin-content.is-loading { opacity: 0.55; filter: saturate(65%); pointer-events: none; }
 
 .btn-loading {
     display: inline-flex !important;
@@ -94,198 +905,70 @@ body.admin-body { margin: 0; background: var(--page); color: var(--ink); font-fa
     justify-content: center;
     cursor: wait;
 }
-/* Anchor tags styled as buttons can't be `disabled` -- block further
-   clicks the same way while the navigation they triggered is pending. */
-.btn-loading[href] { pointer-events: none; }
+
 .btn-loading .btn-spinner {
     display: inline-block;
     width: 13px;
     height: 13px;
-    border: 2px solid rgba(255, 255, 255, .45);
+    border: 2px solid rgba(255, 255, 255, 0.45);
     border-top-color: #fff;
     border-radius: 50%;
-    animation: admin-btn-spin .6s linear infinite;
+    animation: admin-btn-spin 0.6s linear infinite;
 }
-/* Buttons with a light/white background need a dark spinner instead of
-   the default white one, or it's invisible against them. */
-.btn-light.btn-loading .btn-spinner,
-.btn-soft.btn-loading .btn-spinner,
-.btn-outline-success.btn-loading .btn-spinner,
-.search-bar button.btn-loading .btn-spinner {
-    border-color: rgba(79, 70, 229, .3);
-    border-top-color: var(--primary);
-}
-.btn-outline-danger.btn-loading .btn-spinner,
-.danger.btn-loading .btn-spinner {
-    border-color: rgba(216, 66, 74, .3);
-    border-top-color: #d8424a;
-}
+
 @keyframes admin-btn-spin {
     to { transform: rotate(360deg); }
 }
 
-/* Panel-load spinner used inside AJAX-fetched content (e.g. the
-   complaints modal) before the fetched HTML replaces it. */
-.admin-panel-spinner { display: flex; align-items: center; justify-content: center; padding: 60px 0; color: var(--muted); font-size: 26px; }
-
-/* ---------- Shared table row-action icon buttons ----------
-   Round edit/delete icon buttons with a solid color-fill hover, used by
-   every admin list with a per-row Edit/Delete action (vendors, users,
-   stalls, ...). Any button/link tagged .btn-action-edit or
-   .btn-action-delete inside a .table-actions cell gets this look. */
-.btn-action-edit, .btn-action-delete {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: inline-grid;
-    place-items: center;
-    border: 0;
-    font-size: 13px;
-    text-decoration: none;
-    transition: all .2s ease;
+.admin-panel-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    color: var(--muted);
+    font-size: 26px;
 }
-.btn-action-edit { background-color: #eef2ff; color: #4f46e5; }
-.btn-action-edit:hover { background-color: #4f46e5; color: #fff; transform: scale(1.05); }
-.btn-action-delete { background-color: #fef2f2; color: #ef4444; }
-.btn-action-delete:hover { background-color: #ef4444; color: #fff; transform: scale(1.05); }
 
-/* Generic Active/Inactive status dot, reused wherever a list shows an
-   account/record's on-off state next to its label. */
-.status-dot-active, .status-dot-inactive { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-.status-dot-active { background-color: #10b981; animation: adminPulseActiveDot 1.8s infinite; }
-.status-dot-inactive { background-color: #64748b; }
+.status-dot-active {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    background-color: #10b981;
+    animation: adminPulseActiveDot 1.8s infinite;
+}
+
 @keyframes adminPulseActiveDot {
-    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, .45); }
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
     70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
     100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
-/* Shared modern modal chrome for every admin Add/Edit modal (vendors,
-   users, stalls, ...) instead of the plain Bootstrap default look. */
-.modal-content { border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0, 0, 0, .08); }
-.modal-header { border-bottom: 1px solid #f1f5f9; padding: 20px 24px; }
-.modal-body { padding: 24px; }
-.modal-footer { border-top: 1px solid #f1f5f9; padding: 16px 24px; }
-
-/* ============================================================
-   Micro-interactions & motion layer
-   Purely additive: entrance animation, hover/press feedback, and
-   result-state polish on top of the existing AJAX/loading system
-   above. No layout, color palette, or component structure changes.
-   ============================================================ */
-@keyframes adminFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes adminFadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes adminRowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes adminPopIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
-@keyframes adminPulseDot { 0%, 100% { box-shadow: 0 0 0 0 rgba(20, 164, 108, .45); } 70% { box-shadow: 0 0 0 5px rgba(20, 164, 108, 0); } }
-@keyframes adminShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-
-/* Page-load entrance: actionbar text/controls, then the panel below. */
-.page-actionbar > div:first-child .eyebrow { animation: adminFadeUp .38s ease both; }
-.page-actionbar > div:first-child h2 { animation: adminFadeUp .4s ease .04s both; }
-.page-actionbar > div:first-child > p.text-secondary { animation: adminFadeUp .4s ease .08s both; }
-.page-actionbar > div:last-child { animation: adminFadeUp .4s ease .12s both; }
-.panel-card { animation: adminFadeIn .35s ease .1s both; }
-
-/* Table rows: staggered entrance, capped so long lists don't crawl in. */
-.admin-table tbody tr { animation: adminRowIn .32s ease both; }
-.admin-table tbody tr:nth-child(1) { animation-delay: 0ms; }
-.admin-table tbody tr:nth-child(2) { animation-delay: 40ms; }
-.admin-table tbody tr:nth-child(3) { animation-delay: 80ms; }
-.admin-table tbody tr:nth-child(4) { animation-delay: 120ms; }
-.admin-table tbody tr:nth-child(5) { animation-delay: 160ms; }
-.admin-table tbody tr:nth-child(6) { animation-delay: 200ms; }
-.admin-table tbody tr:nth-child(7) { animation-delay: 240ms; }
-.admin-table tbody tr:nth-child(n+8) { animation-delay: 280ms; }
-.admin-table tbody tr:hover { background: #fafbff; }
-
-/* Cross-links from one admin list to another (e.g. a stall name inside
-   the complaints/inspections/reviews tables jumping to its Stalls row,
-   or a vendor name jumping to its Vendors row) via the existing search
-   filter on the target list -- no separate detail page needed. */
 .entity-link {
     color: inherit;
     text-decoration: none;
     border-bottom: 1px dashed transparent;
-    transition: color .15s ease, border-color .15s ease;
+    transition: color 0.15s ease, border-color 0.15s ease;
 }
 
-.entity-link:hover,
-.entity-link:focus-visible {
+.entity-link:hover, .entity-link:focus-visible {
     color: var(--primary);
     border-bottom-color: var(--primary);
 }
 
-/* Buttons: hover lift/press feedback, layered on the existing
-   .btn-loading/.btn-spinner states above rather than replacing them. */
-.action-button { transition: transform .18s ease, box-shadow .18s ease; }
-.action-button:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(79, 70, 229, .28); }
-.action-button:active { transform: translateY(0) scale(.97); }
-.action-button i { transition: transform .18s ease; }
-.action-button:hover i { transform: translateX(1px) rotate(12deg); }
-
-.table-actions a, .table-actions button { transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease; }
-.table-actions a:hover, .table-actions button:hover { transform: scale(1.08); box-shadow: 0 4px 10px rgba(79, 70, 229, .18); }
-.table-actions a:active, .table-actions button:active { transform: scale(.94); }
-.table-actions button i, .table-actions a i { transition: transform .18s ease; }
-.table-actions button:not(.danger):hover i { transform: rotate(8deg); }
-.table-actions button.danger:hover { background: #ffe3e5; box-shadow: 0 4px 10px rgba(216, 66, 74, .22); }
-.table-actions button.danger:hover i { transform: translateY(-1px) rotate(-6deg); }
-
-.search-bar { transition: box-shadow .18s ease; }
-.search-bar:focus-within { box-shadow: 0 0 0 3px rgba(79, 70, 229, .09); }
-.search-bar button { transition: background-color .18s ease, transform .18s ease; }
-.search-bar button:hover { background: #e2e6ff; transform: translateY(-1px); }
-.search-bar button:active { transform: translateY(0) scale(.97); }
-.search-bar > i { transition: transform .18s ease, color .18s ease; }
-.search-bar:focus-within > i { transform: scale(1.08); color: #6b74e0; }
-
-.admin-content .btn:active:not(.btn-loading) { transform: scale(.97); }
-.admin-content .btn { transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease, border-color .15s ease; }
-
-/* Loading/result states on opted-in submit buttons (data-done-label). */
-.btn-result-ok i, .btn-result-error i { animation: adminPopIn .22s ease both; }
-.btn.btn-primary.btn-result-ok { background: #14a46c; border-color: #14a46c; }
-.btn.btn-primary.btn-result-error { background: #d8424a; border-color: #d8424a; }
-.table-actions button.danger.btn-result-ok { background: #e5f8ef; color: #14a46c; }
-.table-actions button.danger.btn-result-error { background: #fee9eb; color: #d8424a; }
-
-/* Sidebar: icon nudge on hover, on top of the existing background transition. */
-.sidebar-link i { transition: transform .18s ease; }
-.sidebar-link:hover i { transform: translateX(2px); }
-
-/* Status pill: subtle pulse dot on active only; no change to inactive/other states. */
-.status-pill.status-active { gap: 5px; }
-.status-pill.status-active::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #14a46c; flex: 0 0 auto; animation: adminPulseDot 2s ease-in-out infinite; }
-
-/* Modal open/close: gentle scale + fade instead of Bootstrap's default slide-down. */
-.modal.fade .modal-dialog { transition: transform .22s cubic-bezier(.22, 1, .36, 1), opacity .22s ease; transform: scale(.96) translateY(-8px); opacity: 0; }
-.modal.show .modal-dialog { transform: scale(1) translateY(0); opacity: 1; }
-
-/* Flashed alerts: treat as the app's toast equivalent -- fade/slide in. */
-.admin-content .alert.fade.show { animation: adminFadeUp .3s ease both; }
-
-/* Empty-state row: icon + gentle fade (rides the row entrance animation above). */
-.empty-state i { display: block; font-size: 22px; margin-bottom: 8px; color: #c3cce0; }
-
-/* Loading shimmer sweep across dimmed content -- lightweight stand-in for a
-   skeleton screen, given content re-renders as one server-provided block. */
-.admin-content.is-loading { position: relative; overflow: hidden; }
-.admin-content.is-loading::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .35) 50%, transparent 70%);
-    transform: translateX(-100%);
-    animation: adminShimmer 1.1s ease-in-out infinite;
-    pointer-events: none;
+@media (max-width: 991.98px) {
+    .admin-main { width: 100%; margin-left: 0; }
+    .admin-topbar { padding: 0 20px; }
+    .admin-content { padding: 24px 20px 35px; }
+    .admin-offcanvas .sidebar-inner { min-height: 100vh; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: .01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: .01ms !important;
-        scroll-behavior: auto !important;
-    }
+@media (max-width: 575.98px) {
+    .admin-topbar { height: 68px; padding: 0 14px; }
+    .admin-content { padding: 20px 14px 30px; }
+    .page-actionbar { align-items: stretch; flex-direction: column; }
+    .action-button { align-self: flex-start; }
+    .kpi-card { min-height: 140px; }
+    .chart-wide, .chart-doughnut { height: 220px; }
+    .panel-card { padding: 16px; }
 }

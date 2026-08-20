@@ -486,6 +486,12 @@ class Inspection(db.Model):
         back_populates="inspection",
         cascade="all, delete-orphan",
     )
+    disputes = db.relationship(
+        "InspectionDispute",
+        back_populates="inspection",
+        cascade="all, delete-orphan",
+        order_by="InspectionDispute.submitted_at",
+    )
 
 
 class InspectionCriterion(db.Model):
@@ -544,6 +550,83 @@ class InspectionScore(db.Model):
 
     inspection = db.relationship("Inspection", back_populates="scores")
     criterion = db.relationship("InspectionCriterion", back_populates="scores")
+
+
+class InspectionDispute(db.Model):
+    __tablename__ = "inspection_disputes"
+
+    dispute_id = db.Column(db.Integer, primary_key=True)
+    inspection_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "inspections.inspection_id", onupdate="CASCADE", ondelete="CASCADE"
+        ),
+        nullable=False,
+    )
+    vendor_id = db.Column(
+        db.Integer,
+        db.ForeignKey("vendors.vendor_id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False,
+    )
+    reason = db.Column(db.Text, nullable=False)
+    status = db.Column(
+        db.Enum("submitted", "under_review", "resolved", "rejected"),
+        nullable=False,
+        default="submitted",
+        server_default="submitted",
+    )
+    submitted_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.current_timestamp(),
+    )
+    resolved_at = db.Column(db.DateTime)
+    admin_response = db.Column(db.Text)
+
+    inspection = db.relationship("Inspection", back_populates="disputes")
+    vendor = db.relationship("Vendor")
+    evidence = db.relationship(
+        "InspectionDisputeEvidence",
+        back_populates="dispute",
+        cascade="all, delete-orphan",
+        order_by="InspectionDisputeEvidence.uploaded_at",
+    )
+
+
+class InspectionDisputeEvidence(db.Model):
+    __tablename__ = "inspection_dispute_evidence"
+
+    evidence_id = db.Column(db.Integer, primary_key=True)
+    dispute_id = db.Column(
+        db.Integer,
+        db.ForeignKey(
+            "inspection_disputes.dispute_id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+    uploaded_by = db.Column(
+        db.Integer,
+        db.ForeignKey("users.user_id", onupdate="CASCADE", ondelete="SET NULL"),
+    )
+    file_name = db.Column(db.String(255), nullable=False)
+    stored_file_name = db.Column(db.String(255), nullable=False)
+    file_type = db.Column(
+        db.Enum("image", "video", "audio", "document"), nullable=False
+    )
+    mime_type = db.Column(db.String(150), nullable=False)
+    file_size = db.Column(db.Integer, nullable=False)
+    storage_path = db.Column(db.String(500), nullable=False)
+    file_hash = db.Column(db.String(64), nullable=False)
+    uploaded_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.current_timestamp(),
+    )
+
+    dispute = db.relationship("InspectionDispute", back_populates="evidence")
+    uploader = db.relationship("User")
 
 
 class ComplaintType(db.Model):

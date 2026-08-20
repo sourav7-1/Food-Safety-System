@@ -12,16 +12,16 @@
 
 <section class="row g-3 kpi-grid">
     {% set cards = [
-        ('Total Vendors', total_vendors, 'fa-store', 'purple', 'Registered operators'),
-        ('Total Stalls', total_stalls, 'fa-shop', 'blue', 'Across all areas'),
-        ("Today's Inspections", todays_inspections, 'fa-clipboard-check', 'green', 'Scheduled and completed'),
-        ('High Risk Stalls', high_risk_stalls, 'fa-triangle-exclamation', 'red', 'High and critical'),
-        ('Pending Complaints', pending_complaints, 'fa-message', 'orange', 'Open or under review'),
-        ('Average Hygiene Score', average_hygiene_score ~ '%', 'fa-chart-simple', 'teal', 'Latest inspections')
+        ('Total Vendors', total_vendors, 'fa-store', 'purple', 'Registered operators', 'total_vendors'),
+        ('Total Stalls', total_stalls, 'fa-shop', 'blue', 'Across all areas', 'total_stalls'),
+        ("Today's Inspections", todays_inspections, 'fa-clipboard-check', 'green', 'Scheduled and completed', 'todays_inspections'),
+        ('High Risk Stalls', high_risk_stalls, 'fa-triangle-exclamation', 'red', 'High and critical', 'high_risk_stalls'),
+        ('Pending Complaints', pending_complaints, 'fa-message', 'orange', 'Open or under review', 'pending_complaints'),
+        ('Average Hygiene Score', (average_hygiene_score|round(1) ~ '%') if average_hygiene_score is not none else '—', 'fa-chart-simple', 'teal', 'Latest inspections', 'average_hygiene_score')
     ] %}
-    {% for label, value, icon, color, note in cards %}
+    {% for label, value, icon, color, note, cat in cards %}
     <div class="col-12 col-sm-6 col-xl-4 col-xxl-2">
-        <article class="kpi-card kpi-{{ color }}">
+        <article class="kpi-card kpi-{{ color }} clickable-kpi-card" onclick="openAdminDashboardModal('{{ cat }}')">
             <div class="kpi-icon"><i class="fa-solid {{ icon }}"></i></div>
             <div class="kpi-value">{{ value }}</div>
             <div class="kpi-label">{{ label }}</div>
@@ -43,7 +43,7 @@
     </div>
     <div class="col-12 col-xl-4">
         <article class="panel-card h-100">
-            <div class="panel-header">
+            <div class="panel-header clickable-header" onclick="openAdminDashboardModal('high_risk_stalls')">
                 <div><h3>Risk Distribution</h3><p>Latest stall classifications</p></div>
             </div>
             <div class="chart-wrap chart-doughnut"><canvas id="riskChart"></canvas></div>
@@ -54,15 +54,15 @@
 <section class="panel-card mt-4">
     <div class="panel-header">
         <div><h3>Recent Inspections</h3><p>Latest updates from field inspectors</p></div>
-        <a class="btn btn-sm btn-soft" href="{{ url_for('admin.inspections') }}">View all</a>
+        <button type="button" class="btn btn-sm btn-soft px-3 fw-bold" style="border-radius: 8px;" onclick="openAdminDashboardModal('todays_inspections')">View all</button>
     </div>
     <div class="table-responsive">
         <table class="table admin-table align-middle mb-0">
             <thead><tr><th>Stall</th><th>Date</th><th>Score</th><th>Risk</th><th>Status</th></tr></thead>
             <tbody>
             {% for inspection in recent_inspections %}
-                <tr>
-                    <td><a class="entity-link" href="{{ url_for('admin.stalls', q=inspection.stall.stall_code) }}"><strong>{{ inspection.stall.stall_name }}</strong></a><small>{{ inspection.stall.stall_code }}</small></td>
+                <tr class="clickable-row" onclick="openAdminDashboardModal('todays_inspections')">
+                    <td><strong class="text-primary">{{ inspection.stall.stall_name }}</strong><small>{{ inspection.stall.stall_code }}</small></td>
                     <td>{{ inspection.inspection_date.strftime('%d %b %Y, %I:%M %p') }}</td>
                     <td><span class="score-value">{{ inspection.overall_score if inspection.overall_score is not none else '—' }}</span></td>
                     <td><span class="status-pill risk-{{ inspection.risk_level or 'unknown' }}">{{ inspection.risk_level or 'unrated' }}</span></td>
@@ -75,62 +75,293 @@
         </table>
     </div>
 </section>
+
+<!-- Operational Details Modal -->
+<div class="modal fade" id="adminDashboardModal" tabindex="-1" aria-labelledby="adminDashboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-bottom-0 pb-0 pt-4 px-4 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <span id="adminModalCategoryBadge" class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-bold" style="font-size: 11px;">DETAILS</span>
+                    <h5 class="modal-title fw-bold mb-0" id="adminDashboardModalLabel">Operational Details</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="adminModalSpinner" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted small mt-2 mb-0">Fetching live safety system data...</p>
+                </div>
+                <div id="adminModalError" class="text-center py-5 d-none">
+                    <i class="fa-solid fa-circle-exclamation text-danger fs-1 mb-2 d-block"></i>
+                    <p class="text-muted mb-0">Failed to load details. Please try again.</p>
+                </div>
+                <div id="adminModalList" class="d-flex flex-column gap-2" style="max-height: 460px; overflow-y: auto;"></div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
+                <button type="button" class="btn btn-light px-4 fw-semibold" style="border-radius: 10px;" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Entity Detail Modal -->
+<div class="modal fade" id="adminItemDetailModal" tabindex="-1" aria-labelledby="adminItemDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-bottom-0 pb-0 pt-4 px-4 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-light rounded-circle" style="width: 32px; height: 32px; display: grid; place-items: center;" onclick="backToAdminListModal()"><i class="fa-solid fa-arrow-left"></i></button>
+                    <h5 class="modal-title fw-bold mb-0" id="adminItemDetailModalLabel">Entity Profile</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="adminItemSpinner" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <div id="adminItemBody"></div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
+                <button type="button" class="btn btn-secondary px-3 fw-semibold" style="border-radius: 10px;" onclick="backToAdminListModal()">Back</button>
+                <button type="button" class="btn btn-light px-3 fw-semibold" style="border-radius: 10px;" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.clickable-kpi-card {
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.25s ease !important;
+}
+.clickable-kpi-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important;
+}
+.clickable-header {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+.clickable-header:hover {
+    opacity: 0.85;
+}
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.clickable-row:hover {
+    background-color: #f8fafc !important;
+}
+.hover-bg-light {
+    cursor: pointer;
+}
+.hover-bg-light:hover {
+    background-color: #eef2ff !important;
+    border-color: #818cf8 !important;
+}
+.avatar-circle-sm {
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.12);
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
 <script>
-document.getElementById("dashboardDate").textContent = new Intl.DateTimeFormat("en", {
-    weekday: "short", day: "2-digit", month: "short", year: "numeric"
-}).format(new Date());
+(function() {
+    "use strict";
 
-Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
-Chart.defaults.color = "#64748b";
+    document.getElementById("dashboardDate").textContent = new Intl.DateTimeFormat("en", {
+        weekday: "short", day: "2-digit", month: "short", year: "numeric"
+    }).format(new Date());
 
-new Chart(document.getElementById("inspectionTrend"), {
-    type: "line",
-    data: {
-        labels: {{ trend_labels | tojson }},
-        datasets: [{
-            label: "Inspections",
-            data: {{ trend_values | tojson }},
-            borderColor: "#4f46e5",
-            backgroundColor: "rgba(79, 70, 229, .12)",
-            fill: true,
-            tension: .42,
-            pointRadius: 4,
-            pointBackgroundColor: "#fff",
-            pointBorderWidth: 3
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            x: { grid: { display: false }, border: { display: false } },
-            y: { beginAtZero: true, ticks: { precision: 0 }, border: { display: false }, grid: { color: "#eef2f7" } }
+    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+    Chart.defaults.color = "#64748b";
+
+    new Chart(document.getElementById("inspectionTrend"), {
+        type: "line",
+        data: {
+            labels: {{ trend_labels | tojson }},
+            datasets: [{
+                label: "Inspections",
+                data: {{ trend_values | tojson }},
+                borderColor: "#4f46e5",
+                backgroundColor: "rgba(79, 70, 229, .12)",
+                fill: true,
+                tension: .42,
+                pointRadius: 4,
+                pointBackgroundColor: "#fff",
+                pointBorderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, border: { display: false } },
+                y: { beginAtZero: true, ticks: { precision: 0 }, border: { display: false }, grid: { color: "#eef2f7" } }
+            }
         }
-    }
-});
+    });
 
-new Chart(document.getElementById("riskChart"), {
-    type: "doughnut",
-    data: {
-        labels: ["Low", "Medium", "High", "Critical"],
-        datasets: [{
-            data: {{ [risk_counts.low, risk_counts.medium, risk_counts.high, risk_counts.critical] | tojson }},
-            backgroundColor: ["#22c55e", "#f59e0b", "#f97316", "#ef4444"],
-            borderWidth: 0,
-            spacing: 3
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: "70%",
-        plugins: { legend: { position: "bottom", labels: { usePointStyle: true, padding: 18 } } }
+    var riskChart = new Chart(document.getElementById("riskChart"), {
+        type: "doughnut",
+        data: {
+            labels: ["Low", "Medium", "High", "Critical"],
+            datasets: [{
+                data: {{ [risk_counts.low, risk_counts.medium, risk_counts.high, risk_counts.critical] | tojson }},
+                backgroundColor: ["#22c55e", "#f59e0b", "#f97316", "#ef4444"],
+                borderWidth: 0,
+                spacing: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "70%",
+            plugins: { legend: { position: "bottom", labels: { usePointStyle: true, padding: 18 } } },
+            onClick: function (event, activeElements) {
+                if (activeElements && activeElements.length > 0) {
+                    var index = activeElements[0].index;
+                    var label = riskChart.data.labels[index].toLowerCase();
+                    var catMap = { "low": "risk_low", "medium": "risk_medium", "high": "high_risk_stalls", "critical": "high_risk_stalls" };
+                    openAdminDashboardModal(catMap[label] || "high_risk_stalls");
+                }
+            },
+            onHover: function (event, activeElements) {
+                event.native.target.style.cursor = (activeElements && activeElements.length > 0) ? "pointer" : "default";
+            }
+        }
+    });
+
+    var adminModalEl = document.getElementById("adminDashboardModal");
+    var adminModal = null;
+    if (adminModalEl && window.bootstrap) {
+        adminModal = new bootstrap.Modal(adminModalEl);
     }
-});
+
+    window.openAdminDashboardModal = function(category) {
+        if (!adminModal) return;
+        var titleEl = document.getElementById("adminDashboardModalLabel");
+        var badgeEl = document.getElementById("adminModalCategoryBadge");
+        var spinner = document.getElementById("adminModalSpinner");
+        var errorEl = document.getElementById("adminModalError");
+        var listEl = document.getElementById("adminModalList");
+
+        spinner.classList.remove("d-none");
+        errorEl.classList.add("d-none");
+        listEl.innerHTML = "";
+
+        adminModal.show();
+
+        fetch("/admin/api/dashboard-details/" + encodeURIComponent(category))
+            .then(function(res) {
+                if (!res.ok) throw new Error("API error");
+                return res.json();
+            })
+            .then(function(data) {
+                spinner.classList.add("d-none");
+                titleEl.textContent = data.title || "Details";
+                badgeEl.textContent = data.category_badge || "INFO";
+                badgeEl.className = "badge px-3 py-2 rounded-pill fw-bold " + (data.badge_class || "bg-primary-subtle text-primary");
+
+                if (!data.items || data.items.length === 0) {
+                    listEl.innerHTML = '<div class="text-center py-4 text-muted"><i class="fa-solid fa-circle-info fs-3 d-block mb-2"></i>No records found in this category.</div>';
+                    return;
+                }
+
+                var html = "";
+                if (data.type === "vendors") {
+                    html = data.items.map(function(item) {
+                        return (
+                            '<div class="p-3 border rounded-3 d-flex align-items-center justify-content-between hover-bg-light" style="transition: all 0.2s; cursor: pointer;" onclick="openEntityDetailModal(\'vendor\', ' + item.id + ', true)">' +
+                            '  <div class="d-flex align-items-center gap-3">' +
+                            '    <div class="avatar-circle-sm" style="background: linear-gradient(135deg, #4f46e5, #8b5cf6); color: white; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 12px;">' + escapeHtml(item.name.substring(0, 2).toUpperCase()) + '</div>' +
+                            '    <div>' +
+                            '      <strong class="d-block text-primary" style="font-size: 13px;">' + escapeHtml(item.name) + ' <i class="fa-solid fa-chevron-right ms-1" style="font-size:10px;"></i></strong>' +
+                            '      <span class="text-muted" style="font-size: 11px;">' + escapeHtml(item.email) + ' &middot; ' + escapeHtml(item.business) + '</span>' +
+                            '    </div>' +
+                            '  </div>' +
+                            '  <div>' +
+                            '    <span class="badge bg-light text-dark border" style="font-size: 11px;">Licence: ' + escapeHtml(item.license) + '</span>' +
+                            '  </div>' +
+                            '</div>'
+                        );
+                    }).join("");
+                } else if (data.type === "stalls") {
+                    html = data.items.map(function(item) {
+                        var scoreText = item.score != null ? item.score + "%" : "—";
+                        var badgeClass = "bg-secondary-subtle text-secondary";
+                        if (item.risk === "low") badgeClass = "bg-success-subtle text-success";
+                        else if (item.risk === "medium") badgeClass = "bg-warning-subtle text-warning";
+                        else if (item.risk === "high" || item.risk === "critical") badgeClass = "bg-danger-subtle text-danger";
+
+                        return (
+                            '<div class="p-3 border rounded-3 d-flex align-items-center justify-content-between hover-bg-light" style="transition: all 0.2s; cursor: pointer;" onclick="openEntityDetailModal(\'stall\', ' + item.id + ', true)">' +
+                            '  <div>' +
+                            '    <strong class="d-block text-primary" style="font-size: 13.5px;">' + escapeHtml(item.stall_name) + ' <i class="fa-solid fa-chevron-right ms-1" style="font-size:10px;"></i></strong>' +
+                            '    <span class="text-muted" style="font-size: 11px;"><i class="fa-solid fa-location-dot me-1"></i>' + escapeHtml(item.area) + ' &middot; Code: ' + escapeHtml(item.code) + '</span>' +
+                            '  </div>' +
+                            '  <div class="d-flex align-items-center gap-2">' +
+                            '    <span class="badge ' + badgeClass + '" style="font-size: 10px; font-weight: 600; text-transform: uppercase;">' + escapeHtml(item.risk) + '</span>' +
+                            '    <span class="badge bg-light text-dark border" style="font-size: 12px; font-weight: 700;">' + scoreText + '</span>' +
+                            '  </div>' +
+                            '</div>'
+                        );
+                    }).join("");
+                } else if (data.type === "inspections") {
+                    html = data.items.map(function(item) {
+                        var scoreText = item.score != null ? item.score + "%" : "—";
+                        return (
+                            '<div class="p-3 border rounded-3 d-flex align-items-center justify-content-between hover-bg-light" style="transition: all 0.2s; cursor: pointer;" onclick="openEntityDetailModal(\'inspection\', ' + item.id + ', true)">' +
+                            '  <div>' +
+                            '    <strong class="d-block text-primary" style="font-size: 13.5px;">' + escapeHtml(item.stall_name) + ' <i class="fa-solid fa-chevron-right ms-1" style="font-size:10px;"></i></strong>' +
+                            '    <span class="text-muted" style="font-size: 11px;"><i class="fa-regular fa-clock me-1"></i>' + escapeHtml(item.date) + '</span>' +
+                            '  </div>' +
+                            '  <div class="d-flex align-items-center gap-2">' +
+                            '    <span class="badge bg-success-subtle text-success border" style="font-size: 11px;">' + escapeHtml(item.status) + '</span>' +
+                            '    <span class="badge bg-light text-dark border" style="font-size: 12px; font-weight: 700;">' + scoreText + '</span>' +
+                            '  </div>' +
+                            '</div>'
+                        );
+                    }).join("");
+                } else if (data.type === "complaints") {
+                    html = data.items.map(function(item) {
+                        return (
+                            '<div class="p-3 border rounded-3 d-flex align-items-center justify-content-between hover-bg-light" style="transition: all 0.2s; cursor: pointer;" onclick="openEntityDetailModal(\'complaint\', ' + item.id + ', true)">' +
+                            '  <div>' +
+                            '    <strong class="d-block text-primary" style="font-size: 13.5px;">' + escapeHtml(item.title) + ' <i class="fa-solid fa-chevron-right ms-1" style="font-size:10px;"></i></strong>' +
+                            '    <span class="text-muted" style="font-size: 11px;"><i class="fa-solid fa-shop me-1"></i>' + escapeHtml(item.stall_name) + ' &middot; ' + escapeHtml(item.date) + '</span>' +
+                            '  </div>' +
+                            '  <div>' +
+                            '    <span class="badge bg-warning-subtle text-warning border" style="font-size: 11px; font-weight: 600;">' + escapeHtml(item.status) + '</span>' +
+                            '  </div>' +
+                            '</div>'
+                        );
+                    }).join("");
+                }
+                listEl.innerHTML = html;
+            })
+            .catch(function() {
+                spinner.classList.add("d-none");
+                errorEl.classList.remove("d-none");
+            });
+    };
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+})();
 </script>
 {% endblock %}
