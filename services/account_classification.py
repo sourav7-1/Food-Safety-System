@@ -14,8 +14,13 @@ import re
 # Exact, anchored -- \Z (not $) so a trailing newline can't smuggle a
 # non-matching suffix past the pattern. Deliberately strict: no partial
 # match, no "contains", no case games (email is lowercased by callers
-# before this ever runs).
-STUDENT_EMAIL_PATTERN = re.compile(r"^[0-9]{3}-[0-9]{2}-[0-9]{3}@diu\.edu\.bd\Z")
+# before this ever runs). A name (one or more letters) must come first,
+# immediately followed by the batch-dept-id block; the final ID segment
+# is 3 or 4 digits -- real DIU IDs roll over to 4 digits once a
+# batch-department's enrollment passes 999.
+STUDENT_EMAIL_PATTERN = re.compile(
+    r"^[a-z]+[0-9]{3}-[0-9]{2}-[0-9]{3,4}@diu\.edu\.bd\Z"
+)
 
 STUDENT_DOMAIN = "diu.edu.bd"
 OFFICIAL_DIU_DOMAIN = "daffodilvariversity.edu.bd"

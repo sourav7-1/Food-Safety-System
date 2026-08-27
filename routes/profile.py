@@ -149,7 +149,7 @@ def edit():
             errors.append(
                 "Your account has the student role, so its email must "
                 "stay in the exact DIU ID format, e.g. "
-                "222-35-456@diu.edu.bd."
+                "john222-35-456@diu.edu.bd."
             )
 
     if phone_changed and new_phone:

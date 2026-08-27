@@ -255,21 +255,21 @@ def google_callback():
         else:
             if not is_allowed_signup_email(email):
                 # Same rule as local register(): only a genuine DIU
-                # student email (222-35-456@diu.edu.bd) may create a NEW
+                # student email (john222-35-456@diu.edu.bd) may create a NEW
                 # account, Google or otherwise. Existing accounts (linked
                 # above by google_id or email) are unaffected -- this
                 # only gates account *creation*.
                 if is_student_domain_email(email):
                     message = (
                         "DIU student Google accounts must use the exact ID "
-                        "email format, e.g. 222-35-456@diu.edu.bd. Please "
+                        "email format, e.g. john222-35-456@diu.edu.bd. Please "
                         "sign in with a different account."
                     )
                     details = "malformed diu student email"
                 else:
                     message = (
                         "Only official DIU student Google accounts (e.g. "
-                        "222-35-456@diu.edu.bd) can create a new account. "
+                        "john222-35-456@diu.edu.bd) can create a new account. "
                         "Please sign in with a different account or "
                         "contact an administrator."
                     )
@@ -368,7 +368,7 @@ def register():
         if phone and User.query.filter_by(phone=phone).first():
             errors.append("An account with that phone number already exists.")
         if email and "@" in email and not is_allowed_signup_email(email):
-            # Only a genuine DIU student email (222-35-456@diu.edu.bd) may
+            # Only a genuine DIU student email (john222-35-456@diu.edu.bd) may
             # create a new account -- no other domain, including Gmail
             # and the official daffodilvariversity.edu.bd staff domain,
             # is accepted here. This never affects logging in to an
@@ -376,12 +376,12 @@ def register():
             if is_student_domain_email(email):
                 errors.append(
                     "DIU student emails must use the exact ID format, e.g. "
-                    "222-35-456@diu.edu.bd, to register."
+                    "john222-35-456@diu.edu.bd, to register."
                 )
             else:
                 errors.append(
                     "Only official DIU student email addresses "
-                    "(e.g. 222-35-456@diu.edu.bd) are allowed to register."
+                    "(e.g. john222-35-456@diu.edu.bd) are allowed to register."
                 )
         if not verify_turnstile(
             request.form.get("cf-turnstile-response"),

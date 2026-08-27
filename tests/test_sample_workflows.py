@@ -60,7 +60,7 @@ class AuthenticationSamples(unittest.TestCase):
             data={
                 "_csrf_token": token,
                 "full_name": "Sample Customer",
-                "email": "222-35-456@diu.edu.bd",
+                "email": "john222-35-456@diu.edu.bd",
                 "phone": "01700000000",
                 "password": "SecurePass123",
                 "confirm_password": "SecurePass123",
@@ -69,7 +69,7 @@ class AuthenticationSamples(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         with self.app.app_context():
             user = User.query.filter_by(
-                email="222-35-456@diu.edu.bd"
+                email="john222-35-456@diu.edu.bd"
             ).one()
             self.assertNotEqual(user.password_hash, "SecurePass123")
             self.assertTrue(user.check_password("SecurePass123"))

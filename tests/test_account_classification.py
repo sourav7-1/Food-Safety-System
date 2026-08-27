@@ -10,22 +10,38 @@ from services.account_classification import (
 
 class StudentEmailClassificationTests(unittest.TestCase):
     def test_valid_student_email_is_student(self):
-        self.assertTrue(is_valid_student_email("222-35-456@diu.edu.bd"))
-        self.assertEqual(classify_email("222-35-456@diu.edu.bd"), "student")
+        self.assertTrue(is_valid_student_email("john222-35-456@diu.edu.bd"))
+        self.assertEqual(classify_email("john222-35-456@diu.edu.bd"), "student")
+
+    def test_missing_name_prefix_rejected(self):
+        # The ID block alone, with no name in front, no longer qualifies.
+        self.assertFalse(is_valid_student_email("222-35-456@diu.edu.bd"))
+
+    def test_name_must_come_before_id_not_after(self):
+        self.assertFalse(is_valid_student_email("222-35-456john@diu.edu.bd"))
 
     def test_gmail_lookalike_id_is_not_student(self):
-        self.assertFalse(is_valid_student_email("222-35-456@gmail.com"))
-        self.assertEqual(classify_email("222-35-456@gmail.com"), "external")
+        self.assertFalse(is_valid_student_email("john222-35-456@gmail.com"))
+        self.assertEqual(classify_email("john222-35-456@gmail.com"), "external")
 
     def test_missing_dashes_rejected(self):
-        self.assertFalse(is_valid_student_email("22235456@diu.edu.bd"))
+        self.assertFalse(is_valid_student_email("john22235456@diu.edu.bd"))
 
     def test_short_final_group_rejected(self):
-        self.assertFalse(is_valid_student_email("222-35-45@diu.edu.bd"))
+        self.assertFalse(is_valid_student_email("john222-35-45@diu.edu.bd"))
+
+    def test_four_digit_final_group_accepted(self):
+        # Departments with enrollment over 999 roll the ID over to 4
+        # digits, e.g. john242-15-7318@diu.edu.bd.
+        self.assertTrue(is_valid_student_email("john242-15-7318@diu.edu.bd"))
+        self.assertEqual(classify_email("john242-15-7318@diu.edu.bd"), "student")
+
+    def test_five_digit_final_group_rejected(self):
+        self.assertFalse(is_valid_student_email("john242-15-73185@diu.edu.bd"))
 
     def test_domain_suffix_spoof_rejected(self):
         self.assertFalse(
-            is_valid_student_email("222-35-456@diu.edu.bd.attacker.com")
+            is_valid_student_email("john222-35-456@diu.edu.bd.attacker.com")
         )
 
     def test_non_id_localpart_on_diu_domain_rejected(self):
@@ -60,11 +76,11 @@ class StudentEmailClassificationTests(unittest.TestCase):
         self.assertFalse(is_valid_student_email("student@diu.edu.bd"))
 
     def test_case_insensitivity(self):
-        self.assertEqual(classify_email("222-35-456@DIU.EDU.BD"), "student")
+        self.assertEqual(classify_email("john222-35-456@DIU.EDU.BD"), "student")
 
     def test_resolve_signup_role_name_never_returns_admin_or_vendor(self):
         for email in (
-            "222-35-456@diu.edu.bd",
+            "john222-35-456@diu.edu.bd",
             "vendor@gmail.com",
             "registrar@daffodilvariversity.edu.bd",
         ):
@@ -72,7 +88,9 @@ class StudentEmailClassificationTests(unittest.TestCase):
             self.assertIn(role_name, ("student", "customer"))
 
     def test_resolve_signup_role_name_student_email_gets_student_role(self):
-        role_name, classification = resolve_signup_role_name("222-35-456@diu.edu.bd")
+        role_name, classification = resolve_signup_role_name(
+            "john222-35-456@diu.edu.bd"
+        )
         self.assertEqual(role_name, "student")
         self.assertEqual(classification, "student")
 

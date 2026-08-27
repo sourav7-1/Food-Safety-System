@@ -25,7 +25,7 @@ class DomainRestrictionTestConfig:
 
 class DomainRestrictionUnitTests(unittest.TestCase):
     def test_valid_student_email_allowed(self):
-        self.assertTrue(is_allowed_signup_email("222-35-456@diu.edu.bd"))
+        self.assertTrue(is_allowed_signup_email("john222-35-456@diu.edu.bd"))
 
     def test_gmail_blocked(self):
         self.assertFalse(is_allowed_signup_email("someone@gmail.com"))
@@ -105,10 +105,10 @@ class DomainRestrictionRouteTests(unittest.TestCase):
             )
 
     def test_register_accepts_valid_diu_student_email(self):
-        response = self._register("222-35-456@diu.edu.bd")
+        response = self._register("john222-35-456@diu.edu.bd")
         self.assertEqual(response.status_code, 302)
         with self.app.app_context():
-            user = User.query.filter_by(email="222-35-456@diu.edu.bd").first()
+            user = User.query.filter_by(email="john222-35-456@diu.edu.bd").first()
             self.assertIsNotNone(user)
             self.assertEqual(user.role_name, "student")
 
@@ -134,10 +134,10 @@ class DomainRestrictionRouteTests(unittest.TestCase):
             )
 
     def test_google_signup_accepts_valid_diu_student_email(self):
-        response = self._google_signup("222-99-111@diu.edu.bd")
+        response = self._google_signup("john222-99-111@diu.edu.bd")
         self.assertEqual(response.status_code, 302)
         with self.app.app_context():
-            user = User.query.filter_by(email="222-99-111@diu.edu.bd").first()
+            user = User.query.filter_by(email="john222-99-111@diu.edu.bd").first()
             self.assertIsNotNone(user)
             self.assertEqual(user.role_name, "student")
 
