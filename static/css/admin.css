@@ -721,6 +721,94 @@ html.sidebar-collapsed .admin-sidebar .sidebar-logout button {
     padding: 50px !important;
 }
 
+/* Stall card grid -- lets admins visually identify a stall (photo,
+   risk, grade) the same way the customer stall search cards do,
+   instead of scanning a plain text table row. */
+.admin-stall-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    cursor: pointer;
+}
+
+.admin-stall-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.admin-stall-card:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.admin-stall-card-photo {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: #f1f5f9;
+    overflow: hidden;
+}
+
+.admin-stall-card-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-stall-card-photo-fallback {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: #94a3b8;
+    font-size: 32px;
+}
+
+.admin-stall-card-risk {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(4px);
+}
+
+.admin-stall-card-body {
+    padding: 16px 18px 18px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-stall-card-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+    color: var(--ink);
+    margin: 0;
+}
+
+.admin-stall-card-grade {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 12%, white);
+    border-radius: 8px;
+    padding: 4px 8px;
+    white-space: nowrap;
+}
+
+.admin-stall-card-vendor, .admin-stall-card-location {
+    font-size: 12.5px;
+    color: var(--ink-secondary);
+    margin: 0;
+}
+
+.admin-stall-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .btn-soft {
     background: var(--primary-light);
     color: var(--primary);

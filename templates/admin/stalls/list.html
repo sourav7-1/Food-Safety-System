@@ -22,39 +22,79 @@
 </div>
 {% if not vendors or not areas %}<div class="alert alert-warning">At least one vendor and one area are required before a stall can be created.</div>{% endif %}
 
-<div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0">
-<thead><tr><th>Stall</th><th>Vendor</th><th>Area</th><th>Address</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
-<tbody>{% for stall in stalls %}<tr>
-<td><strong>{{ stall.stall_name }}</strong><small>{{ stall.stall_code }}</small></td><td><a class="entity-link" href="{{ url_for('admin.vendors', q=stall.vendor.license_number) }}">{{ stall.vendor.business_name }}</a></td><td>{{ stall.area.area_name }}<small>{{ stall.area.city }}</small></td><td class="address-cell">{{ stall.address }}</td><td><span class="status-pill status-{{ stall.status }}">{{ stall.status }}</span></td>
-<td class="text-end table-actions">
-    <button type="button" class="btn btn-sm btn-light text-primary border me-1" title="View Stall Profile" style="border-radius: 8px; width: 32px; height: 32px; display: inline-grid; place-items: center;" onclick="openEntityDetailModal('stall', {{ stall.stall_id }})"><i class="fa-solid fa-eye"></i></button>
-    {% if current_user.has_permission('stalls.edit') %}
-    <button
-        type="button"
-        class="btn-action-edit"
-        aria-label="Edit"
-        data-stall-modal-edit
-        data-action="{{ url_for('admin.stall_edit', stall_id=stall.stall_id) }}"
-        data-stall-name="{{ stall.stall_name }}"
-        data-stall-code="{{ stall.stall_code }}"
-        data-vendor-id="{{ stall.vendor_id }}"
-        data-area-id="{{ stall.area_id }}"
-        data-address="{{ stall.address }}"
-        data-photo-url="{{ stall.photo_url or '' }}"
-        data-latitude="{{ stall.latitude if stall.latitude is not none else '' }}"
-        data-longitude="{{ stall.longitude if stall.longitude is not none else '' }}"
-        data-status="{{ stall.status }}"
-    ><i class="fa-solid fa-pen"></i></button>
-    {% endif %}
-    {% if current_user.has_permission('stalls.delete') %}
-    <form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" data-confirm="Delete this stall?" class="m-0 d-inline">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <button class="btn-action-delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
-    </form>
-    {% endif %}
-</td>
-</tr>{% else %}<tr><td colspan="6" class="empty-state">No stalls found.</td></tr>{% endfor %}</tbody>
-</table></div></div>
+<div class="row g-4 admin-stall-grid">
+{% for stall in stalls %}{% set risk_info = stall_risk.get(stall.stall_id) %}
+<div class="col-md-6 col-xl-4">
+    <article
+        class="panel-card p-0 overflow-hidden admin-stall-card"
+        role="button"
+        tabindex="0"
+        aria-label="View {{ stall.stall_name }} details"
+        onclick="if (!event.target.closest('a, button, form')) { openEntityDetailModal('stall', {{ stall.stall_id }}); }"
+        onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button, form')) { event.preventDefault(); openEntityDetailModal('stall', {{ stall.stall_id }}); }"
+    >
+        <div class="admin-stall-card-photo">
+            {% if stall.photo_url %}
+            <img src="{{ stall.photo_url }}" alt="{{ stall.stall_name }}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className: 'admin-stall-card-photo-fallback', innerHTML: '<i class=\'fa-solid fa-shop\'></i>'}))">
+            {% else %}
+            <div class="admin-stall-card-photo-fallback"><i class="fa-solid fa-shop"></i></div>
+            {% endif %}
+            <span class="status-pill risk-{{ (risk_info.risk if risk_info else none) or 'unknown' }} admin-stall-card-risk">{{ (risk_info.risk if risk_info else none) or 'Unrated' }}</span>
+        </div>
+        <div class="admin-stall-card-body">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                <div>
+                    <h3 class="admin-stall-card-title">{{ stall.stall_name }}</h3>
+                    <small class="text-secondary">{{ stall.stall_code }}</small>
+                </div>
+                {% if risk_info and risk_info.grade %}
+                <span class="admin-stall-card-grade" title="Hygiene score {{ risk_info.score }}%">Grade {{ risk_info.grade }}</span>
+                {% endif %}
+            </div>
+            <p class="admin-stall-card-vendor mb-1">
+                <i class="fa-solid fa-store me-1"></i>
+                <a class="entity-link" href="{{ url_for('admin.vendors', q=stall.vendor.license_number) }}">{{ stall.vendor.business_name }}</a>
+            </p>
+            <p class="admin-stall-card-location mb-3">
+                <i class="fa-solid fa-location-dot me-1"></i>{{ stall.area.area_name }} &middot; {{ stall.address }}
+            </p>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="status-pill status-{{ stall.status }}">{{ stall.status }}</span>
+                <div class="admin-stall-card-actions">
+                    <button type="button" class="btn btn-sm btn-light text-primary border" title="View Stall Profile" style="border-radius: 8px; width: 32px; height: 32px; display: inline-grid; place-items: center;" onclick="openEntityDetailModal('stall', {{ stall.stall_id }})"><i class="fa-solid fa-eye"></i></button>
+                    {% if current_user.has_permission('stalls.edit') %}
+                    <button
+                        type="button"
+                        class="btn-action-edit"
+                        aria-label="Edit"
+                        data-stall-modal-edit
+                        data-action="{{ url_for('admin.stall_edit', stall_id=stall.stall_id) }}"
+                        data-stall-name="{{ stall.stall_name }}"
+                        data-stall-code="{{ stall.stall_code }}"
+                        data-vendor-id="{{ stall.vendor_id }}"
+                        data-area-id="{{ stall.area_id }}"
+                        data-address="{{ stall.address }}"
+                        data-photo-url="{{ stall.photo_url or '' }}"
+                        data-latitude="{{ stall.latitude if stall.latitude is not none else '' }}"
+                        data-longitude="{{ stall.longitude if stall.longitude is not none else '' }}"
+                        data-status="{{ stall.status }}"
+                    ><i class="fa-solid fa-pen"></i></button>
+                    {% endif %}
+                    {% if current_user.has_permission('stalls.delete') %}
+                    <form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" data-confirm="Delete this stall?" class="m-0 d-inline">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn-action-delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </article>
+</div>
+{% else %}
+<div class="col-12"><div class="panel-card empty-state">No stalls found.</div></div>
+{% endfor %}
+</div>
 
 <div class="modal fade" id="stallModal" tabindex="-1" aria-labelledby="stallModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">

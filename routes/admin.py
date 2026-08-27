@@ -686,6 +686,15 @@ def vendor_delete(vendor_id):
     return redirect(url_for("admin.vendors"))
 
 
+def _grade(score):
+    if score is None:
+        return None
+    return db.session.execute(
+        text("SELECT get_hygiene_grade(:score)"),
+        {"score": score},
+    ).scalar_one()
+
+
 def _render_stalls_list(search="", reopen_modal=None, status_code=200):
     query = Stall.query.join(Stall.vendor).join(Stall.area)
     if search:
@@ -699,11 +708,48 @@ def _render_stalls_list(search="", reopen_modal=None, status_code=200):
             )
         )
     records = query.order_by(Stall.created_at.desc()).all()
+
+    # Same latest-inspection-per-stall ranking the customer search page
+    # uses, so admins see the same risk/grade a student would when
+    # identifying a stall -- only submitted/approved inspections count.
+    ranked = (
+        db.session.query(
+            Inspection.stall_id,
+            Inspection.risk_level,
+            Inspection.overall_score,
+            func.row_number()
+            .over(
+                partition_by=Inspection.stall_id,
+                order_by=(
+                    Inspection.inspection_date.desc(),
+                    Inspection.inspection_id.desc(),
+                ),
+            )
+            .label("row_num"),
+        )
+        .filter(Inspection.status.in_(("submitted", "approved")))
+        .subquery()
+    )
+    latest_rows = (
+        db.session.query(ranked)
+        .filter(ranked.c.row_num == 1)
+        .all()
+    )
+    stall_risk = {
+        row.stall_id: {
+            "risk": row.risk_level,
+            "score": row.overall_score,
+            "grade": _grade(row.overall_score),
+        }
+        for row in latest_rows
+    }
+
     return (
         render_template(
             "admin/stalls/list.html",
             page_title="Stalls",
             stalls=records,
+            stall_risk=stall_risk,
             vendors=Vendor.query.order_by(Vendor.business_name).all(),
             areas=Area.query.order_by(Area.area_name).all(),
             search=search,
