@@ -721,31 +721,39 @@ html.sidebar-collapsed .admin-sidebar .sidebar-logout button {
     padding: 50px !important;
 }
 
-/* Stall card grid -- lets admins visually identify a stall (photo,
-   risk, grade) the same way the customer stall search cards do,
-   instead of scanning a plain text table row. */
+/* ==========================================================================
+   Stall Cards & Options (Apple-Grade Premium Visual Design)
+   ========================================================================== */
 .admin-stall-card {
     display: flex;
     flex-direction: column;
     height: 100%;
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease !important;
+    position: relative;
+    overflow: hidden;
     cursor: pointer;
 }
 
 .admin-stall-card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
+    transform: translateY(-6px);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.1) !important;
+    border-color: rgba(0, 113, 227, 0.25);
 }
 
 .admin-stall-card:focus-visible {
     outline: 2px solid var(--primary);
-    outline-offset: 2px;
+    outline-offset: 3px;
 }
 
 .admin-stall-card-photo {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 10;
-    background: #f1f5f9;
+    aspect-ratio: 16 / 9.5;
+    background: #0f172a;
     overflow: hidden;
 }
 
@@ -753,60 +761,313 @@ html.sidebar-collapsed .admin-sidebar .sidebar-logout button {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.admin-stall-card-photo-fallback {
+.admin-stall-card:hover .admin-stall-card-photo img {
+    transform: scale(1.06);
+}
+
+.stall-photo-gradient-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.45) 0%, transparent 40%, rgba(15, 23, 42, 0.65) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.admin-stall-card-mesh-fallback {
     width: 100%;
     height: 100%;
-    display: grid;
-    place-items: center;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
     color: #94a3b8;
-    font-size: 32px;
 }
 
-.admin-stall-card-risk {
+.admin-stall-card-mesh-fallback .mesh-ambient {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(4px);
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 70%);
+    filter: blur(20px);
+    pointer-events: none;
 }
+
+.admin-stall-card-mesh-fallback .mesh-icon {
+    font-size: 36px;
+    color: #38bdf8;
+    margin-bottom: 6px;
+    z-index: 2;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.admin-stall-card:hover .admin-stall-card-mesh-fallback .mesh-icon {
+    transform: scale(1.15) rotate(-5deg);
+    color: #60a5fa;
+}
+
+.admin-stall-card-mesh-fallback .mesh-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #cbd5e1;
+    letter-spacing: 0.05em;
+    z-index: 2;
+}
+
+.stall-glass-pill {
+    position: absolute;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 700;
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stall-glass-pill.pill-code {
+    top: 12px;
+    left: 12px;
+    background: rgba(15, 23, 42, 0.75);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.stall-glass-pill.pill-risk {
+    top: 12px;
+    right: 12px;
+}
+
+.risk-pill-low {
+    background: rgba(16, 185, 129, 0.88);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.risk-pill-medium {
+    background: rgba(245, 158, 11, 0.88);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.risk-pill-high {
+    background: rgba(249, 115, 22, 0.92);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.risk-pill-critical {
+    background: rgba(239, 68, 68, 0.92);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.risk-pill-unrated {
+    background: rgba(100, 116, 139, 0.85);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.pulse-dot.dot-low { background: #a7f3d0; box-shadow: 0 0 8px #10b981; }
+.pulse-dot.dot-medium { background: #fde68a; box-shadow: 0 0 8px #f59e0b; }
+.pulse-dot.dot-high { background: #fed7aa; box-shadow: 0 0 8px #f97316; }
+.pulse-dot.dot-critical { background: #fecaca; box-shadow: 0 0 8px #ef4444; }
+.pulse-dot.dot-unrated { background: #e2e8f0; }
+
+.stall-grade-overlay {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.grade-tag-a { background: rgba(16, 185, 129, 0.92); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); }
+.grade-tag-b { background: rgba(59, 130, 246, 0.92); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); }
+.grade-tag-c { background: rgba(245, 158, 11, 0.92); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); }
+.grade-tag-d { background: rgba(239, 68, 68, 0.92); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); }
 
 .admin-stall-card-body {
-    padding: 16px 18px 18px;
+    padding: 20px;
     flex: 1;
     display: flex;
     flex-direction: column;
 }
 
 .admin-stall-card-title {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
-    letter-spacing: -0.2px;
+    letter-spacing: -0.3px;
     color: var(--ink);
     margin: 0;
+    line-height: 1.3;
 }
 
-.admin-stall-card-grade {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 12%, white);
-    border-radius: 8px;
-    padding: 4px 8px;
-    white-space: nowrap;
-}
-
-.admin-stall-card-vendor, .admin-stall-card-location {
-    font-size: 12.5px;
-    color: var(--ink-secondary);
-    margin: 0;
-}
-
-.admin-stall-card-actions {
-    display: flex;
+.status-indicator-pill {
+    display: inline-flex;
     align-items: center;
     gap: 6px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.status-pill-active { background: #ecfdf5; color: #059669; border: 1px solid rgba(16, 185, 129, 0.25); }
+.status-pill-suspended { background: #fef2f2; color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.25); }
+.status-pill-closed { background: #f1f5f9; color: #64748b; border: 1px solid rgba(100, 116, 139, 0.25); }
+
+.status-dot-active { width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.6); }
+.status-dot-suspended { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; }
+.status-dot-closed { width: 6px; height: 6px; border-radius: 50%; background: #94a3b8; }
+
+.stall-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+}
+
+.meta-icon-wrap {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.04);
+    display: grid;
+    place-items: center;
+    font-size: 10.5px;
+    color: var(--ink-secondary);
+    flex-shrink: 0;
+}
+
+.stall-hygiene-row {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.hygiene-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--ink-secondary);
+}
+
+.hygiene-value {
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.score-text-low { color: #10b981; }
+.score-text-medium { color: #f59e0b; }
+.score-text-high { color: #f97316; }
+.score-text-critical { color: #ef4444; }
+.score-text-unrated { color: #94a3b8; }
+
+.stall-score-bar-track {
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+.stall-score-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stall-score-bar-fill.fill-low { background: linear-gradient(90deg, #34d399, #10b981); }
+.stall-score-bar-fill.fill-medium { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+.stall-score-bar-fill.fill-high { background: linear-gradient(90deg, #fb923c, #f97316); }
+.stall-score-bar-fill.fill-critical { background: linear-gradient(90deg, #f87171, #ef4444); }
+.stall-score-bar-fill.fill-unrated { background: #cbd5e1; }
+
+.admin-stall-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.btn-card-quickview {
+    display: inline-flex;
+    align-items: center;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 0;
+    border-radius: 10px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.btn-card-quickview:hover {
+    background: var(--primary);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+}
+
+.btn-card-action {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+    display: inline-grid;
+    place-items: center;
+    font-size: 12px;
+    color: var(--ink-secondary);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-card-edit:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.btn-card-delete:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    border-color: #ef4444;
+    transform: translateY(-1px);
 }
 
 .btn-soft {

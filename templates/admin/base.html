@@ -113,6 +113,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
     <script>
     (function () {
         "use strict";
@@ -499,28 +500,69 @@
                             '</div>'
                         );
                     } else if (data.type === "stall") {
-                        var scoreText = data.score != null ? data.score + "%" : "Unrated";
-                        var riskBadge = "bg-success-subtle text-success";
-                        if (data.risk.toLowerCase() === "medium") riskBadge = "bg-warning-subtle text-warning";
-                        else if (data.risk.toLowerCase() === "high" || data.risk.toLowerCase() === "critical") riskBadge = "bg-danger-subtle text-danger";
+                        var scoreVal = data.score != null ? data.score : null;
+                        var scoreText = scoreVal != null ? scoreVal + "%" : "Unrated";
+                        var riskClass = (data.risk || "unknown").toLowerCase();
+                        var riskBadge = "bg-success-subtle text-success border border-success-subtle";
+                        var scoreBarColor = "#10b981";
+                        if (riskClass === "medium") {
+                            riskBadge = "bg-warning-subtle text-warning border border-warning-subtle";
+                            scoreBarColor = "#f59e0b";
+                        } else if (riskClass === "high" || riskClass === "critical") {
+                            riskBadge = "bg-danger-subtle text-danger border border-danger-subtle";
+                            scoreBarColor = "#ef4444";
+                        }
+
+                        var photoSection = "";
+                        if (data.photo_url) {
+                            photoSection = (
+                                '<div class="rounded-4 overflow-hidden mb-3 position-relative shadow-sm" style="aspect-ratio: 16/9; background: #0f172a;">' +
+                                '  <img src="' + escapeHtml(data.photo_url) + '" alt="' + escapeHtml(data.title) + '" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.style.display=\'none\'">' +
+                                '  <span class="position-absolute top-0 start-0 m-2.5 badge bg-dark bg-opacity-75 text-white border-0 px-2.5 py-1.5" style="backdrop-filter: blur(8px); font-family: monospace; font-size: 11px;">' + escapeHtml(data.code) + '</span>' +
+                                '  <span class="position-absolute top-0 end-0 m-2.5 badge ' + riskBadge + ' px-2.5 py-1.5 rounded-pill fw-bold" style="backdrop-filter: blur(8px); font-size: 11px;">' + escapeHtml(data.risk) + ' Risk</span>' +
+                                '</div>'
+                            );
+                        } else {
+                            photoSection = (
+                                '<div class="rounded-4 p-4 text-center mb-3 position-relative" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);">' +
+                                '  <span class="position-absolute top-0 start-0 m-2.5 badge bg-white bg-opacity-10 text-white border-0 px-2.5 py-1.5" style="backdrop-filter: blur(8px); font-family: monospace; font-size: 11px;">' + escapeHtml(data.code) + '</span>' +
+                                '  <span class="position-absolute top-0 end-0 m-2.5 badge ' + riskBadge + ' px-2.5 py-1.5 rounded-pill fw-bold" style="font-size: 11px;">' + escapeHtml(data.risk) + ' Risk</span>' +
+                                '  <div class="mx-auto my-2 text-primary" style="font-size: 38px; width: 64px; height: 64px; border-radius: 50%; background: rgba(56, 189, 248, 0.12); display: grid; place-items: center;"><i class="fa-solid fa-shop"></i></div>' +
+                                '  <h5 class="fw-bold text-white mb-1">' + escapeHtml(data.title) + '</h5>' +
+                                '  <span class="text-secondary small"><i class="fa-solid fa-location-dot me-1 text-danger"></i>' + escapeHtml(data.area) + '</span>' +
+                                '</div>'
+                            );
+                        }
+
+                        var scorePercent = scoreVal != null ? Math.min(Math.max(scoreVal, 0), 100) : 0;
 
                         html = (
-                            '<div class="text-center mb-4">' +
-                            '  <div class="badge-circle mx-auto mb-2 bg-info-subtle text-info d-grid place-items-center rounded-circle" style="width: 50px; height: 50px; font-size: 22px;"><i class="fa-solid fa-shop"></i></div>' +
-                            '  <h5 class="fw-bold text-dark mb-1">' + escapeHtml(data.title) + '</h5>' +
-                            '  <span class="badge bg-light text-dark border px-2.5 py-1" style="font-family: monospace;">' + escapeHtml(data.code) + '</span>' +
-                            '</div>' +
-                            '<div class="card border-0 bg-light p-3 rounded-3 mb-3" style="font-size: 13px;">' +
-                            '  <div class="row g-2">' +
-                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Area</span><strong class="text-dark">' + escapeHtml(data.area) + '</strong></div>' +
-                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Address</span><strong class="text-dark">' + escapeHtml(data.address) + '</strong></div>' +
-                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Operator/Vendor</span><strong class="text-dark">' + escapeHtml(data.vendor_name) + ' (' + escapeHtml(data.vendor_business) + ')</strong></div>' +
-                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Hygiene Score</span><strong class="text-primary fs-6">' + scoreText + '</strong></div>' +
+                            photoSection +
+                            (data.photo_url ? (
+                                '<div class="text-center mb-3">' +
+                                '  <h5 class="fw-bold text-dark mb-1">' + escapeHtml(data.title) + '</h5>' +
+                                '  <span class="text-muted small"><i class="fa-solid fa-location-dot me-1 text-danger"></i>' + escapeHtml(data.area) + ' &middot; ' + escapeHtml(data.address) + '</span>' +
+                                '</div>'
+                            ) : '') +
+                            '<div class="card border-0 bg-light p-3 rounded-4 mb-3">' +
+                            '  <div class="d-flex justify-content-between align-items-center mb-2">' +
+                            '    <span class="text-secondary small fw-bold"><i class="fa-solid fa-shield-heart text-success me-1"></i>Hygiene Score</span>' +
+                            '    <strong class="fs-6 fw-bold" style="color: ' + scoreBarColor + ';">' + scoreText + '</strong>' +
+                            '  </div>' +
+                            '  <div class="progress" style="height: 8px; border-radius: 4px; background: rgba(0,0,0,0.06);">' +
+                            '    <div class="progress-bar" role="progressbar" style="width: ' + scorePercent + '%; background-color: ' + scoreBarColor + '; border-radius: 4px;" aria-valuenow="' + scorePercent + '" aria-valuemin="0" aria-valuemax="100"></div>' +
                             '  </div>' +
                             '</div>' +
-                            '<div class="d-flex justify-content-between align-items-center p-2 border rounded-3" style="font-size: 12px;">' +
-                            '  <span>Risk Classification: <span class="badge ' + riskBadge + '">' + escapeHtml(data.risk) + '</span></span>' +
-                            '  <span>Inspections: <strong>' + data.inspections_count + '</strong></span>' +
+                            '<div class="card border-0 bg-light p-3 rounded-4 mb-3" style="font-size: 13px;">' +
+                            '  <div class="row g-2">' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Operator / Vendor</span><strong class="text-dark">' + escapeHtml(data.vendor_name) + '</strong><small class="text-muted d-block">' + escapeHtml(data.vendor_business) + '</small></div>' +
+                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Status</span><span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill">' + escapeHtml(data.status) + '</span></div>' +
+                            '    <div class="col-12"><span class="text-muted d-block" style="font-size: 11px;">Full Address</span><strong class="text-dark">' + escapeHtml(data.address) + '</strong></div>' +
+                            '  </div>' +
+                            '</div>' +
+                            '<div class="d-flex justify-content-between align-items-center p-2.5 border rounded-3 bg-white" style="font-size: 12px;">' +
+                            '  <span><i class="fa-solid fa-clipboard-check me-1 text-primary"></i>Inspections: <strong>' + (data.inspections_count || 0) + '</strong></span>' +
+                            '  <span><i class="fa-solid fa-message me-1 text-warning"></i>Complaints: <strong>' + (data.complaints_count || 0) + '</strong></span>' +
                             '</div>'
                         );
                     } else if (data.type === "inspection") {

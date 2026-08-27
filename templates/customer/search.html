@@ -198,8 +198,12 @@
 
             <!-- Category Chips -->
             <div class="category-chips">
+                {% set seen_categories = [] %}
                 {% for item in result.stall.food_items %}
-                <span class="category-chip"><i class="fa-solid fa-tag me-1"></i>{{ item.category.category_name }}</span>
+                    {% if item.category and item.category.category_name not in seen_categories %}
+                        {% if seen_categories.append(item.category.category_name) %}{% endif %}
+                        <span class="category-chip"><i class="fa-solid fa-tag me-1"></i>{{ item.category.category_name }}</span>
+                    {% endif %}
                 {% endfor %}
             </div>
 

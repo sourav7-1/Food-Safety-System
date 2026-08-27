@@ -3,10 +3,10 @@
 <div class="page-actionbar">
     <div>
         <p class="eyebrow mb-1">MANAGEMENT</p>
-        <h2 class="h3 fw-bold mb-1">Stalls</h2>
-        <p class="text-secondary mb-0">Manage food stall locations, ownership and operational status.</p>
+        <h2 class="h3 fw-bold mb-1">Food Stalls</h2>
+        <p class="text-secondary mb-0">Manage food stall locations, ownership, hygiene ratings and operational status.</p>
     </div>
-    <div class="d-flex gap-2 align-items-start flex-wrap">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
         <form class="search-bar" method="get">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input name="q" value="{{ search }}" placeholder="Search by stall, code, vendor or area..." aria-label="Search">
@@ -20,52 +20,112 @@
         {% endif %}
     </div>
 </div>
-{% if not vendors or not areas %}<div class="alert alert-warning">At least one vendor and one area are required before a stall can be created.</div>{% endif %}
+{% if not vendors or not areas %}
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
+    <i class="fa-solid fa-triangle-exclamation fs-5"></i>
+    <div>At least one vendor and one area are required before a stall can be created.</div>
+</div>
+{% endif %}
 
 <div class="row g-4 admin-stall-grid">
 {% for stall in stalls %}{% set risk_info = stall_risk.get(stall.stall_id) %}
-<div class="col-md-6 col-xl-4">
+{% set risk_name = ((risk_info.risk if risk_info else none) or 'unrated')|lower %}
+<div class="col-12 col-md-6 col-xl-4">
     <article
-        class="panel-card p-0 overflow-hidden admin-stall-card"
+        class="panel-card p-0 overflow-hidden admin-stall-card risk-border-{{ risk_name }}"
         role="button"
         tabindex="0"
         aria-label="View {{ stall.stall_name }} details"
-        onclick="if (!event.target.closest('a, button, form')) { openEntityDetailModal('stall', {{ stall.stall_id }}); }"
-        onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button, form')) { event.preventDefault(); openEntityDetailModal('stall', {{ stall.stall_id }}); }"
+        onclick="if (!event.target.closest('a, button, form, input, select')) { openEntityDetailModal('stall', {{ stall.stall_id }}); }"
+        onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button, form, input, select')) { event.preventDefault(); openEntityDetailModal('stall', {{ stall.stall_id }}); }"
     >
+        <!-- Photo Banner / Modern Gradient Fallback -->
         <div class="admin-stall-card-photo">
             {% if stall.photo_url %}
-            <img src="{{ stall.photo_url }}" alt="{{ stall.stall_name }}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className: 'admin-stall-card-photo-fallback', innerHTML: '<i class=\'fa-solid fa-shop\'></i>'}))">
+            <img src="{{ stall.photo_url }}" alt="{{ stall.stall_name }}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className: 'admin-stall-card-mesh-fallback', innerHTML: '<div class=\'mesh-ambient\'></div><i class=\'fa-solid fa-shop mesh-icon\'></i><span class=\'mesh-code\'>{{ stall.stall_code }}</span>'}))">
             {% else %}
-            <div class="admin-stall-card-photo-fallback"><i class="fa-solid fa-shop"></i></div>
-            {% endif %}
-            <span class="status-pill risk-{{ (risk_info.risk if risk_info else none) or 'unknown' }} admin-stall-card-risk">{{ (risk_info.risk if risk_info else none) or 'Unrated' }}</span>
-        </div>
-        <div class="admin-stall-card-body">
-            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-                <div>
-                    <h3 class="admin-stall-card-title">{{ stall.stall_name }}</h3>
-                    <small class="text-secondary">{{ stall.stall_code }}</small>
-                </div>
-                {% if risk_info and risk_info.grade %}
-                <span class="admin-stall-card-grade" title="Hygiene score {{ risk_info.score }}%">Grade {{ risk_info.grade }}</span>
-                {% endif %}
+            <div class="admin-stall-card-mesh-fallback">
+                <div class="mesh-ambient"></div>
+                <i class="fa-solid fa-shop mesh-icon"></i>
+                <span class="mesh-code">{{ stall.stall_code }}</span>
             </div>
-            <p class="admin-stall-card-vendor mb-1">
-                <i class="fa-solid fa-store me-1"></i>
-                <a class="entity-link" href="{{ url_for('admin.vendors', q=stall.vendor.license_number) }}">{{ stall.vendor.business_name }}</a>
-            </p>
-            <p class="admin-stall-card-location mb-3">
-                <i class="fa-solid fa-location-dot me-1"></i>{{ stall.area.area_name }} &middot; {{ stall.address }}
-            </p>
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="status-pill status-{{ stall.status }}">{{ stall.status }}</span>
-                <div class="admin-stall-card-actions">
-                    <button type="button" class="btn btn-sm btn-light text-primary border" title="View Stall Profile" style="border-radius: 8px; width: 32px; height: 32px; display: inline-grid; place-items: center;" onclick="openEntityDetailModal('stall', {{ stall.stall_id }})"><i class="fa-solid fa-eye"></i></button>
+            {% endif %}
+            
+            <div class="stall-photo-gradient-overlay"></div>
+
+            <!-- Top Left: Code Glass Pill -->
+            <div class="stall-glass-pill pill-code">
+                <i class="fa-solid fa-hashtag"></i>
+                <span>{{ stall.stall_code }}</span>
+            </div>
+
+            <!-- Top Right: Glass Risk Badge with Pulsing Dot -->
+            <div class="stall-glass-pill pill-risk risk-pill-{{ risk_name }}">
+                <span class="pulse-dot dot-{{ risk_name }}"></span>
+                <span>{{ risk_name|title }} Risk</span>
+            </div>
+
+            <!-- Bottom Left: Grade Tag Overlay -->
+            {% if risk_info and risk_info.grade %}
+            <div class="stall-grade-overlay grade-tag-{{ risk_info.grade|lower }}">
+                <i class="fa-solid fa-shield-check me-1"></i>
+                <span>Grade {{ risk_info.grade }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Card Body -->
+        <div class="admin-stall-card-body">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                <h3 class="admin-stall-card-title text-truncate" title="{{ stall.stall_name }}">{{ stall.stall_name }}</h3>
+                <span class="status-indicator-pill status-pill-{{ stall.status }}">
+                    <span class="status-dot-{{ stall.status }}"></span>
+                    {{ stall.status|title }}
+                </span>
+            </div>
+
+            <!-- Vendor Line -->
+            <div class="stall-meta-line mb-1.5">
+                <div class="meta-icon-wrap"><i class="fa-solid fa-store"></i></div>
+                <a class="entity-link text-truncate" href="{{ url_for('admin.vendors', q=stall.vendor.license_number) }}" title="Vendor: {{ stall.vendor.business_name }}" onclick="event.stopPropagation()">
+                    {{ stall.vendor.business_name }}
+                </a>
+            </div>
+
+            <!-- Location Line -->
+            <div class="stall-meta-line mb-3">
+                <div class="meta-icon-wrap"><i class="fa-solid fa-location-dot text-danger"></i></div>
+                <span class="text-truncate text-secondary" title="{{ stall.area.area_name }} &middot; {{ stall.address }}">
+                    <strong class="text-dark">{{ stall.area.area_name }}</strong> &middot; {{ stall.address }}
+                </span>
+            </div>
+
+            <!-- Hygiene Score Bar -->
+            <div class="stall-hygiene-row mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                    <span class="hygiene-label"><i class="fa-solid fa-heart-pulse me-1 text-primary"></i>Hygiene Rating</span>
+                    <strong class="hygiene-value score-text-{{ risk_name }}">
+                        {{ (risk_info.score ~ '%') if risk_info and risk_info.score is not none else 'Unrated' }}
+                    </strong>
+                </div>
+                <div class="stall-score-bar-track">
+                    <div class="stall-score-bar-fill fill-{{ risk_name }}" style="width: {{ (risk_info.score if risk_info and risk_info.score is not none else 0) }}%;"></div>
+                </div>
+            </div>
+
+            <!-- Action Toolbar -->
+            <div class="admin-stall-card-footer">
+                <button type="button" class="btn-card-quickview" title="Quick Stall Profile" onclick="openEntityDetailModal('stall', {{ stall.stall_id }})">
+                    <i class="fa-solid fa-eye me-1.5"></i>
+                    <span>Preview</span>
+                </button>
+
+                <div class="d-flex align-items-center gap-1.5">
                     {% if current_user.has_permission('stalls.edit') %}
                     <button
                         type="button"
-                        class="btn-action-edit"
+                        class="btn-card-action btn-card-edit"
+                        title="Edit Stall"
                         aria-label="Edit"
                         data-stall-modal-edit
                         data-action="{{ url_for('admin.stall_edit', stall_id=stall.stall_id) }}"
@@ -78,12 +138,13 @@
                         data-latitude="{{ stall.latitude if stall.latitude is not none else '' }}"
                         data-longitude="{{ stall.longitude if stall.longitude is not none else '' }}"
                         data-status="{{ stall.status }}"
-                    ><i class="fa-solid fa-pen"></i></button>
+                    ><i class="fa-solid fa-pen-to-square"></i></button>
                     {% endif %}
+
                     {% if current_user.has_permission('stalls.delete') %}
-                    <form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" data-confirm="Delete this stall?" class="m-0 d-inline">
+                    <form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" data-confirm="Are you sure you want to delete stall '{{ stall.stall_name }}'?" class="m-0 d-inline">
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                        <button class="btn-action-delete" aria-label="Delete"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn-card-action btn-card-delete" aria-label="Delete Stall" title="Delete Stall"><i class="fa-solid fa-trash-can"></i></button>
                     </form>
                     {% endif %}
                 </div>
@@ -92,40 +153,55 @@
     </article>
 </div>
 {% else %}
-<div class="col-12"><div class="panel-card empty-state">No stalls found.</div></div>
+<div class="col-12">
+    <div class="panel-card empty-state text-center py-5">
+        <i class="fa-solid fa-shop-slash fs-1 text-muted mb-2 d-block"></i>
+        <h4 class="h6 fw-bold text-dark">No food stalls found</h4>
+        <p class="text-secondary small mb-0">Try adjusting your search criteria or add a new stall.</p>
+    </div>
+</div>
 {% endfor %}
 </div>
 
+<!-- Add / Edit Stall Modal -->
 <div class="modal fade" id="stallModal" tabindex="-1" aria-labelledby="stallModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <form method="post" id="stallModalForm" action="{{ url_for('admin.stall_create') }}" class="entity-form">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-header">
-                    <h2 class="modal-title h5" id="stallModalLabel">Add Stall</h2>
+                <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="badge-circle bg-primary-subtle text-primary rounded-circle d-grid place-items-center" style="width: 38px; height: 38px; font-size: 16px;">
+                            <i class="fa-solid fa-shop"></i>
+                        </div>
+                        <div>
+                            <h2 class="modal-title h5 fw-bold mb-0" id="stallModalLabel">Add Stall</h2>
+                            <p class="text-secondary small mb-0" id="stallModalSubtitle">Enter food stall profile and location information.</p>
+                        </div>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="stallName">Stall name</label>
-                            <input class="form-control" id="stallName" name="stall_name" required maxlength="150">
+                            <label class="form-label small fw-bold text-dark" for="stallName">Stall name</label>
+                            <input class="form-control" id="stallName" name="stall_name" placeholder="e.g. Green Lounge Cafe" required maxlength="150">
                         </div>
                         <div class="col-md-6">
-                            <label for="stallCode">Stall code</label>
-                            <input class="form-control" id="stallCode" name="stall_code" required maxlength="80">
+                            <label class="form-label small fw-bold text-dark" for="stallCode">Stall code</label>
+                            <input class="form-control" id="stallCode" name="stall_code" placeholder="e.g. ST-101" required maxlength="80" style="font-family: monospace;">
                         </div>
                         <div class="col-md-6">
-                            <label for="stallVendor">Vendor</label>
+                            <label class="form-label small fw-bold text-dark" for="stallVendor">Assigned Vendor</label>
                             <select class="form-select" id="stallVendor" name="vendor_id" required>
                                 <option value="">Select vendor</option>
                                 {% for vendor in vendors %}
-                                <option value="{{ vendor.vendor_id }}">{{ vendor.business_name }}</option>
+                                <option value="{{ vendor.vendor_id }}">{{ vendor.business_name }} ({{ vendor.user.full_name }})</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="stallArea">Area</label>
+                            <label class="form-label small fw-bold text-dark" for="stallArea">Campus Area / Food Court</label>
                             <select class="form-select" id="stallArea" name="area_id" required>
                                 <option value="">Select area</option>
                                 {% for area in areas %}
@@ -134,23 +210,30 @@
                             </select>
                         </div>
                         <div class="col-12">
-                            <label for="stallAddress">Full address</label>
-                            <input class="form-control" id="stallAddress" name="address" required maxlength="255">
+                            <label class="form-label small fw-bold text-dark" for="stallAddress">Full address / Booth location</label>
+                            <input class="form-control" id="stallAddress" name="address" placeholder="e.g. Level 2, Food Court, Main Campus" required maxlength="255">
                         </div>
                         <div class="col-12">
-                            <label for="stallPhotoUrl">Photo URL</label>
-                            <input class="form-control" id="stallPhotoUrl" name="photo_url" maxlength="1000" placeholder="https://...">
+                            <label class="form-label small fw-bold text-dark" for="stallPhotoUrl">Photo URL <span class="text-secondary fw-normal">(Optional)</span></label>
+                            <input class="form-control" id="stallPhotoUrl" name="photo_url" maxlength="1000" placeholder="https://images.unsplash.com/...">
+                            <!-- Photo Preview Container -->
+                            <div class="stall-modal-preview-box mt-2 d-none" id="stallPhotoPreviewWrap">
+                                <span class="preview-label small text-muted mb-1 d-block">Live Preview:</span>
+                                <div class="preview-img-holder rounded-3 overflow-hidden" style="max-height: 140px; background: #0f172a;">
+                                    <img id="stallPhotoPreviewImg" src="" alt="Preview" style="width: 100%; height: 140px; object-fit: cover;">
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-4">
-                            <label for="stallLatitude">Latitude</label>
-                            <input class="form-control" id="stallLatitude" name="latitude">
+                            <label class="form-label small fw-bold text-dark" for="stallLatitude">Latitude</label>
+                            <input class="form-control" id="stallLatitude" name="latitude" placeholder="23.8765">
                         </div>
                         <div class="col-md-4">
-                            <label for="stallLongitude">Longitude</label>
-                            <input class="form-control" id="stallLongitude" name="longitude">
+                            <label class="form-label small fw-bold text-dark" for="stallLongitude">Longitude</label>
+                            <input class="form-control" id="stallLongitude" name="longitude" placeholder="90.3123">
                         </div>
                         <div class="col-md-4">
-                            <label for="stallStatus">Status</label>
+                            <label class="form-label small fw-bold text-dark" for="stallStatus">Operational Status</label>
                             <select class="form-select" id="stallStatus" name="status">
                                 {% for value in ['active','closed','suspended'] %}
                                 <option value="{{ value }}">{{ value|title }}</option>
@@ -159,9 +242,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Stall</button>
+                <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light px-4 fw-semibold" style="border-radius: 10px;" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold" id="stallModalSubmitBtn" style="border-radius: 10px;" data-busy-label="Saving..." data-done-label="Saved">Save Stall</button>
                 </div>
             </form>
         </div>
@@ -177,63 +260,96 @@
 (function () {
     "use strict";
     function initStallModal() {
-    var modalEl = document.getElementById("stallModal");
-    if (!modalEl) { return; }
-    var modal = new bootstrap.Modal(modalEl);
-    var form = document.getElementById("stallModalForm");
-    var titleEl = document.getElementById("stallModalLabel");
-    var createUrl = "{{ url_for('admin.stall_create') }}";
+        var modalEl = document.getElementById("stallModal");
+        if (!modalEl) { return; }
+        var modal = new bootstrap.Modal(modalEl);
+        var form = document.getElementById("stallModalForm");
+        var titleEl = document.getElementById("stallModalLabel");
+        var subtitleEl = document.getElementById("stallModalSubtitle");
+        var photoInput = document.getElementById("stallPhotoUrl");
+        var previewWrap = document.getElementById("stallPhotoPreviewWrap");
+        var previewImg = document.getElementById("stallPhotoPreviewImg");
+        var submitBtn = document.getElementById("stallModalSubmitBtn");
+        var createUrl = "{{ url_for('admin.stall_create') }}";
 
-    function resetForm() {
-        form.reset();
-        form.action = createUrl;
-        titleEl.textContent = "Add Stall";
-    }
+        function updatePhotoPreview(url) {
+            if (url && url.trim().length > 0 && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/"))) {
+                previewImg.src = url.trim();
+                previewWrap.classList.remove("d-none");
+            } else {
+                previewWrap.classList.add("d-none");
+                previewImg.src = "";
+            }
+        }
 
-    document.querySelectorAll("[data-stall-modal-create]").forEach(function (button) {
-        button.addEventListener("click", function () {
-            resetForm();
-            modal.show();
+        if (photoInput) {
+            photoInput.addEventListener("input", function () {
+                updatePhotoPreview(this.value);
+            });
+        }
+
+        function resetForm() {
+            form.reset();
+            form.action = createUrl;
+            titleEl.textContent = "Add Stall";
+            subtitleEl.textContent = "Enter food stall profile and location information.";
+            submitBtn.setAttribute("data-busy-label", "Creating...");
+            submitBtn.setAttribute("data-done-label", "Created");
+            updatePhotoPreview("");
+        }
+
+        document.querySelectorAll("[data-stall-modal-create]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                resetForm();
+                modal.show();
+            });
         });
-    });
 
-    document.querySelectorAll("[data-stall-modal-edit]").forEach(function (button) {
-        button.addEventListener("click", function () {
-            resetForm();
-            form.action = button.getAttribute("data-action");
-            titleEl.textContent = "Edit Stall";
+        document.querySelectorAll("[data-stall-modal-edit]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                resetForm();
+                form.action = button.getAttribute("data-action");
+                titleEl.textContent = "Edit Stall";
+                subtitleEl.textContent = "Update stall details, coordinates or operational status.";
+                submitBtn.setAttribute("data-busy-label", "Saving...");
+                submitBtn.setAttribute("data-done-label", "Saved");
 
-            document.getElementById("stallName").value = button.getAttribute("data-stall-name") || "";
-            document.getElementById("stallCode").value = button.getAttribute("data-stall-code") || "";
-            document.getElementById("stallVendor").value = button.getAttribute("data-vendor-id") || "";
-            document.getElementById("stallArea").value = button.getAttribute("data-area-id") || "";
-            document.getElementById("stallAddress").value = button.getAttribute("data-address") || "";
-            document.getElementById("stallPhotoUrl").value = button.getAttribute("data-photo-url") || "";
-            document.getElementById("stallLatitude").value = button.getAttribute("data-latitude") || "";
-            document.getElementById("stallLongitude").value = button.getAttribute("data-longitude") || "";
-            document.getElementById("stallStatus").value = button.getAttribute("data-status") || "active";
+                document.getElementById("stallName").value = button.getAttribute("data-stall-name") || "";
+                document.getElementById("stallCode").value = button.getAttribute("data-stall-code") || "";
+                document.getElementById("stallVendor").value = button.getAttribute("data-vendor-id") || "";
+                document.getElementById("stallArea").value = button.getAttribute("data-area-id") || "";
+                document.getElementById("stallAddress").value = button.getAttribute("data-address") || "";
+                var photoUrl = button.getAttribute("data-photo-url") || "";
+                document.getElementById("stallPhotoUrl").value = photoUrl;
+                document.getElementById("stallLatitude").value = button.getAttribute("data-latitude") || "";
+                document.getElementById("stallLongitude").value = button.getAttribute("data-longitude") || "";
+                document.getElementById("stallStatus").value = button.getAttribute("data-status") || "active";
 
-            modal.show();
+                updatePhotoPreview(photoUrl);
+                modal.show();
+            });
         });
-    });
 
-    var reopenEl = document.getElementById("reopenModalData");
-    if (reopenEl) {
-        var reopen = JSON.parse(reopenEl.textContent);
-        var values = reopen.values || {};
-        form.action = reopen.action;
-        titleEl.textContent = reopen.mode === "edit" ? "Edit Stall" : "Add Stall";
-        document.getElementById("stallName").value = values.stall_name || "";
-        document.getElementById("stallCode").value = values.stall_code || "";
-        document.getElementById("stallVendor").value = values.vendor_id || "";
-        document.getElementById("stallArea").value = values.area_id || "";
-        document.getElementById("stallAddress").value = values.address || "";
-        document.getElementById("stallPhotoUrl").value = values.photo_url || "";
-        document.getElementById("stallLatitude").value = values.latitude || "";
-        document.getElementById("stallLongitude").value = values.longitude || "";
-        document.getElementById("stallStatus").value = values.status || "active";
-        modal.show();
-    }
+        var reopenEl = document.getElementById("reopenModalData");
+        if (reopenEl) {
+            try {
+                var reopen = JSON.parse(reopenEl.textContent);
+                var values = reopen.values || {};
+                form.action = reopen.action;
+                titleEl.textContent = reopen.mode === "edit" ? "Edit Stall" : "Add Stall";
+                document.getElementById("stallName").value = values.stall_name || "";
+                document.getElementById("stallCode").value = values.stall_code || "";
+                document.getElementById("stallVendor").value = values.vendor_id || "";
+                document.getElementById("stallArea").value = values.area_id || "";
+                document.getElementById("stallAddress").value = values.address || "";
+                document.getElementById("stallPhotoUrl").value = values.photo_url || "";
+                document.getElementById("stallLatitude").value = values.latitude || "";
+                document.getElementById("stallLongitude").value = values.longitude || "";
+                document.getElementById("stallStatus").value = values.status || "active";
+                updatePhotoPreview(values.photo_url || "");
+                modal.show();
+            } catch (e) {}
+        }
     }
 
     initStallModal();
