@@ -401,18 +401,58 @@
         // a moment to read them. Bound once per element so repeated
         // admin:content-updated swaps don't stack timers.
         function autoDismissAlerts() {
-            document.querySelectorAll(".admin-content .alert.show").forEach(function (el) {
+            document.querySelectorAll(".admin-content .alert.show, .admin-content .alert.alert-dismissible").forEach(function (el) {
                 if (el.dataset.autoDismissBound) {
                     return;
                 }
                 el.dataset.autoDismissBound = "1";
-                setTimeout(function () {
+
+                var dismissDelay = 4000;
+                var timerId = null;
+                var isHovered = false;
+
+                function dismiss() {
                     if (!el.isConnected) {
                         return;
                     }
-                    var instance = bootstrap.Alert.getOrCreateInstance(el);
-                    instance.close();
-                }, 4500);
+                    if (window.bootstrap && window.bootstrap.Alert) {
+                        var instance = bootstrap.Alert.getOrCreateInstance(el);
+                        instance.close();
+                    } else {
+                        el.classList.remove("show");
+                        setTimeout(function () {
+                            if (el.parentNode) {
+                                el.parentNode.removeChild(el);
+                            }
+                        }, 350);
+                    }
+                }
+
+                function startTimer(duration) {
+                    if (timerId) {
+                        clearTimeout(timerId);
+                    }
+                    timerId = setTimeout(function () {
+                        if (!el.isConnected || isHovered) {
+                            return;
+                        }
+                        dismiss();
+                    }, duration || dismissDelay);
+                }
+
+                el.addEventListener("mouseenter", function () {
+                    isHovered = true;
+                    if (timerId) {
+                        clearTimeout(timerId);
+                    }
+                });
+
+                el.addEventListener("mouseleave", function () {
+                    isHovered = false;
+                    startTimer(2000);
+                });
+
+                startTimer(dismissDelay);
             });
         }
 

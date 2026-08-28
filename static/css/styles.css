@@ -1145,3 +1145,20 @@ html {
     opacity: 1;
     transform: none;
 }
+
+/* Flash Alerts & Auto-Dismiss Transitions */
+#siteFlashMessages:empty {
+    display: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.alert.fade {
+    transition: opacity 0.35s ease, transform 0.35s ease, margin-bottom 0.35s ease, max-height 0.35s ease;
+}
+
+.alert.fade:not(.show) {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+

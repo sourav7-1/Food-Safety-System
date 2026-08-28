@@ -101,9 +101,9 @@
     <main id="main-content" class="{% block main_class %}container py-5{% endblock %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="container{% block flash_top_pad %} pt-4{% endblock %}">
+                <div class="container{% block flash_top_pad %} pt-4{% endblock %}" id="siteFlashMessages">
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
                             {{ message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
@@ -265,6 +265,72 @@
             });
         }
 
+        // Auto-dismiss flashed alerts / toast notifications after giving the user
+        // a moment to read them (4 seconds), with pause-on-hover support.
+        function autoDismissAlerts() {
+            var alerts = document.querySelectorAll(".alert.alert-dismissible, .alert.fade.show");
+            alerts.forEach(function (el) {
+                if (el.dataset.autoDismissBound) {
+                    return;
+                }
+                el.dataset.autoDismissBound = "1";
+
+                var dismissDelay = 4000;
+                var timerId = null;
+                var isHovered = false;
+
+                function dismiss() {
+                    if (!el.isConnected) {
+                        return;
+                    }
+                    if (window.bootstrap && window.bootstrap.Alert) {
+                        var instance = bootstrap.Alert.getOrCreateInstance(el);
+                        instance.close();
+                    } else {
+                        el.classList.remove("show");
+                        setTimeout(function () {
+                            if (el.parentNode) {
+                                el.parentNode.removeChild(el);
+                            }
+                        }, 350);
+                    }
+                }
+
+                function startTimer(duration) {
+                    if (timerId) {
+                        clearTimeout(timerId);
+                    }
+                    timerId = setTimeout(function () {
+                        if (!el.isConnected || isHovered) {
+                            return;
+                        }
+                        dismiss();
+                    }, duration || dismissDelay);
+                }
+
+                el.addEventListener("mouseenter", function () {
+                    isHovered = true;
+                    if (timerId) {
+                        clearTimeout(timerId);
+                    }
+                });
+
+                el.addEventListener("mouseleave", function () {
+                    isHovered = false;
+                    startTimer(2000);
+                });
+
+                el.addEventListener("closed.bs.alert", function () {
+                    var container = document.getElementById("siteFlashMessages");
+                    if (container && !container.querySelector(".alert")) {
+                        container.remove();
+                    }
+                }, { once: true });
+
+                startTimer(dismissDelay);
+            });
+        }
+
         function swapContent(html) {
             var doc = new DOMParser().parseFromString(html, "text/html");
             var next = doc.querySelector(CONTENT_SELECTOR);
@@ -300,6 +366,7 @@
             }
 
             document.dispatchEvent(new CustomEvent("site:content-updated"));
+            autoDismissAlerts();
         }
 
         window.SiteAjax = {
@@ -362,6 +429,10 @@
                 })
                 .finally(hideProgress);
         });
+
+        autoDismissAlerts();
+        document.addEventListener("DOMContentLoaded", autoDismissAlerts);
+        document.addEventListener("site:content-updated", autoDismissAlerts);
     })();
     </script>
     {% block scripts %}{% endblock %}
