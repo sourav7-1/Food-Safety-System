@@ -52,12 +52,12 @@ class ComplaintEvidenceTests(unittest.TestCase):
             db.session.add_all(
                 [
                     Role(role_name="admin", is_admin_tier=True),
-                    Role(role_name="customer"),
+                    Role(role_name="student"),
                 ]
             )
             db.session.commit()
 
-            customer_role = Role.query.filter_by(role_name="customer").one()
+            customer_role = Role.query.filter_by(role_name="student").one()
             admin_role = Role.query.filter_by(role_name="admin").one()
 
             self.customer = User(
@@ -336,6 +336,86 @@ class ComplaintEvidenceTests(unittest.TestCase):
             # The core business rule: evidence decisions never touch the
             # complaint's own status.
             self.assertEqual(complaint.status, original_status)
+
+    # -- corrective-action evidence, viewed from the admin panel ---------
+
+    def test_admin_can_preview_corrective_action_evidence(self):
+        from models import CorrectiveAction, Vendor
+        from datetime import date
+
+        with self.app.app_context():
+            vendor = Vendor.query.filter_by(license_number="LIC-1").one()
+            complaint = Complaint(
+                stall_id=self.stall_id,
+                complaint_type_id=self.complaint_type_id,
+                submitted_by_user_id=self.customer_id,
+                title="Dirty prep area",
+                description="Needs cleaning.",
+                status="action_required",
+            )
+            db.session.add(complaint)
+            db.session.flush()
+            action = CorrectiveAction(
+                complaint_id=complaint.complaint_id,
+                assigned_to_vendor_id=vendor.vendor_id,
+                action_description="Clean the prep surface.",
+                due_date=date(2026, 1, 1),
+                status="completed",
+                evidence_path="proof.png",
+            )
+            db.session.add(action)
+            db.session.commit()
+            action_id = action.action_id
+
+        # Simulate the vendor's earlier upload having actually landed on
+        # disk, the way validate_and_store_corrective_evidence would.
+        import os
+        os.makedirs(os.path.join(self.storage_dir, "corrective_actions"), exist_ok=True)
+        with open(
+            os.path.join(self.storage_dir, "corrective_actions", "proof.png"), "wb"
+        ) as handle:
+            handle.write(PNG_BYTES)
+
+        self._csrf_session(self.admin_id)
+        response = self.client.get(f"/admin/corrective-actions/{action_id}/evidence")
+        self.assertEqual(response.status_code, 200)
+        # Inline, not forced download -- see services/evidence.py:
+        # serve_corrective_evidence.
+        self.assertNotIn(
+            "attachment", response.headers.get("Content-Disposition", "")
+        )
+
+    def test_non_admin_cannot_view_corrective_action_evidence(self):
+        from models import CorrectiveAction, Vendor
+        from datetime import date
+
+        with self.app.app_context():
+            vendor = Vendor.query.filter_by(license_number="LIC-1").one()
+            complaint = Complaint(
+                stall_id=self.stall_id,
+                complaint_type_id=self.complaint_type_id,
+                submitted_by_user_id=self.customer_id,
+                title="Dirty prep area",
+                description="Needs cleaning.",
+                status="action_required",
+            )
+            db.session.add(complaint)
+            db.session.flush()
+            action = CorrectiveAction(
+                complaint_id=complaint.complaint_id,
+                assigned_to_vendor_id=vendor.vendor_id,
+                action_description="Clean the prep surface.",
+                due_date=date(2026, 1, 1),
+                status="completed",
+                evidence_path="proof.png",
+            )
+            db.session.add(action)
+            db.session.commit()
+            action_id = action.action_id
+
+        self._csrf_session(self.customer_id)
+        response = self.client.get(f"/admin/corrective-actions/{action_id}/evidence")
+        self.assertEqual(response.status_code, 403)
 
 
 if __name__ == "__main__":

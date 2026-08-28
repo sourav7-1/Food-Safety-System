@@ -87,8 +87,11 @@ def is_allowed_signup_email(email):
 
 
 def resolve_signup_role_name(email):
-    """The only role name a self-service signup (local register or
-    Google OAuth) may ever receive, plus its classification tag.
+    """The only role a self-service signup (local register or Google
+    OAuth) may ever receive is "student" -- see is_allowed_signup_email,
+    which already restricts signup to a genuine DIU student email before
+    this is ever reached. The classification tag is still returned so
+    the caller can stamp users.email_classification.
 
     Admin, Super Admin, and Vendor are never returned here -- vendor
     access is only ever activated later by an admin approving a
@@ -96,6 +99,4 @@ def resolve_signup_role_name(email):
     routes/admin.py:vendor_approve), and admin/super-admin can only be
     granted by an existing admin through routes/admin.py.
     """
-    classification = classify_email(email)
-    role_name = "student" if classification == STUDENT else "customer"
-    return role_name, classification
+    return "student", classify_email(email)

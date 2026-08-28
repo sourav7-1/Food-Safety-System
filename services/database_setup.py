@@ -18,11 +18,10 @@ DEFAULT_ROLES = {
     "admin": "System administrators",
     "vendor": "Registered street-food stall operators",
     "inspector": "Authorised food-safety inspectors",
-    "customer": "Public users of the food-safety platform",
-    "student": "DIU students (exact ID-pattern email match)",
+    "student": "DIU students (exact ID-pattern email match) -- the only public-user role",
 }
 
-# All 5 built-in roles are is_system (can't be renamed/deleted from the
+# All 4 built-in roles are is_system (can't be renamed/deleted from the
 # Roles UI); only "admin" is is_admin_tier (can enter the admin panel).
 # "student" is deliberately NOT admin-tier and is never assignable except
 # by services/account_classification.py matching the exact DIU student

@@ -1,0 +1,55 @@
+{% extends "inspector/base.html" %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}">
+{% endblock %}
+
+{% block title %}Complaints · Street Food Safety{% endblock %}
+{% block inspector_title %}Complaints{% endblock %}
+{% block inspector_subtitle %}
+Review student-reported issues{% if inspector.assigned_area %} for {{ inspector.assigned_area.area_name }}{% endif %}.
+{% endblock %}
+
+{% block inspector_content %}
+<div class="inspector-panel p-0 overflow-hidden">
+    <form class="d-flex align-items-center gap-2 p-3 border-bottom" method="get">
+        <select name="status" class="form-select form-select-sm w-auto">
+            <option value="">All statuses</option>
+            {% for value in ['submitted','under_review','investigation','action_required','resolved','rejected','closed'] %}
+            <option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|replace('_',' ')|title }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-secondary">Filter</button>
+    </form>
+    <div class="table-responsive">
+        <table class="table inspection-table align-middle mb-0">
+            <thead>
+                <tr><th>ID</th><th>Stall</th><th>Complaint</th><th>Severity</th><th>Submitted</th><th>Evidence</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+            {% for complaint in complaints %}
+                <tr>
+                    <td>#{{ complaint.complaint_id }}</td>
+                    <td>
+                        <strong>{{ complaint.stall.stall_name }}</strong>
+                        <small>{{ complaint.stall.stall_code }} · {{ complaint.stall.area.area_name }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ complaint.title }}</strong>
+                        <small>{{ complaint.complaint_type.type_name }}</small>
+                    </td>
+                    <td><span class="risk-badge risk-{{ complaint.complaint_type.severity_level }}">{{ complaint.complaint_type.severity_level }}</span></td>
+                    <td>{{ complaint.submitted_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ complaint.evidence|length or '—' }}</td>
+                    <td><span class="risk-badge status-{{ complaint.status }}">{{ complaint.status|replace('_',' ') }}</span></td>
+                    <td class="text-end"><a class="view-button" href="{{ url_for('inspector_complaints.complaint_manage', complaint_id=complaint.complaint_id) }}">Review <i class="fa-solid fa-arrow-right ms-1"></i></a></td>
+                </tr>
+            {% else %}
+                <tr><td colspan="8" class="inspection-empty"><i class="fa-regular fa-message d-block mb-3"></i>No complaints in your assigned area.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

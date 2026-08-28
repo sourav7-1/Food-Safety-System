@@ -30,7 +30,6 @@ from models import (
     InspectionDispute,
     InspectionDisputeEvidence,
     Inspector,
-    Notification,
     Permission,
     Review,
     Role,
@@ -42,7 +41,20 @@ from models import (
 )
 from routes import permission_required, super_admin_required
 from services.auth_audit import record_auth_event
-from services.evidence import record_audit, serve_complaint_evidence, serve_dispute_evidence
+from services.complaints import (
+    COMPLAINT_STATUSES,
+    COMPLAINT_TRANSITIONS,
+    EVIDENCE_ACTION_BY_STATUS,
+    EVIDENCE_VERIFICATION_STATUSES,
+    notify_complaint_update as _notify_complaint_update,
+    refresh_stall_risk as _refresh_stall_risk,
+)
+from services.evidence import (
+    record_audit,
+    serve_complaint_evidence,
+    serve_corrective_evidence,
+    serve_dispute_evidence,
+)
 from services.registration_import import cache_photo
 from services.role_audit import record_role_change
 from services.role_requests import (
@@ -56,42 +68,15 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 USER_STATUSES = {"active", "inactive", "suspended"}
 STALL_STATUSES = {"active", "closed", "suspended"}
-COMPLAINT_STATUSES = {
-    "submitted",
-    "under_review",
-    "investigation",
-    "action_required",
-    "resolved",
-    "rejected",
-    "closed",
-}
-COMPLAINT_TRANSITIONS = {
-    "submitted": {"submitted", "under_review", "rejected"},
-    "under_review": {
-        "under_review", "investigation", "action_required", "resolved", "rejected",
-    },
-    "investigation": {
-        "investigation", "action_required", "resolved", "rejected", "under_review",
-    },
-    "action_required": {
-        "action_required", "resolved", "rejected", "under_review",
-    },
-    "resolved": {"resolved", "closed", "under_review"},
-    "rejected": {"rejected", "closed", "under_review"},
-    "closed": {"closed", "under_review"},
-}
+# COMPLAINT_STATUSES, COMPLAINT_TRANSITIONS, EVIDENCE_VERIFICATION_STATUSES,
+# and EVIDENCE_ACTION_BY_STATUS now live in services/complaints.py, shared
+# with routes/inspector.py's own complaint-handling routes.
 DISPUTE_STATUSES = {"submitted", "under_review", "resolved", "rejected"}
 DISPUTE_TRANSITIONS = {
     "submitted": {"submitted", "under_review", "resolved", "rejected"},
     "under_review": {"under_review", "resolved", "rejected"},
     "resolved": {"resolved", "under_review"},
     "rejected": {"rejected", "under_review"},
-}
-EVIDENCE_VERIFICATION_STATUSES = {"under_review", "verified", "rejected"}
-EVIDENCE_ACTION_BY_STATUS = {
-    "under_review": "marked_under_review",
-    "verified": "verified",
-    "rejected": "rejected",
 }
 
 
@@ -137,90 +122,6 @@ def _reopen_payload(mode, action, form):
         if key not in {"_csrf_token", "password"}
     }
     return {"mode": mode, "action": action, "values": values}
-
-
-def _notify_complaint_update(complaint, status_changed, response_text):
-    """Best-effort in-app notification for the customer who submitted this
-    complaint. Never fails the request that just successfully updated the
-    complaint -- a notification write failure is logged, not surfaced."""
-    if not complaint.submitted_by_user_id:
-        return  # nothing to notify (no logged-in submitter on record)
-
-    status_label = complaint.status.replace("_", " ").title()
-    if status_changed and response_text:
-        message = (
-            f'Your complaint "{complaint.title}" is now {status_label}. '
-            f"Admin note: {response_text[:180]}"
-        )
-    elif status_changed:
-        message = f'Your complaint "{complaint.title}" is now {status_label}.'
-    else:
-        message = f'New update on your complaint "{complaint.title}": {response_text[:180]}'
-
-    try:
-        db.session.add(
-            Notification(
-                user_id=complaint.submitted_by_user_id,
-                complaint_id=complaint.complaint_id,
-                message=message[:255],
-            )
-        )
-        db.session.commit()
-    except SQLAlchemyError:
-        db.session.rollback()
-        current_app.logger.exception(
-            "Failed to create notification for complaint %s",
-            complaint.complaint_id,
-        )
-
-
-def _refresh_stall_risk(stall_id):
-    """Re-run calculate_stall_risk against a stall's latest inspection.
-
-    Complaint status changes shift the procedure's complaint-severity
-    penalty, so the latest inspection's risk_level/reinspection_date must
-    be recalculated whenever a complaint against that stall opens,
-    resolves, or is rejected -- otherwise it silently goes stale.
-    """
-    latest = (
-        Inspection.query.filter(
-            Inspection.stall_id == stall_id,
-            Inspection.status.in_(("submitted", "approved")),
-        )
-        .order_by(
-            Inspection.inspection_date.desc(),
-            Inspection.inspection_id.desc(),
-        )
-        .first()
-    )
-    if latest is None:
-        return
-    db.session.execute(
-        text(
-            """
-            CALL calculate_stall_risk(
-              :stall_id,
-              @calculated_risk_level,
-              @calculated_risk_score,
-              @calculated_reinspection_date
-            )
-            """
-        ),
-        {"stall_id": stall_id},
-    )
-    result = db.session.execute(
-        text(
-            """
-            SELECT
-              @calculated_risk_level AS risk_level,
-              @calculated_reinspection_date AS reinspection_date
-            """
-        )
-    ).mappings().one()
-    if result["risk_level"] is not None:
-        latest.risk_level = result["risk_level"]
-        latest.reinspection_date = result["reinspection_date"]
-        db.session.commit()
 
 
 def _render_vendors_list(search="", reopen_modal=None, status_code=200):
@@ -1018,6 +919,16 @@ def evidence_download(evidence_id):
     evidence = db.get_or_404(ComplaintEvidence, evidence_id)
     record_audit(evidence, current_user, "viewed")
     return serve_complaint_evidence(evidence)
+
+
+@admin_bp.route("/corrective-actions/<int:action_id>/evidence")
+@login_required
+@permission_required("complaints.view", "complaints.evidence")
+def corrective_evidence(action_id):
+    action = db.get_or_404(CorrectiveAction, action_id)
+    if not action.evidence_path:
+        abort(404)
+    return serve_corrective_evidence(action.evidence_path)
 
 
 @admin_bp.route("/inspection-disputes")

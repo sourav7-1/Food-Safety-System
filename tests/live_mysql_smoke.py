@@ -167,7 +167,7 @@ def run():
 
             customer = (
                 User.query.join(User.role)
-                .filter(Role.role_name == "customer", User.status == "active")
+                .filter(Role.role_name == "student", User.status == "active")
                 .first()
             )
             if customer is not None:

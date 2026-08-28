@@ -324,7 +324,11 @@ def serve_corrective_evidence(stored_file_name):
     path = _storage_root() / "corrective_actions" / stored_file_name
     if not path.is_file():
         abort(404)
-    return send_file(path, as_attachment=True, conditional=True)
+    # Inline, not as_attachment -- corrective evidence is always an image
+    # or PDF (see CORRECTIVE_EVIDENCE_RULES), and both the vendor's own
+    # "View Submitted Evidence" link and the admin panel expect a preview
+    # in a new tab, not a forced download.
+    return send_file(path, as_attachment=False, conditional=True)
 
 
 def record_audit(evidence, user, action, details=None):

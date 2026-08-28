@@ -1,0 +1,134 @@
+{% extends "inspector/base.html" %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}">
+{% endblock %}
+
+{% block title %}Complaint #{{ complaint.complaint_id }} · Street Food Safety{% endblock %}
+{% block inspector_title %}Complaint #{{ complaint.complaint_id }}{% endblock %}
+{% block inspector_subtitle %}{{ complaint.stall.stall_name }} &middot; {{ complaint.complaint_type.type_name }}{% endblock %}
+{% block inspector_action %}
+<a class="btn btn-outline-secondary inspector-primary" href="{{ url_for('inspector_complaints.complaints') }}">
+    <i class="fa-solid fa-arrow-left me-2"></i>Back to Complaints
+</a>
+{% endblock %}
+
+{% block inspector_content %}
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="inspector-panel mb-4">
+            <div class="section-heading">
+                <span><i class="fa-regular fa-message"></i></span>
+                <div>
+                    <h2>{{ complaint.title }}</h2>
+                    <p>Student report</p>
+                </div>
+            </div>
+            <p class="text-secondary">{{ complaint.description }}</p>
+            <dl class="row small mb-0">
+                <dt class="col-4">Submitted by</dt>
+                <dd class="col-8">{{ complaint.submitted_by.full_name if complaint.submitted_by else 'Anonymous' }}</dd>
+                <dt class="col-4">Submitted</dt>
+                <dd class="col-8">{{ complaint.submitted_at.strftime('%d %b %Y, %I:%M %p') }}</dd>
+                <dt class="col-4">Severity</dt>
+                <dd class="col-8"><span class="risk-badge risk-{{ complaint.complaint_type.severity_level }}">{{ complaint.complaint_type.severity_level|title }}</span></dd>
+                <dt class="col-4">Current status</dt>
+                <dd class="col-8"><span class="risk-badge status-{{ complaint.status }}">{{ complaint.status|replace('_',' ')|title }}</span></dd>
+            </dl>
+        </div>
+
+        <div class="inspector-panel">
+            <div class="section-heading">
+                <span><i class="fa-solid fa-camera"></i></span>
+                <div>
+                    <h2>Evidence</h2>
+                    <p>Student submissions and your on-site follow-up proof</p>
+                </div>
+            </div>
+
+            {% if complaint.evidence %}
+            <div class="complaint-evidence-grid">
+            {% for item in complaint.evidence %}
+                <div class="complaint-evidence-card">
+                    {% if item.file_type == 'image' %}
+                    <img src="{{ url_for('inspector_complaints.evidence_download', evidence_id=item.evidence_id) }}" alt="{{ item.file_name }}" loading="lazy">
+                    {% elif item.file_type == 'video' %}
+                    <video controls preload="metadata" src="{{ url_for('inspector_complaints.evidence_download', evidence_id=item.evidence_id) }}"></video>
+                    {% elif item.file_type == 'audio' %}
+                    <audio controls preload="metadata" src="{{ url_for('inspector_complaints.evidence_download', evidence_id=item.evidence_id) }}"></audio>
+                    {% else %}
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('inspector_complaints.evidence_download', evidence_id=item.evidence_id) }}"><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>
+                    {% endif %}
+                    <span class="evidence-file-name">{{ item.file_name }}</span>
+                    <span class="evidence-file-meta">{{ (item.file_size / 1024)|round(0, 'floor')|int }} KB &middot; {{ item.uploaded_at.strftime('%d %b %Y') }}{% if item.uploader %} &middot; {{ item.uploader.full_name }}{% if item.uploader.role_name == 'inspector' %} (inspector){% endif %}{% endif %}</span>
+                    <span class="risk-badge status-{{ item.verification_status }}">{{ item.verification_status|replace('_',' ')|title }}</span>
+                    {% if item.verification_status == 'rejected' and item.rejection_reason %}
+                    <span class="text-danger small"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ item.rejection_reason }}</span>
+                    {% endif %}
+
+                    {% if item.verification_status != 'verified' %}
+                    <form method="post" action="{{ url_for('inspector_complaints.evidence_status', evidence_id=item.evidence_id) }}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="verification_status" value="verified">
+                        <button class="btn btn-sm btn-success w-100" type="submit">Verify</button>
+                    </form>
+                    {% endif %}
+                    {% if item.verification_status not in ('under_review', 'verified') %}
+                    <form method="post" action="{{ url_for('inspector_complaints.evidence_status', evidence_id=item.evidence_id) }}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="verification_status" value="under_review">
+                        <button class="btn btn-sm btn-outline-secondary w-100" type="submit">Mark under review</button>
+                    </form>
+                    {% endif %}
+                    {% if item.verification_status != 'rejected' %}
+                    <form method="post" action="{{ url_for('inspector_complaints.evidence_status', evidence_id=item.evidence_id) }}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="verification_status" value="rejected">
+                        <input class="form-control form-control-sm mb-1" type="text" name="rejection_reason" placeholder="Reason for rejection" required>
+                        <button class="btn btn-sm btn-outline-danger w-100" type="submit">Reject</button>
+                    </form>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-secondary mb-0">No evidence attached yet.</p>
+            {% endif %}
+
+            <hr>
+            <form method="post" enctype="multipart/form-data" action="{{ url_for('inspector_complaints.complaint_evidence_upload', complaint_id=complaint.complaint_id) }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label class="form-label">Attach your inspection evidence (photo, video, audio, or PDF)</label>
+                <input class="form-control mb-2" type="file" name="evidence" multiple>
+                <button class="btn btn-success btn-sm" type="submit"><i class="fa-solid fa-upload me-1"></i>Upload evidence</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="inspector-panel">
+            <div class="section-heading">
+                <span><i class="fa-solid fa-clipboard-check"></i></span>
+                <div>
+                    <h2>Resolution</h2>
+                    <p>Decide and respond to the student</p>
+                </div>
+            </div>
+            <form method="post" action="{{ url_for('inspector_complaints.complaint_manage', complaint_id=complaint.complaint_id) }}">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <label class="form-label">Status</label>
+                <select class="form-select mb-3" name="status">
+                {% for value in ['submitted','under_review','investigation','action_required','resolved','rejected','closed'] %}
+                    <option value="{{ value }}" {{ 'selected' if complaint.status == value }}>{{ value|replace('_',' ')|title }}</option>
+                {% endfor %}
+                </select>
+                <p class="text-secondary small mb-3">Marking a complaint <strong>resolved</strong> requires at least one evidence file you've uploaded and verified above.</p>
+                <label class="form-label">Response to student <span>(optional)</span></label>
+                <textarea class="form-control mb-3" name="admin_response" rows="4" placeholder="Visible to the student on their complaint tracking page">{{ complaint.admin_response or '' }}</textarea>
+                <button class="btn btn-primary w-100" type="submit">Save complaint</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

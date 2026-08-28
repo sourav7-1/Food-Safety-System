@@ -58,7 +58,7 @@ class InspectionDisputeTests(unittest.TestCase):
                     Role(role_name="admin", is_admin_tier=True),
                     Role(role_name="vendor"),
                     Role(role_name="inspector"),
-                    Role(role_name="customer"),
+                    Role(role_name="student"),
                 ]
             )
             db.session.commit()

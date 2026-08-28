@@ -29,7 +29,7 @@ class AuthenticationSamples(unittest.TestCase):
             db.session.add_all(
                 [
                     Role(role_name="admin"),
-                    Role(role_name="customer"),
+                    Role(role_name="student"),
                 ]
             )
             db.session.commit()
@@ -49,11 +49,8 @@ class AuthenticationSamples(unittest.TestCase):
         # Registration is restricted to @diu.edu.bd student emails -- see
         # tests/test_domain_restriction.py for the restriction itself.
         # This sample only checks password hashing, so it uses a valid
-        # DIU student email and the resulting "student" role.
-        with self.app.app_context():
-            db.session.add(Role(role_name="student"))
-            db.session.commit()
-
+        # DIU student email and the resulting "student" role (seeded in
+        # setUp).
         token = self.csrf_session()
         response = self.client.post(
             "/register",
@@ -77,7 +74,7 @@ class AuthenticationSamples(unittest.TestCase):
 
     def test_disabled_user_cannot_login(self):
         with self.app.app_context():
-            role = Role.query.filter_by(role_name="customer").one()
+            role = Role.query.filter_by(role_name="student").one()
             user = User(
                 role=role,
                 full_name="Disabled Customer",
@@ -101,7 +98,7 @@ class AuthenticationSamples(unittest.TestCase):
 
     def test_customer_cannot_access_admin(self):
         with self.app.app_context():
-            role = Role.query.filter_by(role_name="customer").one()
+            role = Role.query.filter_by(role_name="student").one()
             user = User(
                 role=role,
                 full_name="Customer",

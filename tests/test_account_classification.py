@@ -71,7 +71,7 @@ class StudentEmailClassificationTests(unittest.TestCase):
     def test_is_student_domain_email_flags_malformed_diu_address(self):
         # Domain matches diu.edu.bd but the ID pattern doesn't -- this
         # must be caught and rejected outright, not silently downgraded
-        # to a plain external/customer account.
+        # to a plain external/student account.
         self.assertTrue(is_student_domain_email("student@diu.edu.bd"))
         self.assertFalse(is_valid_student_email("student@diu.edu.bd"))
 
@@ -85,7 +85,7 @@ class StudentEmailClassificationTests(unittest.TestCase):
             "registrar@daffodilvariversity.edu.bd",
         ):
             role_name, _classification = resolve_signup_role_name(email)
-            self.assertIn(role_name, ("student", "customer"))
+            self.assertEqual(role_name, "student")
 
     def test_resolve_signup_role_name_student_email_gets_student_role(self):
         role_name, classification = resolve_signup_role_name(
@@ -94,9 +94,14 @@ class StudentEmailClassificationTests(unittest.TestCase):
         self.assertEqual(role_name, "student")
         self.assertEqual(classification, "student")
 
-    def test_resolve_signup_role_name_external_gets_customer_role(self):
+    def test_resolve_signup_role_name_external_also_resolves_to_student(self):
+        # "student" is the only role self-service signup can ever
+        # produce -- is_allowed_signup_email is what actually blocks a
+        # non-DIU email from reaching account creation at all; this
+        # function no longer has a separate "customer" role to fall
+        # back to.
         role_name, classification = resolve_signup_role_name("vendor@gmail.com")
-        self.assertEqual(role_name, "customer")
+        self.assertEqual(role_name, "student")
         self.assertEqual(classification, "external")
 
 

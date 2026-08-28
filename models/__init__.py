@@ -43,7 +43,7 @@ class Role(db.Model):
     role_id = db.Column(db.Integer, primary_key=True)
     role_name = db.Column(db.String(50), nullable=False, unique=True)
     description = db.Column(db.String(255))
-    # The 4 built-in roles (admin/vendor/inspector/customer) are
+    # The 4 built-in roles (admin/vendor/inspector/student) are
     # is_system=True and can't be renamed/deleted from the Roles UI --
     # many call sites outside the admin panel still reference these exact
     # role_name strings. is_admin_tier controls whether this role can

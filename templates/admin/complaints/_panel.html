@@ -74,6 +74,6 @@
 </section></div></div>
 
 {% if complaint.corrective_actions %}
-<div class="row g-4 mt-1"><div class="col-12"><section class="panel-card"><h3 class="h6 fw-bold">Corrective actions on this complaint</h3><ul class="list-unstyled mb-0">{% for action in complaint.corrective_actions %}<li class="mb-2 pb-2 border-bottom"><strong>{{ action.status|replace('_',' ')|title }}</strong> &mdash; {{ action.action_description }} <span class="text-secondary">(due {{ action.due_date.strftime('%d %b %Y') }})</span></li>{% endfor %}</ul></section></div></div>
+<div class="row g-4 mt-1"><div class="col-12"><section class="panel-card"><h3 class="h6 fw-bold">Corrective actions on this complaint</h3><ul class="list-unstyled mb-0">{% for action in complaint.corrective_actions %}<li class="mb-2 pb-2 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2"><span><strong>{{ action.status|replace('_',' ')|title }}</strong> &mdash; {{ action.action_description }} <span class="text-secondary">(due {{ action.due_date.strftime('%d %b %Y') }})</span></span>{% if action.evidence_path %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.corrective_evidence', action_id=action.action_id) }}" target="_blank" rel="noopener"><i class="fa-solid fa-paperclip me-1"></i>View evidence</a>{% endif %}</li>{% endfor %}</ul></section></div></div>
 {% endif %}
 </div>

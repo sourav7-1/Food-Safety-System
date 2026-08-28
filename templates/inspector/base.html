@@ -15,6 +15,14 @@
         </div>
         {% block inspector_action %}{% endblock %}
     </header>
+    <nav class="inspector-tabs">
+        <a class="{{ 'active' if request.endpoint and request.endpoint.startswith('inspection_workflow.') }}" href="{{ url_for('inspection_workflow.inspections') }}">
+            <i class="fa-solid fa-clipboard-check me-2"></i>Inspections
+        </a>
+        <a class="{{ 'active' if request.endpoint and request.endpoint.startswith('inspector_complaints.') }}" href="{{ url_for('inspector_complaints.complaints') }}">
+            <i class="fa-regular fa-message me-2"></i>Complaints
+        </a>
+    </nav>
     {% block inspector_content %}{% endblock %}
 </div>
 {% endblock %}

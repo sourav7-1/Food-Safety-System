@@ -46,7 +46,7 @@ class DomainRestrictionRouteTests(unittest.TestCase):
             db.session.add_all(
                 [
                     Role(role_name="student", is_system=True),
-                    Role(role_name="customer", is_system=True),
+                    Role(role_name="vendor", is_system=True),
                 ]
             )
             db.session.commit()
@@ -141,15 +141,15 @@ class DomainRestrictionRouteTests(unittest.TestCase):
             self.assertIsNotNone(user)
             self.assertEqual(user.role_name, "student")
 
-    def test_google_login_still_works_for_preexisting_non_diu_account(self):
+    def test_google_login_still_works_for_preexisting_non_student_role_account(self):
         # The restriction only gates NEW account creation -- an existing
-        # account (e.g. a Gmail customer account created before this
-        # restriction existed) must still be able to log in.
+        # non-student account (e.g. a vendor with a Gmail address) must
+        # still be able to log in/link via Google.
         with self.app.app_context():
-            customer_role = Role.query.filter_by(role_name="customer").first()
+            vendor_role = Role.query.filter_by(role_name="vendor").first()
             existing = User(
-                role_id=customer_role.role_id,
-                full_name="Existing Customer",
+                role_id=vendor_role.role_id,
+                full_name="Existing Vendor",
                 email="existing@gmail.com",
                 status="active",
                 auth_provider="local",
@@ -164,6 +164,37 @@ class DomainRestrictionRouteTests(unittest.TestCase):
             user = User.query.filter_by(email="existing@gmail.com").first()
             self.assertIsNotNone(user)
             self.assertEqual(user.google_id, "google-sub-existing@gmail.com")
+
+    def test_login_blocked_for_student_role_account_with_non_diu_email(self):
+        # Now that "student" is the only public-user role, an account
+        # left over from before the customer/student merge (or manually
+        # given the student role with a non-matching email) must still
+        # be blocked at login -- same defense-in-depth re-check as any
+        # other student account whose email no longer matches the DIU
+        # ID pattern.
+        with self.app.app_context():
+            student_role = Role.query.filter_by(role_name="student").first()
+            existing = User(
+                role_id=student_role.role_id,
+                full_name="Legacy Public User",
+                email="legacy@gmail.com",
+                status="active",
+                auth_provider="local",
+            )
+            existing.set_password("SecurePass123")
+            db.session.add(existing)
+            db.session.commit()
+
+        token = self._csrf_token()
+        response = self.client.post(
+            "/login",
+            data={
+                "_csrf_token": token,
+                "email": "legacy@gmail.com",
+                "password": "SecurePass123",
+            },
+        )
+        self.assertEqual(response.status_code, 403)
 
 
 if __name__ == "__main__":

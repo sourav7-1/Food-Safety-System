@@ -76,7 +76,7 @@ class RbacTests(unittest.TestCase):
                     permissions["users.inspectors"],
                 ],
             )
-            customer_role = Role(role_name="customer", is_system=True)
+            customer_role = Role(role_name="student", is_system=True)
             inspector_role = Role(role_name="inspector", is_system=True)
             vendor_role = Role(role_name="vendor", is_system=True)
             support_role = Role(
@@ -726,6 +726,25 @@ class RbacMigrationSyntaxTests(unittest.TestCase):
             "users.inspectors",
             "complaints.evidence",
             "delete from permissions",
+        ):
+            self.assertIn(expected, joined)
+
+    def test_migration_015_sql_parses_cleanly(self):
+        path = os.path.join(
+            PROJECT_ROOT,
+            "database",
+            "migrations",
+            "015_merge_customer_into_student.sql",
+        )
+        with open(path, encoding="utf-8") as handle:
+            script = handle.read()
+        statements = list(_split_mysql_script(script))
+        self.assertGreater(len(statements), 0)
+        joined = "\n".join(statements).lower()
+        for expected in (
+            "'customer', 'consumer'",
+            "delete from roles",
+            "role_audit_log",
         ):
             self.assertIn(expected, joined)
 

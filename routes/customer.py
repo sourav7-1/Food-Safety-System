@@ -177,7 +177,7 @@ def _leaderboard_boards(row_limit):
 
 @customer_bp.route("/leaderboard")
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def leaderboard():
     row_limit = _leaderboard_limit()
     high_risk, low_risk = _leaderboard_boards(row_limit)
@@ -197,7 +197,7 @@ def leaderboard():
 
 @customer_bp.route("/api/leaderboard")
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def api_leaderboard():
     row_limit = _leaderboard_limit()
     high_risk, low_risk = _leaderboard_boards(row_limit)
@@ -245,7 +245,7 @@ def api_leaderboard():
 
 @customer_bp.route("/api/risk-stalls/<risk_level>")
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def api_risk_stalls(risk_level):
     if risk_level not in ("low", "medium", "high", "critical", "all", "complaints"):
         return jsonify({"stalls": [], "complaints": []}), 400
@@ -327,7 +327,7 @@ def api_risk_stalls(risk_level):
 
 @customer_bp.route("/stalls")
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def search_stalls():
     search = request.args.get("q", "").strip()
     area_id = request.args.get("area_id", type=int)
@@ -414,7 +414,7 @@ def search_stalls():
 
 @customer_bp.route("/stalls/<int:stall_id>")
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def stall_detail(stall_id):
     stall = Stall.query.filter_by(
         stall_id=stall_id,
@@ -453,7 +453,7 @@ def stall_detail(stall_id):
 
 @customer_bp.route("/stalls/<int:stall_id>/review", methods=["POST"])
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def submit_review(stall_id):
     Stall.query.filter_by(stall_id=stall_id, status="active").first_or_404()
     if Review.query.filter_by(
@@ -489,7 +489,7 @@ def submit_review(stall_id):
 
 @customer_bp.route("/stalls/<int:stall_id>/complaint", methods=["POST"])
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 @limiter.limit("10 per hour")
 def submit_complaint(stall_id):
     Stall.query.filter_by(stall_id=stall_id, status="active").first_or_404()
@@ -584,7 +584,7 @@ def submit_complaint(stall_id):
 
 @customer_bp.route("/complaints")
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def my_complaints():
     records = Complaint.query.filter_by(
         submitted_by_user_id=current_user.user_id
@@ -597,7 +597,7 @@ def my_complaints():
 
 @customer_bp.route("/complaints/<int:complaint_id>")
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def complaint_detail(complaint_id):
     complaint = Complaint.query.filter_by(
         complaint_id=complaint_id,
@@ -611,7 +611,7 @@ def complaint_detail(complaint_id):
 
 @customer_bp.route("/evidence/<int:evidence_id>")
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def evidence_download(evidence_id):
     evidence = db.get_or_404(ComplaintEvidence, evidence_id)
     if evidence.complaint.submitted_by_user_id != current_user.user_id:
@@ -622,7 +622,7 @@ def evidence_download(evidence_id):
 
 @customer_bp.route("/notifications")
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def notifications():
     records = (
         Notification.query.filter_by(user_id=current_user.user_id)
@@ -634,7 +634,7 @@ def notifications():
 
 @customer_bp.route("/notifications/read-all", methods=["POST"])
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def mark_all_notifications_read():
     Notification.query.filter_by(
         user_id=current_user.user_id, is_read=False
@@ -645,7 +645,7 @@ def mark_all_notifications_read():
 
 @customer_bp.route("/notifications/<int:notification_id>/read", methods=["POST"])
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def read_notification(notification_id):
     notification = Notification.query.filter_by(
         notification_id=notification_id, user_id=current_user.user_id
@@ -670,7 +670,7 @@ def _parse_application_date(value):
 
 @customer_bp.route("/vendor-application", methods=["GET", "POST"])
 @login_required
-@role_required("customer", "consumer", "student")
+@role_required("student")
 def vendor_application():
     # A Vendor row existing at all -- pending, approved, rejected, or
     # suspended -- means this account already went through (or is going

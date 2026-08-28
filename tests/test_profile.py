@@ -54,13 +54,13 @@ class ProfileTests(unittest.TestCase):
             db.session.add_all(
                 [
                     Role(role_name="admin"),
-                    Role(role_name="customer"),
+                    Role(role_name="student"),
                     Role(role_name="vendor"),
                 ]
             )
             db.session.commit()
 
-            customer_role = Role.query.filter_by(role_name="customer").one()
+            customer_role = Role.query.filter_by(role_name="student").one()
             vendor_role = Role.query.filter_by(role_name="vendor").one()
 
             self.area = Area(area_name="Gulshan", city="Dhaka", zone="North")
@@ -274,12 +274,15 @@ class ProfileTests(unittest.TestCase):
             self.assertEqual(user.email, "primary@example.test")
 
     def test_email_change_with_correct_password_succeeds_and_needs_reverification(self):
+        # The new address must match the DIU student ID pattern -- the
+        # account holds the "student" role, which enforces that on any
+        # email change (see routes/profile.py).
         self._edit(
-            email="new-address@example.test", current_password="SecurePass123"
+            email="john222-35-999@diu.edu.bd", current_password="SecurePass123"
         )
         with self.app.app_context():
             user = db.session.get(User, self.customer_id)
-            self.assertEqual(user.email, "new-address@example.test")
+            self.assertEqual(user.email, "john222-35-999@diu.edu.bd")
             self.assertIsNone(user.email_verified_at)
 
     def test_email_change_to_existing_address_rejected(self):

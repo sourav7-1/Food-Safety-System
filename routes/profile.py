@@ -44,7 +44,7 @@ _MIN_PASSWORD_LENGTH = 8
 @login_required
 def view():
     reviews = complaints = None
-    if current_user.role_name in ("customer", "consumer", "student"):
+    if current_user.role_name == "student":
         reviews = (
             Review.query.filter_by(user_id=current_user.user_id)
             .order_by(Review.created_at.desc())
@@ -68,7 +68,7 @@ def view():
     )
     if is_admin_tier:
         template_name = "profile/view_admin.html"
-    elif current_user.role_name in ("customer", "consumer", "student"):
+    elif current_user.role_name == "student":
         template_name = "profile/view_student.html"
     elif current_user.role_name == "vendor":
         template_name = "profile/view_vendor.html"

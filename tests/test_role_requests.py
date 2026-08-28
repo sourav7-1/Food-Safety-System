@@ -32,7 +32,7 @@ class RoleRequestTests(unittest.TestCase):
             db.create_all()
 
             admin_role = Role(role_name="admin", is_system=True, is_admin_tier=True)
-            customer_role = Role(role_name="customer", is_system=True)
+            customer_role = Role(role_name="student", is_system=True)
             inspector_role = Role(role_name="inspector", is_system=True)
             db.session.add_all([admin_role, customer_role, inspector_role])
             db.session.commit()

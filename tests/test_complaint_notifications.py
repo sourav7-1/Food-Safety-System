@@ -36,13 +36,13 @@ class ComplaintNotificationTests(unittest.TestCase):
             db.session.add_all(
                 [
                     Role(role_name="admin", is_admin_tier=True),
-                    Role(role_name="customer"),
+                    Role(role_name="student"),
                     Role(role_name="vendor"),
                 ]
             )
             db.session.commit()
 
-            customer_role = Role.query.filter_by(role_name="customer").one()
+            customer_role = Role.query.filter_by(role_name="student").one()
             admin_role = Role.query.filter_by(role_name="admin").one()
             vendor_role = Role.query.filter_by(role_name="vendor").one()
 

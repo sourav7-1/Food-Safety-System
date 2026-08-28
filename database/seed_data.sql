@@ -27,7 +27,9 @@ DELETE FROM role_permissions;
 DELETE FROM roles;
 DELETE FROM street_food_stall_registrations;
 
--- Required authorization lookup values. Public registration uses customer;
+-- Required authorization lookup values. Public registration uses student
+-- (the only public-user role -- self-service signup is restricted to
+-- exact-format DIU student emails, see services/account_classification.py);
 -- privileged accounts must be provisioned by an administrator. `admin` is
 -- the only built-in role that enters the admin panel (is_admin_tier); all
 -- four are `is_system` so they can't be renamed/deleted from the Roles UI
@@ -40,7 +42,7 @@ INSERT INTO roles (role_id, role_name, description, is_system, is_admin_tier) VA
   (1, 'admin', 'System administrators', 1, 1),
   (2, 'vendor', 'Registered street-food stall operators', 1, 0),
   (3, 'inspector', 'Authorised food-safety inspectors', 1, 0),
-  (4, 'customer', 'Public users of the food-safety platform', 1, 0);
+  (4, 'student', 'DIU students (exact ID-pattern email match) -- the only public-user role', 1, 0);
 
 INSERT INTO street_food_stall_registrations (
   registration_id, submitted_at, vendor_name, phone_number, stall_name, area,

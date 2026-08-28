@@ -61,10 +61,8 @@ def _dashboard_url(user):
     endpoint_by_role = {
         "inspector": "dashboard.inspector",
         "vendor": "dashboard.vendor",
-        "customer": "dashboard.customer",
-        "consumer": "dashboard.customer",
-        # "student" is a classification of public user, not a separate
-        # portal -- it shares the customer dashboard/routes.
+        # "student" is the only public-user role -- it uses the
+        # pre-existing customer dashboard/routes/templates.
         "student": "dashboard.customer",
     }
     endpoint = endpoint_by_role.get(user.role_name)
@@ -80,14 +78,6 @@ def _google_oauth_configured():
     )
 
 
-def _default_customer_role():
-    return (
-        Role.query.filter(func.lower(Role.role_name).in_(("customer", "consumer")))
-        .order_by((func.lower(Role.role_name) == "customer").desc())
-        .first()
-    )
-
-
 def _role_for_signup(email):
     """The only role a self-service signup (local register or Google
     OAuth) may ever receive, resolved purely from the email address --
@@ -98,15 +88,12 @@ def _role_for_signup(email):
     vendor_approve), and admin/super-admin can only be granted through
     routes/admin.py's role management, never here.
 
-    Falls back to the plain customer role if the resolved role_name
-    (e.g. "student") doesn't exist in this database yet -- e.g. a
-    database that hasn't had migration 011 applied -- so signup never
-    hard-fails just because that role row is missing.
+    Returns (None, classification) if the "student" role row hasn't
+    been seeded yet (e.g. a database that hasn't run flask init-db) --
+    signup then fails safely instead of guessing another role.
     """
     role_name, classification = resolve_signup_role_name(email)
     role = Role.query.filter(func.lower(Role.role_name) == role_name).first()
-    if role is None:
-        role = _default_customer_role()
     return role, classification
 
 
