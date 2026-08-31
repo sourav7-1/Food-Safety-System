@@ -8,8 +8,20 @@ from sqlalchemy.engine import URL
 load_dotenv()
 
 
+def _require_secret_key():
+    key = os.getenv("SECRET_KEY")
+    if not key:
+        raise RuntimeError(
+            "SECRET_KEY environment variable is not set. Refusing to start "
+            "with a hardcoded fallback, since that would let anyone forge "
+            "sessions and CSRF tokens. Set SECRET_KEY in your environment "
+            "(see .env.example)."
+        )
+    return key
+
+
 class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "change-this-secret-key")
+    SECRET_KEY = _require_secret_key()
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = (

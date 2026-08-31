@@ -121,6 +121,38 @@ def create_app(config_class=Config):
             )
             return redirect(url_for("auth.login"))
 
+    @app.after_request
+    def set_security_headers(response):
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = (
+            "geolocation=(), microphone=(), camera=()"
+        )
+        # Templates rely on inline <script>/onclick handlers and inline
+        # style attributes throughout, and load Bootstrap/Font Awesome/
+        # Google Fonts/Turnstile from their CDNs -- so this allowlists
+        # those specific origins plus 'unsafe-inline' rather than using a
+        # nonce-based policy, instead of a default-src 'self' policy that
+        # would break the existing templates.
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' "
+            "https://cdn.jsdelivr.net https://challenges.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' "
+            "https://cdn.jsdelivr.net https://cdnjs.cloudflare.com "
+            "https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com "
+            "https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "img-src 'self' data:; "
+            "connect-src 'self'; "
+            "frame-src https://challenges.cloudflare.com; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'"
+        )
+        return response
+
     @app.route("/")
     def home():
         from sqlalchemy import func
