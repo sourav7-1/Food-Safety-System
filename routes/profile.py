@@ -14,7 +14,15 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from extensions import db
-from models import Area, AuthAuditLog, Complaint, Review, User, Notification
+from models import (
+    Area,
+    AuthAuditLog,
+    Complaint,
+    Notification,
+    Review,
+    RoleAuditLog,
+    User,
+)
 from services.account_classification import is_valid_student_email
 from services.email_verification import send_verification_email
 from services.profile_photo import (
@@ -66,8 +74,35 @@ def view():
         .limit(10)
         .all()
     )
+    role_audit_logs = []
+    admin_permissions = []
+    total_logins = 0
+    last_login = None
     if is_admin_tier:
         template_name = "profile/view_admin.html"
+        role_audit_logs = (
+            RoleAuditLog.query.filter(
+                (RoleAuditLog.target_user_id == current_user.user_id)
+                | (RoleAuditLog.actor_user_id == current_user.user_id)
+            )
+            .order_by(RoleAuditLog.audit_id.desc())
+            .limit(10)
+            .all()
+        )
+        if current_user.role and current_user.role.permissions:
+            admin_permissions = sorted(
+                current_user.role.permissions, key=lambda p: p.code
+            )
+        total_logins = AuthAuditLog.query.filter_by(
+            user_id=current_user.user_id, event="login_success"
+        ).count()
+        last_login = (
+            AuthAuditLog.query.filter_by(
+                user_id=current_user.user_id, event="login_success"
+            )
+            .order_by(AuthAuditLog.audit_id.desc())
+            .first()
+        )
     elif current_user.role_name == "student":
         template_name = "profile/view_student.html"
     elif current_user.role_name == "vendor":
@@ -83,6 +118,10 @@ def view():
         reviews=reviews,
         complaints=complaints,
         recent_logins=recent_logins,
+        role_audit_logs=role_audit_logs,
+        admin_permissions=admin_permissions,
+        total_logins=total_logins,
+        last_login=last_login,
         today=date.today(),
         page_title="My Profile",
     )

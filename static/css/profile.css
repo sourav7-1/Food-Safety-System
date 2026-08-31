@@ -1,12 +1,856 @@
-/* "My Profile" page — shared by every role, built on top of the root
-   site shell (templates/base.html) plus portal.css's card/table/badge
-   components. Scoped to .profile-page so it never leaks elsewhere. */
+/* ==========================================================================
+   Food Safety System - Modern Profile UI Design System
+   Apple-Inspired Glassmorphism, Micro-Interactions, and Responsive Layouts
+   ========================================================================== */
 
-.profile-page {
-    max-width: 1180px;
-    margin: 0 auto;
+:root {
+    --prof-primary: #0071e3;
+    --prof-primary-hover: #0077ed;
+    --prof-primary-light: #e8f2ff;
+    --prof-primary-glow: rgba(0, 113, 227, 0.22);
+    --prof-success: #10b981;
+    --prof-success-light: #ecfdf5;
+    --prof-warning: #f59e0b;
+    --prof-warning-light: #fffbeb;
+    --prof-danger: #ef4444;
+    --prof-danger-light: #fef2f2;
+    --prof-purple: #8b5cf6;
+    --prof-purple-light: #f5f3ff;
+    
+    --prof-bg-card: #ffffff;
+    --prof-border: rgba(0, 0, 0, 0.08);
+    --prof-border-focus: #0071e3;
+    --prof-text-main: #1d1d1f;
+    --prof-text-muted: #6e6e73;
+    --prof-text-subtle: #86868b;
+    
+    --prof-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.03);
+    --prof-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.05);
+    --prof-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.08);
+    --prof-shadow-glow: 0 0 20px rgba(0, 113, 227, 0.15);
+    --prof-radius: 20px;
+    --prof-radius-sm: 12px;
 }
 
+.profile-page,
+.admin-profile-workspace {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding-bottom: 2.5rem;
+}
+
+/* ==========================================================================
+   Executive Profile Hero Banner
+   ========================================================================== */
+.admin-profile-hero {
+    position: relative;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
+    border-radius: var(--prof-radius);
+    padding: 2.25rem;
+    color: #ffffff;
+    margin-bottom: 1.75rem;
+    overflow: hidden;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-profile-hero::before {
+    content: "";
+    position: absolute;
+    top: -40%;
+    right: -10%;
+    width: 450px;
+    height: 450px;
+    background: radial-gradient(circle, rgba(0, 113, 227, 0.35) 0%, rgba(139, 92, 246, 0.15) 50%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(40px);
+    pointer-events: none;
+}
+
+.admin-profile-hero::after {
+    content: "";
+    position: absolute;
+    bottom: -50%;
+    left: 20%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(40px);
+    pointer-events: none;
+}
+
+.admin-hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.75rem;
+    flex-wrap: wrap;
+}
+
+.admin-hero-identity {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+/* Avatar System */
+.admin-avatar-wrapper {
+    position: relative;
+    width: 92px;
+    height: 92px;
+    flex: 0 0 92px;
+}
+
+.admin-avatar-ring {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, #0071e3, #8b5cf6);
+    box-shadow: 0 8px 24px rgba(0, 113, 227, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-avatar-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #1e293b;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #0f172a;
+}
+
+.admin-avatar-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-avatar-initials {
+    font-size: 34px;
+    font-weight: 800;
+    color: #ffffff;
+    background: linear-gradient(135deg, #0071e3, #3898ff);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+}
+
+.admin-avatar-status {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid #0f172a;
+    background: var(--prof-success);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+
+.admin-avatar-status.status-inactive {
+    background: var(--prof-warning);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+}
+
+.admin-avatar-status.status-suspended {
+    background: var(--prof-danger);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+.admin-hero-title-group h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0 0 6px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.admin-hero-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.hero-chip-role {
+    background: rgba(0, 113, 227, 0.25);
+    color: #93c5fd;
+    border-color: rgba(147, 197, 253, 0.3);
+}
+
+.hero-chip-super {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(236, 72, 153, 0.3));
+    color: #fbcfe8;
+    border-color: rgba(244, 114, 182, 0.4);
+    box-shadow: 0 0 14px rgba(236, 72, 153, 0.25);
+}
+
+.hero-chip-status {
+    background: rgba(16, 185, 129, 0.2);
+    color: #6ee7b7;
+    border-color: rgba(110, 231, 183, 0.3);
+}
+
+.hero-chip-email {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+/* Quick Metrics Row in Hero */
+.admin-hero-metrics {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.hero-metric-box {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--prof-radius-sm);
+    padding: 10px 16px;
+    min-width: 120px;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.hero-metric-box:hover {
+    background: rgba(255, 255, 255, 0.14);
+    transform: translateY(-2px);
+}
+
+.hero-metric-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #94a3b8;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.hero-metric-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.2px;
+}
+
+/* ==========================================================================
+   Modern Apple Segmented Navigation Tabs
+   ========================================================================== */
+.admin-profile-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    border: 1px solid var(--prof-border);
+    border-radius: var(--prof-radius-sm);
+    padding: 6px;
+    margin-bottom: 1.75rem;
+    box-shadow: var(--prof-shadow-sm);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.admin-profile-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.admin-profile-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--prof-text-muted);
+    border: 0;
+    background: transparent;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.admin-profile-tab i {
+    font-size: 14px;
+    transition: transform 0.2s ease;
+}
+
+.admin-profile-tab:hover {
+    color: var(--prof-text-main);
+    background: #f1f5f9;
+}
+
+.admin-profile-tab:hover i {
+    transform: scale(1.1);
+}
+
+.admin-profile-tab.active {
+    background: var(--prof-primary);
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px var(--prof-primary-glow);
+}
+
+/* ==========================================================================
+   Elevated Profile Cards & Sections
+   ========================================================================== */
+.admin-profile-card {
+    background: var(--prof-bg-card);
+    border: 1px solid var(--prof-border);
+    border-radius: var(--prof-radius);
+    padding: 24px 28px;
+    box-shadow: var(--prof-shadow-md);
+    transition: box-shadow 0.28s ease, border-color 0.28s ease;
+    height: 100%;
+}
+
+.admin-profile-card:hover {
+    box-shadow: var(--prof-shadow-lg);
+}
+
+.admin-profile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex: 0 0 38px;
+}
+
+.card-icon-blue { background: #eff6ff; color: #0071e3; }
+.card-icon-green { background: #ecfdf5; color: #10b981; }
+.card-icon-purple { background: #f5f3ff; color: #8b5cf6; }
+.card-icon-orange { background: #fff7ed; color: #ea580c; }
+.card-icon-red { background: #fef2f2; color: #ef4444; }
+
+.admin-profile-card-header h2,
+.admin-profile-card-header h3 {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    margin: 0 0 2px;
+    color: var(--prof-text-main);
+}
+
+.admin-profile-card-header p {
+    font-size: 12px;
+    color: var(--prof-text-muted);
+    margin: 0;
+}
+
+/* ==========================================================================
+   Photo Upload Dropzone & Avatar Manager
+   ========================================================================== */
+.avatar-manager-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 10px 0 6px;
+}
+
+.avatar-preview-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin-bottom: 16px;
+}
+
+.avatar-preview-circle {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #f1f5f9;
+    border: 3px solid #ffffff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.avatar-preview-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-preview-initials {
+    font-size: 42px;
+    font-weight: 800;
+    color: #ffffff;
+    background: linear-gradient(135deg, #0071e3, #6366f1);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-dropzone {
+    width: 100%;
+    border: 2px dashed rgba(0, 113, 227, 0.25);
+    background: #f8fafc;
+    border-radius: var(--prof-radius-sm);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 14px;
+}
+
+.avatar-dropzone:hover,
+.avatar-dropzone.dragover {
+    border-color: var(--prof-primary);
+    background: var(--prof-primary-light);
+}
+
+.avatar-dropzone input[type="file"] {
+    display: none;
+}
+
+.dropzone-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.dropzone-icon {
+    font-size: 24px;
+    color: var(--prof-primary);
+}
+
+.dropzone-text {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--prof-text-main);
+}
+
+.dropzone-hint {
+    font-size: 10.5px;
+    color: var(--prof-text-subtle);
+}
+
+/* ==========================================================================
+   Refined Form Inputs & Icons
+   ========================================================================== */
+.admin-form-group {
+    margin-bottom: 18px;
+}
+
+.admin-form-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 7px;
+    letter-spacing: 0.2px;
+}
+
+.admin-form-label span.required {
+    color: var(--prof-danger);
+    margin-left: 3px;
+}
+
+.admin-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.admin-input-icon {
+    position: absolute;
+    left: 14px;
+    color: #94a3b8;
+    font-size: 13.5px;
+    pointer-events: none;
+    z-index: 4;
+    transition: color 0.2s ease;
+}
+
+.admin-form-control {
+    width: 100%;
+    height: 44px;
+    padding: 8px 14px 8px 40px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--prof-text-main);
+    background-color: #fcfcfd;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--prof-radius-sm);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.admin-form-control:focus {
+    background-color: #ffffff;
+    border-color: var(--prof-primary);
+    outline: 0;
+    box-shadow: 0 0 0 3px var(--prof-primary-glow);
+}
+
+.admin-form-control:focus + .admin-input-icon,
+.admin-input-group:focus-within .admin-input-icon {
+    color: var(--prof-primary);
+}
+
+textarea.admin-form-control {
+    height: auto;
+    min-height: 86px;
+    padding-top: 10px;
+    resize: vertical;
+}
+
+select.admin-form-control {
+    padding-right: 32px;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px 10px;
+    appearance: none;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: 0;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 6px;
+    font-size: 13.5px;
+    z-index: 5;
+    transition: color 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+    color: var(--prof-text-main);
+}
+
+/* Security Callout Box */
+.security-notice-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid var(--prof-primary);
+    border-radius: var(--prof-radius-sm);
+    padding: 14px 16px;
+    margin: 18px 0;
+}
+
+.security-notice-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.security-notice-text {
+    font-size: 11.5px;
+    color: var(--prof-text-muted);
+    margin: 0 0 10px;
+    line-height: 1.45;
+}
+
+/* Password Strength Meter */
+.password-meter-wrap {
+    margin-top: 8px;
+}
+
+.password-meter-bar {
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 6px;
+}
+
+.password-meter-fill {
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    border-radius: 4px;
+}
+
+.password-meter-fill.weak { width: 33%; background-color: var(--prof-danger); }
+.password-meter-fill.medium { width: 66%; background-color: var(--prof-warning); }
+.password-meter-fill.strong { width: 100%; background-color: var(--prof-success); }
+
+.password-requirements {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--prof-text-subtle);
+}
+
+.req-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.req-item.valid {
+    color: var(--prof-success);
+    font-weight: 700;
+}
+
+.req-item.valid i {
+    color: var(--prof-success);
+}
+
+/* ==========================================================================
+   Modern Buttons with Micro-Interactions
+   ========================================================================== */
+.btn-prof-primary {
+    background: var(--prof-primary);
+    color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: var(--prof-radius-sm);
+    border: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px var(--prof-primary-glow);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-prof-primary:hover {
+    background: var(--prof-primary-hover);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px var(--prof-primary-glow);
+}
+
+.btn-prof-danger {
+    background: #fff1f2;
+    color: var(--prof-danger);
+    border: 1px solid #fecdd3;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: var(--prof-radius-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-prof-danger:hover {
+    background: var(--prof-danger);
+    color: #ffffff;
+    border-color: var(--prof-danger);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+/* ==========================================================================
+   Permissions Matrix & Grid
+   ========================================================================== */
+.permissions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.permission-card-chip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--prof-radius-sm);
+    transition: all 0.2s ease;
+}
+
+.permission-card-chip:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.permission-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: var(--prof-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex: 0 0 32px;
+}
+
+.permission-info strong {
+    display: block;
+    font-size: 12.5px;
+    color: var(--prof-text-main);
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.permission-info small {
+    display: block;
+    font-size: 11px;
+    color: var(--prof-text-muted);
+}
+
+/* ==========================================================================
+   Activity & Audit Logs Table
+   ========================================================================== */
+.prof-table-wrap {
+    overflow-x: auto;
+    border-radius: var(--prof-radius-sm);
+    border: 1px solid #f1f5f9;
+}
+
+.prof-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+}
+
+.prof-table th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.prof-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--prof-text-main);
+    vertical-align: middle;
+}
+
+.prof-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.prof-table tr:hover td {
+    background: #f8fafc;
+}
+
+.event-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.event-success {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.event-danger {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.event-neutral {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.ip-badge {
+    font-family: monospace;
+    font-size: 11.5px;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    color: #334155;
+}
+
+/* ==========================================================================
+   Shared / Legacy Portal Styles (Preserves Student, Vendor, Inspector pages)
+   ========================================================================== */
 .profile-header {
     display: flex;
     align-items: center;
@@ -15,8 +859,8 @@
 }
 
 .profile-header .eyebrow {
-    color: #198754;
-    font-size: 9px;
+    color: #0071e3;
+    font-size: 10px;
     font-weight: 800;
     letter-spacing: 1.5px;
 }
@@ -24,7 +868,7 @@
 .profile-header h1 {
     font-size: 26px;
     font-weight: 800;
-    letter-spacing: -.6px;
+    letter-spacing: -0.6px;
     margin: 4px 0 3px;
     color: #122033;
 }
@@ -37,11 +881,11 @@
     overflow: hidden;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, #198754, #146c44);
+    background: linear-gradient(135deg, #0071e3, #6366f1);
     color: #fff;
     font-size: 32px;
     font-weight: 800;
-    box-shadow: 0 10px 26px rgba(15, 81, 50, .18);
+    box-shadow: 0 10px 26px rgba(0, 113, 227, 0.2);
 }
 
 .profile-avatar-lg img {
@@ -51,17 +895,17 @@
 }
 
 .profile-tabs {
-    border-bottom-color: #e4eaf1;
+    border-bottom: 1px solid #e2e8f0;
     margin-bottom: 22px;
 }
 
 .profile-tabs .nav-link {
     color: #64748b;
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 700;
     border: 0;
     border-bottom: 2px solid transparent;
-    padding: 10px 16px;
+    padding: 10px 18px;
 }
 
 .profile-tabs .nav-link i {
@@ -69,36 +913,49 @@
 }
 
 .profile-tabs .nav-link.active {
-    color: #147b52;
-    border-bottom-color: #198754;
+    color: var(--prof-primary);
+    border-bottom-color: var(--prof-primary);
     background: transparent;
 }
 
-.profile-tab-content .portal-card h3 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 800;
-    margin-bottom: 14px;
-}
-
-.profile-tab-content .portal-card h3 i {
-    color: #198754;
-}
-
-.profile-tab-content label {
-    display: block;
-    font-size: 10px;
-    font-weight: 700;
-    color: #59687c;
-    margin-bottom: 5px;
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+@media (max-width: 991.98px) {
+    .admin-profile-hero {
+        padding: 1.75rem;
+    }
+    .admin-hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .admin-hero-metrics {
+        width: 100%;
+    }
+    .hero-metric-box {
+        flex: 1 1 calc(50% - 6px);
+    }
 }
 
 @media (max-width: 575.98px) {
-    .profile-header {
+    .admin-profile-hero {
+        padding: 1.25rem;
+    }
+    .admin-hero-identity {
         flex-direction: column;
         align-items: flex-start;
-        text-align: left;
+        gap: 1rem;
+    }
+    .admin-hero-title-group h1 {
+        font-size: 1.4rem;
+    }
+    .hero-metric-box {
+        flex: 1 1 100%;
+    }
+    .admin-profile-card {
+        padding: 18px 16px;
+    }
+    .permissions-grid {
+        grid-template-columns: 1fr;
     }
 }

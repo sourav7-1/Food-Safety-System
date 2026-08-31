@@ -10,5 +10,701 @@
 {% endblock %}
 
 {% block content %}
-    {% include "profile/_view_content.html" %}
+<div class="admin-profile-workspace">
+    <!-- Executive Hero Identity Banner -->
+    <section class="admin-profile-hero">
+        <div class="admin-hero-content">
+            <div class="admin-hero-identity">
+                <div class="admin-avatar-wrapper">
+                    <div class="admin-avatar-ring">
+                        <div class="admin-avatar-inner">
+                            {% if current_user.profile_photo_url %}
+                            <img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}" id="adminHeroAvatarImg">
+                            {% else %}
+                            <div class="admin-avatar-initials" id="adminHeroAvatarInitials">{{ current_user.full_name[:1] | upper }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="admin-avatar-status status-{{ current_user.status }}" title="Status: {{ current_user.status | title }}"></span>
+                </div>
+
+                <div class="admin-hero-title-group">
+                    <h1>
+                        {{ current_user.full_name }}
+                        {% if current_user.is_super_admin %}
+                        <span class="hero-chip hero-chip-super"><i class="fa-solid fa-crown"></i> Super Admin</span>
+                        {% endif %}
+                    </h1>
+                    <div class="admin-hero-badges">
+                        <span class="hero-chip hero-chip-role"><i class="fa-solid fa-user-shield"></i> {{ current_user.role.role_name|title if current_user.role else 'Administrator' }}</span>
+                        <span class="hero-chip hero-chip-status"><i class="fa-solid fa-circle-check"></i> {{ current_user.status | title }}</span>
+                        <span class="hero-chip hero-chip-email"><i class="fa-regular fa-envelope"></i> {{ current_user.email }}</span>
+                        {% if current_user.email_verified_at %}
+                        <span class="hero-chip hero-chip-email"><i class="fa-solid fa-certificate text-info"></i> Verified</span>
+                        {% else %}
+                        <span class="hero-chip hero-chip-email text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Unverified</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Metrics Deck -->
+            <div class="admin-hero-metrics">
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-hashtag"></i> User ID</div>
+                    <div class="hero-metric-value">#UID-{{ current_user.user_id }}</div>
+                </div>
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-right-to-bracket"></i> Total Logins</div>
+                    <div class="hero-metric-value">{{ total_logins }}</div>
+                </div>
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-key"></i> Auth Method</div>
+                    <div class="hero-metric-value">{{ 'Google SSO' if current_user.auth_provider == 'google' else 'Password' }}</div>
+                </div>
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-shield-halved"></i> Privileges</div>
+                    <div class="hero-metric-value">{{ admin_permissions|length if admin_permissions else 'All' }} Perms</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modern Apple Segmented Navigation Tabs -->
+    <nav class="admin-profile-nav" id="adminProfileTabs" role="tablist">
+        <button class="admin-profile-tab active" id="tab-info" data-bs-toggle="tab" data-bs-target="#pane-info" type="button" role="tab" aria-controls="pane-info" aria-selected="true">
+            <i class="fa-solid fa-id-card"></i> Personal Details
+        </button>
+        <button class="admin-profile-tab" id="tab-security" data-bs-toggle="tab" data-bs-target="#pane-security" type="button" role="tab" aria-controls="pane-security" aria-selected="false">
+            <i class="fa-solid fa-shield-halved"></i> Security &amp; Logins
+        </button>
+        <button class="admin-profile-tab" id="tab-permissions" data-bs-toggle="tab" data-bs-target="#pane-permissions" type="button" role="tab" aria-controls="pane-permissions" aria-selected="false">
+            <i class="fa-solid fa-user-lock"></i> Role &amp; Permissions
+        </button>
+        <button class="admin-profile-tab" id="tab-activity" data-bs-toggle="tab" data-bs-target="#pane-activity" type="button" role="tab" aria-controls="pane-activity" aria-selected="false">
+            <i class="fa-solid fa-clock-rotate-left"></i> Activity Trail
+        </button>
+    </nav>
+
+    <!-- Tab Contents -->
+    <div class="tab-content">
+        <!-- ==========================================
+             Tab 1: Personal Details & Avatar
+             ========================================== -->
+        <div class="tab-pane fade show active" id="pane-info" role="tabpanel" aria-labelledby="tab-info">
+            <div class="row g-4">
+                <!-- Profile Photo Manager & Quick Summary -->
+                <div class="col-xl-4 col-lg-5">
+                    <div class="admin-profile-card mb-4">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-blue"><i class="fa-solid fa-camera"></i></div>
+                                <div>
+                                    <h2>Profile Photo</h2>
+                                    <p>Your public avatar in the admin panel</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="avatar-manager-box">
+                            <div class="avatar-preview-container">
+                                <div class="avatar-preview-circle" id="adminPhotoPreviewCircle">
+                                    {% if current_user.profile_photo_url %}
+                                    <img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}" id="adminPhotoPreviewImg">
+                                    {% else %}
+                                    <div class="avatar-preview-initials" id="adminPhotoPreviewInitials">{{ current_user.full_name[:1] | upper }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <form method="post" action="{{ url_for('profile.upload_photo') }}" enctype="multipart/form-data" class="w-100" id="adminPhotoForm">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <div class="avatar-dropzone" id="adminAvatarDropzone">
+                                    <input type="file" name="photo" id="adminPhotoInput" accept=".jpg,.jpeg,.png,.webp" required>
+                                    <label for="adminPhotoInput" class="dropzone-label">
+                                        <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                                        <span class="dropzone-text" id="adminDropzoneText">Click to choose or drag photo here</span>
+                                        <span class="dropzone-hint">JPG, PNG, or WEBP (Max {{ config.PROFILE_PHOTO_MAX_MB }} MB)</span>
+                                    </label>
+                                </div>
+                                <button class="btn-prof-primary w-100 justify-content-center mb-2" type="submit" id="adminUploadBtn">
+                                    <i class="fa-solid fa-upload"></i> Upload New Photo
+                                </button>
+                            </form>
+
+                            {% if current_user.profile_photo_url %}
+                            <form method="post" action="{{ url_for('profile.remove_photo') }}" class="w-100">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn-prof-danger w-100 justify-content-center" type="submit">
+                                    <i class="fa-solid fa-trash-can"></i> Remove Photo
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Account Summary Card -->
+                    <div class="admin-profile-card">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-purple"><i class="fa-solid fa-address-card"></i></div>
+                                <div>
+                                    <h3>Account Summary</h3>
+                                    <p>System identity &amp; account details</p>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="list-unstyled mb-0" style="font-size: 13px;">
+                            <li class="d-flex justify-content-between py-2 border-bottom">
+                                <span class="text-secondary fw-semibold"><i class="fa-regular fa-calendar-check me-2 text-primary"></i>Member Since</span>
+                                <span class="fw-bold">{{ current_user.created_at.strftime('%d %b %Y') if current_user.created_at else 'Active' }}</span>
+                            </li>
+                            <li class="d-flex justify-content-between py-2 border-bottom">
+                                <span class="text-secondary fw-semibold"><i class="fa-solid fa-shield-halved me-2 text-purple"></i>Access Role</span>
+                                <span class="fw-bold">{{ current_user.role.role_name|title if current_user.role else 'Administrator' }}</span>
+                            </li>
+                            <li class="d-flex justify-content-between py-2 border-bottom">
+                                <span class="text-secondary fw-semibold"><i class="fa-solid fa-map-pin me-2 text-danger"></i>Assigned Area</span>
+                                <span class="fw-bold">{{ current_user.preferred_area.area_name if current_user.preferred_area else 'All Campus' }}</span>
+                            </li>
+                            <li class="d-flex justify-content-between py-2">
+                                <span class="text-secondary fw-semibold"><i class="fa-solid fa-key me-2 text-success"></i>Classification</span>
+                                <span class="fw-bold text-capitalize">{{ current_user.email_classification | replace('_', ' ') if current_user.email_classification else 'Official DIU' }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Edit Profile Form -->
+                <div class="col-xl-8 col-lg-7">
+                    <div class="admin-profile-card">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-green"><i class="fa-solid fa-pen-to-square"></i></div>
+                                <div>
+                                    <h2>Edit Profile Details</h2>
+                                    <p>Update your personal information, contact info, and preferences</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form method="post" action="{{ url_for('profile.edit') }}" id="adminProfileEditForm">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <div class="row g-3">
+                                <!-- Full Name -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="full_name">
+                                            <span>Full Name<span class="required">*</span></span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-user admin-input-icon"></i>
+                                            <input class="admin-form-control" id="full_name" name="full_name" type="text" value="{{ current_user.full_name }}" maxlength="120" required placeholder="e.g. John Doe">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Email Address -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="email">
+                                            <span>Email Address<span class="required">*</span></span>
+                                            {% if current_user.email_verified_at %}
+                                            <span class="text-success small fw-semibold"><i class="fa-solid fa-check-circle"></i> Verified</span>
+                                            {% endif %}
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-envelope admin-input-icon"></i>
+                                            <input class="admin-form-control" id="email" name="email" type="email" value="{{ current_user.email }}" maxlength="150" required placeholder="admin@diu.edu.bd">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Phone Number -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="phone">
+                                            <span>Phone Number</span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-phone admin-input-icon"></i>
+                                            <input class="admin-form-control" id="phone" name="phone" type="tel" value="{{ current_user.phone or '' }}" maxlength="30" placeholder="+880 1XXXXXXXXX">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Date of Birth -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="date_of_birth">
+                                            <span>Date of Birth</span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-calendar admin-input-icon"></i>
+                                            <input class="admin-form-control" id="date_of_birth" name="date_of_birth" type="date" value="{{ current_user.date_of_birth.isoformat() if current_user.date_of_birth else '' }}" max="{{ today.isoformat() }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Preferred Area -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="preferred_area_id">
+                                            <span>Primary Operational Area</span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-location-dot admin-input-icon"></i>
+                                            <select class="admin-form-control" id="preferred_area_id" name="preferred_area_id">
+                                                <option value="">All Areas (Global Admin Scope)</option>
+                                                {% for area in areas %}
+                                                <option value="{{ area.area_id }}" {{ 'selected' if current_user.preferred_area_id == area.area_id }}>{{ area.area_name }}, {{ area.city }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Street Address -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="address">
+                                            <span>Address / Office Location</span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-map-pin admin-input-icon"></i>
+                                            <input class="admin-form-control" id="address" name="address" type="text" value="{{ current_user.address or '' }}" maxlength="255" placeholder="e.g. Admin Building, Room 402">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bio -->
+                                <div class="col-12">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="bio">
+                                            <span>Professional Bio &amp; Role Notes</span>
+                                            <span class="small text-muted" id="bioCounter">Max 2000 chars</span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-quote-left admin-input-icon" style="top: 14px;"></i>
+                                            <textarea class="admin-form-control" id="bio" name="bio" rows="3" maxlength="2000" placeholder="Brief statement about your responsibilities or food safety operations focus...">{{ current_user.bio or '' }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Security Password Confirmation for Sensitive Changes -->
+                                <div class="col-12">
+                                    <div class="security-notice-box">
+                                        <div class="security-notice-header">
+                                            <i class="fa-solid fa-shield-halved text-primary"></i> Security Confirmation
+                                        </div>
+                                        <p class="security-notice-text">
+                                            If you modify your <strong>Email address</strong> or <strong>Phone number</strong>, enter your current password below to authorize the change.
+                                        </p>
+                                        <div class="admin-input-group" style="max-width: 380px;">
+                                            <i class="fa-solid fa-lock admin-input-icon"></i>
+                                            <input class="admin-form-control" id="current_password" name="current_password" type="password" autocomplete="current-password" placeholder="Enter current password">
+                                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('current_password', this)" aria-label="Toggle password visibility">
+                                                <i class="fa-regular fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-3 mt-4 pt-2">
+                                <button class="btn-prof-primary" type="submit" id="adminSaveProfileBtn">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             Tab 2: Security & Sign-In Activity
+             ========================================== -->
+        <div class="tab-pane fade" id="pane-security" role="tabpanel" aria-labelledby="tab-security">
+            <div class="row g-4">
+                <!-- Password Change Card -->
+                <div class="col-xl-5 col-lg-6">
+                    <div class="admin-profile-card">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-orange"><i class="fa-solid fa-key"></i></div>
+                                <div>
+                                    <h2>Change Password</h2>
+                                    <p>Keep your administrator credentials secure</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if not current_user.password_hash %}
+                        <div class="text-center py-4">
+                            <div class="mb-3">
+                                <i class="fa-brands fa-google text-danger fs-1"></i>
+                            </div>
+                            <h4 class="h6 fw-bold">Google Authentication Active</h4>
+                            <p class="text-secondary small mb-0">Your account logs in securely with Google Single Sign-On and does not require a local password.</p>
+                        </div>
+                        {% else %}
+                        <form method="post" action="{{ url_for('profile.change_password') }}" id="adminChangePasswordForm">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            
+                            <div class="admin-form-group">
+                                <label class="admin-form-label" for="current_password_sec">Current Password<span class="required">*</span></label>
+                                <div class="admin-input-group">
+                                    <i class="fa-solid fa-lock admin-input-icon"></i>
+                                    <input class="admin-form-control" id="current_password_sec" name="current_password" type="password" autocomplete="current-password" required placeholder="Enter existing password">
+                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('current_password_sec', this)" aria-label="Toggle password visibility">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="admin-form-group">
+                                <label class="admin-form-label" for="new_password">New Password<span class="required">*</span></label>
+                                <div class="admin-input-group">
+                                    <i class="fa-solid fa-shield-halved admin-input-icon"></i>
+                                    <input class="admin-form-control" id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="8" required placeholder="Minimum 8 characters" oninput="checkPasswordStrength(this.value)">
+                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('new_password', this)" aria-label="Toggle password visibility">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="password-meter-wrap">
+                                    <div class="password-meter-bar">
+                                        <div class="password-meter-fill" id="passwordStrengthBar"></div>
+                                    </div>
+                                    <div class="password-requirements">
+                                        <span class="req-item" id="reqLength"><i class="fa-regular fa-circle-check"></i> 8+ Characters</span>
+                                        <span class="req-item" id="reqMatch"><i class="fa-regular fa-circle-check"></i> Passwords match</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="admin-form-group">
+                                <label class="admin-form-label" for="confirm_password">Confirm New Password<span class="required">*</span></label>
+                                <div class="admin-input-group">
+                                    <i class="fa-solid fa-check-double admin-input-icon"></i>
+                                    <input class="admin-form-control" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required placeholder="Repeat new password" oninput="checkPasswordMatch()">
+                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('confirm_password', this)" aria-label="Toggle password visibility">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button class="btn-prof-primary w-100 justify-content-center mt-3" type="submit" id="adminSubmitPasswordBtn">
+                                <i class="fa-solid fa-key"></i> Update Password
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Recent Sign-in Sessions & Security Logs -->
+                <div class="col-xl-7 col-lg-6">
+                    <div class="admin-profile-card">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-blue"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                                <div>
+                                    <h2>Recent Sign-In Sessions</h2>
+                                    <p>Authentication history for your admin account</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if recent_logins %}
+                        <div class="prof-table-wrap">
+                            <table class="prof-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date &amp; Time</th>
+                                        <th>Event</th>
+                                        <th>IP Address</th>
+                                        <th>Provider</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in recent_logins %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ entry.created_at.strftime('%d %b %Y') }}</strong>
+                                            <small class="text-secondary">{{ entry.created_at.strftime('%I:%M %p') }}</small>
+                                        </td>
+                                        <td>
+                                            {% if entry.event == 'login_success' %}
+                                            <span class="event-pill event-success"><i class="fa-solid fa-circle-check"></i> Login Success</span>
+                                            {% elif entry.event == 'logout' %}
+                                            <span class="event-pill event-neutral"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</span>
+                                            {% elif 'fail' in entry.event %}
+                                            <span class="event-pill event-danger"><i class="fa-solid fa-circle-exclamation"></i> Failed</span>
+                                            {% else %}
+                                            <span class="event-pill event-neutral">{{ entry.event | replace('_', ' ') | title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="ip-badge">{{ entry.ip_address or '127.0.0.1' }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-secondary small fw-semibold text-capitalize">{{ entry.auth_provider or 'Local' }}</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-secondary">
+                            <i class="fa-solid fa-shield-cat fs-1 mb-2 text-muted"></i>
+                            <p class="mb-0">No sign-in records found for this account.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             Tab 3: Roles & Permissions
+             ========================================== -->
+        <div class="tab-pane fade" id="pane-permissions" role="tabpanel" aria-labelledby="tab-permissions">
+            <div class="admin-profile-card mb-4">
+                <div class="admin-profile-card-header">
+                    <div class="card-title-group">
+                        <div class="card-icon-badge card-icon-purple"><i class="fa-solid fa-user-shield"></i></div>
+                        <div>
+                            <h2>Role &amp; Privilege Scope</h2>
+                            <p>Overview of system rights assigned to your account</p>
+                        </div>
+                    </div>
+                    {% if current_user.is_super_admin %}
+                    <span class="hero-chip hero-chip-super"><i class="fa-solid fa-crown"></i> Full System Super Admin</span>
+                    {% else %}
+                    <span class="hero-chip hero-chip-role">{{ current_user.role.role_name|title if current_user.role else 'Administrator' }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="p-3 bg-light rounded-3 mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="fs-3 text-primary"><i class="fa-solid fa-certificate"></i></div>
+                        <div>
+                            <strong class="d-block text-dark">{{ current_user.role.role_name|title if current_user.role else 'Administrator' }} Access Level</strong>
+                            <p class="text-secondary small mb-0">
+                                {% if current_user.is_super_admin %}
+                                You have <strong>Super Administrator</strong> status with unrestricted permissions across all operational modules, security controls, and audit logs.
+                                {% else %}
+                                {{ current_user.role.description if current_user.role and current_user.role.description else 'Authorized administrator for food safety system operations.' }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="h6 fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-list-check text-primary"></i> Granted Administrative Capabilities
+                    <span class="badge bg-primary-subtle text-primary rounded-pill">{{ admin_permissions|length if admin_permissions else 'Global Scope' }}</span>
+                </h3>
+
+                {% if admin_permissions %}
+                <div class="permissions-grid">
+                    {% for perm in admin_permissions %}
+                    <div class="permission-card-chip">
+                        <div class="permission-icon">
+                            {% if 'vendor' in perm.code %}
+                            <i class="fa-solid fa-store"></i>
+                            {% elif 'stall' in perm.code %}
+                            <i class="fa-solid fa-shop"></i>
+                            {% elif 'inspection' in perm.code %}
+                            <i class="fa-solid fa-clipboard-check"></i>
+                            {% elif 'complaint' in perm.code %}
+                            <i class="fa-solid fa-message"></i>
+                            {% elif 'review' in perm.code %}
+                            <i class="fa-solid fa-star"></i>
+                            {% elif 'risk' in perm.code %}
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            {% elif 'user' in perm.code %}
+                            <i class="fa-solid fa-users"></i>
+                            {% elif 'role' in perm.code %}
+                            <i class="fa-solid fa-shield-halved"></i>
+                            {% elif 'audit' in perm.code %}
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            {% else %}
+                            <i class="fa-solid fa-check"></i>
+                            {% endif %}
+                        </div>
+                        <div class="permission-info">
+                            <strong>{{ perm.code }}</strong>
+                            <small>{{ perm.description or 'Granted operational capability' }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-4 text-center bg-light rounded-3 text-secondary">
+                    <i class="fa-solid fa-shield-check fs-1 text-primary mb-2"></i>
+                    <p class="mb-0 fw-semibold">Global Administrative Scope Active.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ==========================================
+             Tab 4: System Activity Trail
+             ========================================== -->
+        <div class="tab-pane fade" id="pane-activity" role="tabpanel" aria-labelledby="tab-activity">
+            <div class="admin-profile-card">
+                <div class="admin-profile-card-header">
+                    <div class="card-title-group">
+                        <div class="card-icon-badge card-icon-blue"><i class="fa-solid fa-timeline"></i></div>
+                        <div>
+                            <h2>Account Audit Trail</h2>
+                            <p>Governance record and role modification history</p>
+                        </div>
+                    </div>
+                </div>
+
+                {% if role_audit_logs %}
+                <div class="prof-table-wrap">
+                    <table class="prof-table">
+                        <thead>
+                            <tr>
+                                <th>Date &amp; Time</th>
+                                <th>Target / Actor</th>
+                                <th>Role Change</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in role_audit_logs %}
+                            <tr>
+                                <td>
+                                    <strong>{{ log.created_at.strftime('%d %b %Y') }}</strong>
+                                    <small class="text-secondary">{{ log.created_at.strftime('%I:%M %p') }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ log.target_user.full_name if log.target_user else 'User #' ~ log.target_user_id }}</strong>
+                                    <small class="text-secondary">By: {{ log.actor.full_name if log.actor else 'System' }}</small>
+                                </td>
+                                <td>
+                                    <span class="event-pill event-neutral">{{ log.old_role.role_name|title if log.old_role else 'None' }}</span>
+                                    <i class="fa-solid fa-arrow-right mx-1 text-secondary small"></i>
+                                    <span class="event-pill event-success">{{ log.new_role.role_name|title if log.new_role else 'New Role' }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-secondary small">{{ log.reason or 'Administrative update' }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-secondary">
+                    <i class="fa-solid fa-clipboard-list fs-1 mb-2 text-muted"></i>
+                    <p class="mb-0">No role change audit logs recorded for your account.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Live Image Preview on File Input
+(function() {
+    const photoInput = document.getElementById('adminPhotoInput');
+    const previewCircle = document.getElementById('adminPhotoPreviewCircle');
+    const dropzoneText = document.getElementById('adminDropzoneText');
+
+    if (photoInput && previewCircle) {
+        photoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (dropzoneText) {
+                    dropzoneText.textContent = file.name;
+                }
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    previewCircle.innerHTML = '<img src="' + event.target.result + '" alt="Preview" style="width:100%;height:100%;object-fit:cover;">';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Bio Character Counter
+    const bioField = document.getElementById('bio');
+    const bioCounter = document.getElementById('bioCounter');
+    if (bioField && bioCounter) {
+        bioField.addEventListener('input', function() {
+            const left = 2000 - bioField.value.length;
+            bioCounter.textContent = left + ' chars left';
+        });
+    }
+})();
+
+// Password Visibility Toggle
+function togglePasswordVisibility(fieldId, btn) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    const icon = btn.querySelector('i');
+    if (field.type === 'password') {
+        field.type = 'text';
+        if (icon) {
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    } else {
+        field.type = 'password';
+        if (icon) {
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+}
+
+// Password Strength Meter
+function checkPasswordStrength(password) {
+    const bar = document.getElementById('passwordStrengthBar');
+    const reqLength = document.getElementById('reqLength');
+    if (!bar) return;
+
+    let score = 0;
+    if (password.length >= 8) {
+        score += 1;
+        if (reqLength) reqLength.classList.add('valid');
+    } else {
+        if (reqLength) reqLength.classList.remove('valid');
+    }
+    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+    if (/[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password)) score += 1;
+
+    bar.className = 'password-meter-fill';
+    if (password.length === 0) {
+        bar.style.width = '0%';
+    } else if (score <= 1) {
+        bar.classList.add('weak');
+    } else if (score === 2) {
+        bar.classList.add('medium');
+    } else {
+        bar.classList.add('strong');
+    }
+    checkPasswordMatch();
+}
+
+function checkPasswordMatch() {
+    const newPass = document.getElementById('new_password');
+    const confirmPass = document.getElementById('confirm_password');
+    const reqMatch = document.getElementById('reqMatch');
+    if (!newPass || !confirmPass || !reqMatch) return;
+
+    if (newPass.value && confirmPass.value && newPass.value === confirmPass.value) {
+        reqMatch.classList.add('valid');
+    } else {
+        reqMatch.classList.remove('valid');
+    }
+}
+</script>
 {% endblock %}
