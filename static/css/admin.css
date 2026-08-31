@@ -1402,3 +1402,28 @@ html.sidebar-collapsed .admin-sidebar .sidebar-logout button {
         transition: none !important;
     }
 }
+
+/* ==========================================================================
+   Chart Containers & Responsive Sizing
+   ========================================================================== */
+.report-chart,
+.chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    max-height: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.report-wide {
+    height: 340px;
+    max-height: 400px;
+}
+
+.report-chart canvas,
+.chart-wrap canvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+}

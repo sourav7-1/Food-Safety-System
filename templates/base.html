@@ -101,7 +101,7 @@
     <main id="main-content" class="{% block main_class %}container py-5{% endblock %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="container{% block flash_top_pad %} pt-4{% endblock %}" id="siteFlashMessages">
+                <div class="{% block flash_top_pad %}mb-3{% endblock %}" id="siteFlashMessages">
                     {% for category, message in messages %}
                         <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
                             {{ message }}

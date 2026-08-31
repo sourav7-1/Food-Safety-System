@@ -1286,6 +1286,30 @@ html {
     padding: 3.5rem 3rem;
 }
 
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.5rem 0;
+    color: var(--apple-text-tertiary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid var(--apple-border);
+}
+
+.auth-divider span {
+    padding: 0 1rem;
+    background: transparent;
+}
+
 .btn-google {
     display: inline-flex;
     align-items: center;
@@ -1314,6 +1338,14 @@ html {
 .btn-google__icon {
     width: 1.25rem;
     height: 1.25rem;
+}
+
+.auth-card {
+    max-width: 540px;
+    border-radius: var(--radius-card);
+    background: #ffffff;
+    box-shadow: var(--apple-shadow-lg) !important;
+    border: 1px solid var(--apple-border) !important;
 }
 
 @media (max-width: 767.98px) {
