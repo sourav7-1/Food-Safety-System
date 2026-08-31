@@ -685,6 +685,7 @@
             hideProgress: hideProgress,
             setButtonLoading: setButtonLoading,
             loadAdminPage: loadAdminPage,
+            autoDismissAlerts: autoDismissAlerts,
             refresh: function (url) {
                 showProgress();
                 return fetch(url || window.location.href, {

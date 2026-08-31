@@ -38,6 +38,9 @@
             })
             .then(function (html) {
                 body.innerHTML = html;
+                if (window.AdminAjax && window.AdminAjax.autoDismissAlerts) {
+                    window.AdminAjax.autoDismissAlerts();
+                }
             })
             .catch(function () {
                 body.innerHTML = '<div class="alert alert-danger">Could not load this dispute. Please try again.</div>';
