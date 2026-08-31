@@ -54,6 +54,25 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.admin-profile-hero.hero-student {
+    background: linear-gradient(135deg, #064e3b 0%, #047857 55%, #059669 100%);
+    box-shadow: 0 14px 36px rgba(5, 150, 105, 0.25);
+}
+
+.admin-profile-hero.hero-vendor {
+    background: linear-gradient(135deg, #134e4a 0%, #0f766e 55%, #047857 100%);
+    box-shadow: 0 14px 36px rgba(15, 118, 110, 0.25);
+}
+
+.admin-profile-hero.hero-inspector {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #312e81 100%);
+    box-shadow: 0 14px 36px rgba(49, 46, 129, 0.25);
+}
+
+.admin-profile-hero.hero-default {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
+}
+
 .admin-profile-hero::before {
     content: "";
     position: absolute;

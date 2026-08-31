@@ -1,214 +1,751 @@
-<div class="profile-page">
-    <div class="profile-header">
-        <div class="profile-avatar-lg">
-            {% if current_user.profile_photo_url %}
-            <img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}">
-            {% else %}
-            <span>{{ current_user.full_name[:1] | upper }}</span>
-            {% endif %}
-        </div>
-        <div>
-            <p class="eyebrow mb-1"><i class="fa-solid fa-user"></i> MY PROFILE</p>
-            <h1>{{ current_user.full_name }}</h1>
-            <p class="text-secondary mb-0">
-                {{ current_user.email }} &middot; {{ current_user.role_name | title }}
-                &middot; <span class="risk-badge status-{{ current_user.status }}">{{ current_user.status | title }}</span>
-                {% if current_user.vendor_profile %}
-                &middot; Vendor: <span class="risk-badge status-{{ current_user.vendor_profile.status }}">{{ current_user.vendor_profile.status | replace('_',' ') | title }}</span>
-                {% endif %}
-            </p>
-        </div>
-    </div>
-
-    <ul class="nav nav-tabs profile-tabs" id="profileTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-pane" type="button" role="tab" aria-controls="info-pane" aria-selected="true">
-                <i class="fa-solid fa-id-card"></i> Profile Info
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity-pane" type="button" role="tab" aria-controls="activity-pane" aria-selected="false">
-                <i class="fa-solid fa-clock-rotate-left"></i> Activity
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security-pane" type="button" role="tab" aria-controls="security-pane" aria-selected="false">
-                <i class="fa-solid fa-shield-halved"></i> Security
-            </button>
-        </li>
-    </ul>
-
-    <div class="tab-content profile-tab-content">
-        <div class="tab-pane fade show active" id="info-pane" role="tabpanel" aria-labelledby="info-tab">
-            <div class="row g-4">
-                <div class="col-lg-4">
-                    <section class="portal-card">
-                        <h3><i class="fa-solid fa-camera"></i> Profile photo</h3>
-                        <p class="text-secondary small">JPG, JPEG, PNG, or WEBP. Max {{ config.PROFILE_PHOTO_MAX_MB }} MB. Resized automatically.</p>
-                        <form method="post" action="{{ url_for('profile.upload_photo') }}" enctype="multipart/form-data" class="mb-2">
-                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                            <input class="form-control form-control-sm mb-2" type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" required>
-                            <button class="btn btn-success btn-sm w-100" type="submit"><i class="fa-solid fa-upload"></i> Upload photo</button>
-                        </form>
-                        {% if current_user.profile_photo_url %}
-                        <form method="post" action="{{ url_for('profile.remove_photo') }}">
-                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                            <button class="btn btn-outline-danger btn-sm w-100" type="submit"><i class="fa-solid fa-trash"></i> Remove photo</button>
-                        </form>
-                        {% endif %}
-                    </section>
+<div class="admin-profile-workspace">
+    <!-- Executive Hero Identity Banner (Themed by User Role) -->
+    <section class="admin-profile-hero hero-{{ current_user.role_name or 'default' }}">
+        <div class="admin-hero-content">
+            <div class="admin-hero-identity">
+                <div class="admin-avatar-wrapper">
+                    <div class="admin-avatar-ring">
+                        <div class="admin-avatar-inner">
+                            {% if current_user.profile_photo_url %}
+                            <img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}" id="portalHeroAvatarImg">
+                            {% else %}
+                            <div class="admin-avatar-initials" id="portalHeroAvatarInitials">{{ current_user.full_name[:1] | upper }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="admin-avatar-status status-{{ current_user.status }}" title="Status: {{ current_user.status | title }}"></span>
                 </div>
-                <div class="col-lg-8">
-                    <section class="portal-card">
-                        <h3><i class="fa-solid fa-pen"></i> Edit details</h3>
-                        <form method="post" action="{{ url_for('profile.edit') }}">
-                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="full_name">Full name</label>
-                                    <input class="form-control" id="full_name" name="full_name" type="text" value="{{ current_user.full_name }}" maxlength="120" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="date_of_birth">Date of birth</label>
-                                    <input class="form-control" id="date_of_birth" name="date_of_birth" type="date" value="{{ current_user.date_of_birth.isoformat() if current_user.date_of_birth else '' }}" max="{{ today.isoformat() }}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="email">Email address</label>
-                                    <input class="form-control" id="email" name="email" type="email" value="{{ current_user.email }}" maxlength="150" required>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="phone">Phone number</label>
-                                    <input class="form-control" id="phone" name="phone" type="tel" value="{{ current_user.phone or '' }}" maxlength="30">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="preferred_area_id">Preferred area</label>
-                                    <select class="form-select" id="preferred_area_id" name="preferred_area_id">
-                                        <option value="">Not set</option>
-                                        {% for area in areas %}
-                                        <option value="{{ area.area_id }}" {{ 'selected' if current_user.preferred_area_id == area.area_id }}>{{ area.area_name }}, {{ area.city }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <label for="address">Address</label>
-                                    <input class="form-control" id="address" name="address" type="text" value="{{ current_user.address or '' }}" maxlength="255">
-                                </div>
-                                <div class="col-12">
-                                    <label for="bio">Bio</label>
-                                    <textarea class="form-control" id="bio" name="bio" rows="3" maxlength="2000">{{ current_user.bio or '' }}</textarea>
-                                </div>
-                                <div class="col-12">
-                                    <hr>
-                                    <label for="current_password">Current password</label>
-                                    <input class="form-control" id="current_password" name="current_password" type="password" autocomplete="current-password">
-                                    <div class="form-text">Only required if you change your email address or phone number above.</div>
+
+                <div class="admin-hero-title-group">
+                    <h1>
+                        {{ current_user.full_name }}
+                        {% if current_user.is_super_admin %}
+                        <span class="hero-chip hero-chip-super"><i class="fa-solid fa-crown"></i> Super Admin</span>
+                        {% endif %}
+                    </h1>
+                    <div class="admin-hero-badges">
+                        <span class="hero-chip hero-chip-role">
+                            {% if current_user.role_name == 'student' %}
+                            <i class="fa-solid fa-graduation-cap"></i> Student Member
+                            {% elif current_user.role_name == 'vendor' %}
+                            <i class="fa-solid fa-store"></i> Food Vendor
+                            {% elif current_user.role_name == 'inspector' %}
+                            <i class="fa-solid fa-clipboard-check"></i> Field Inspector
+                            {% else %}
+                            <i class="fa-solid fa-user"></i> {{ current_user.role.role_name|title if current_user.role else 'Member' }}
+                            {% endif %}
+                        </span>
+                        <span class="hero-chip hero-chip-status"><i class="fa-solid fa-circle-check"></i> {{ current_user.status | title }}</span>
+                        <span class="hero-chip hero-chip-email"><i class="fa-regular fa-envelope"></i> {{ current_user.email }}</span>
+                        {% if current_user.email_verified_at %}
+                        <span class="hero-chip hero-chip-email"><i class="fa-solid fa-certificate text-info"></i> Verified</span>
+                        {% else %}
+                        <span class="hero-chip hero-chip-email text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Unverified</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Metrics Deck -->
+            <div class="admin-hero-metrics">
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-hashtag"></i> User ID</div>
+                    <div class="hero-metric-value">#UID-{{ current_user.user_id }}</div>
+                </div>
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-right-to-bracket"></i> Total Logins</div>
+                    <div class="hero-metric-value">{{ total_logins or 1 }}</div>
+                </div>
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-key"></i> Auth Method</div>
+                    <div class="hero-metric-value">{{ 'Google SSO' if current_user.auth_provider == 'google' else 'Password' }}</div>
+                </div>
+                {% if current_user.role_name == 'student' %}
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-star"></i> Reviews / Complaints</div>
+                    <div class="hero-metric-value">{{ (reviews|length if reviews else 0) + (complaints|length if complaints else 0) }}</div>
+                </div>
+                {% elif current_user.role_name == 'vendor' and current_user.vendor_profile %}
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-store"></i> Business Status</div>
+                    <div class="hero-metric-value text-capitalize">{{ current_user.vendor_profile.status | replace('_', ' ') }}</div>
+                </div>
+                {% elif current_user.role_name == 'inspector' and current_user.inspector_profile %}
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-id-badge"></i> Employee Code</div>
+                    <div class="hero-metric-value">{{ current_user.inspector_profile.employee_code }}</div>
+                </div>
+                {% else %}
+                <div class="hero-metric-box">
+                    <div class="hero-metric-label"><i class="fa-solid fa-location-dot"></i> Area</div>
+                    <div class="hero-metric-value">{{ current_user.preferred_area.area_name if current_user.preferred_area else 'All Campus' }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Modern Apple Segmented Navigation Tabs -->
+    <nav class="admin-profile-nav" id="portalProfileTabs" role="tablist">
+        <button class="admin-profile-tab active" id="portal-tab-info" data-bs-toggle="tab" data-bs-target="#portal-pane-info" type="button" role="tab" aria-controls="portal-pane-info" aria-selected="true">
+            <i class="fa-solid fa-id-card"></i> Personal Details
+        </button>
+        <button class="admin-profile-tab" id="portal-tab-security" data-bs-toggle="tab" data-bs-target="#portal-pane-security" type="button" role="tab" aria-controls="portal-pane-security" aria-selected="false">
+            <i class="fa-solid fa-shield-halved"></i> Security &amp; Logins
+        </button>
+
+        {% if current_user.role_name == 'student' %}
+        <button class="admin-profile-tab" id="portal-tab-activity" data-bs-toggle="tab" data-bs-target="#portal-pane-activity" type="button" role="tab" aria-controls="portal-pane-activity" aria-selected="false">
+            <i class="fa-solid fa-clock-rotate-left"></i> My Activity
+        </button>
+        {% elif current_user.role_name == 'vendor' %}
+        <button class="admin-profile-tab" id="portal-tab-vendor" data-bs-toggle="tab" data-bs-target="#portal-pane-vendor" type="button" role="tab" aria-controls="portal-pane-vendor" aria-selected="false">
+            <i class="fa-solid fa-store"></i> Vendor Profile
+        </button>
+        {% elif current_user.role_name == 'inspector' %}
+        <button class="admin-profile-tab" id="portal-tab-inspector" data-bs-toggle="tab" data-bs-target="#portal-pane-inspector" type="button" role="tab" aria-controls="portal-pane-inspector" aria-selected="false">
+            <i class="fa-solid fa-clipboard-user"></i> Inspector Profile
+        </button>
+        {% endif %}
+    </nav>
+
+    <!-- Tab Content Panes -->
+    <div class="tab-content">
+        <!-- ==========================================
+             Tab 1: Personal Details & Avatar
+             ========================================== -->
+        <div class="tab-pane fade show active" id="portal-pane-info" role="tabpanel" aria-labelledby="portal-tab-info">
+            <div class="row g-4">
+                <!-- Avatar & Account Summary -->
+                <div class="col-xl-4 col-lg-5">
+                    <div class="admin-profile-card mb-4">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-blue"><i class="fa-solid fa-camera"></i></div>
+                                <div>
+                                    <h2>Profile Photo</h2>
+                                    <p>Your public avatar in the portal</p>
                                 </div>
                             </div>
-                            <button class="btn btn-success mt-4" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save changes</button>
+                        </div>
+
+                        <div class="avatar-manager-box">
+                            <div class="avatar-preview-container">
+                                <div class="avatar-preview-circle" id="portalPhotoPreviewCircle">
+                                    {% if current_user.profile_photo_url %}
+                                    <img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}" id="portalPhotoPreviewImg">
+                                    {% else %}
+                                    <div class="avatar-preview-initials" id="portalPhotoPreviewInitials">{{ current_user.full_name[:1] | upper }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <form method="post" action="{{ url_for('profile.upload_photo') }}" enctype="multipart/form-data" class="w-100" id="portalPhotoForm">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <div class="avatar-dropzone" id="portalAvatarDropzone">
+                                    <input type="file" name="photo" id="portalPhotoInput" accept=".jpg,.jpeg,.png,.webp" required>
+                                    <label for="portalPhotoInput" class="dropzone-label">
+                                        <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                                        <span class="dropzone-text" id="portalDropzoneText">Click to choose or drag photo here</span>
+                                        <span class="dropzone-hint">JPG, PNG, or WEBP (Max {{ config.PROFILE_PHOTO_MAX_MB }} MB)</span>
+                                    </label>
+                                </div>
+                                <button class="btn-prof-primary w-100 justify-content-center mb-2" type="submit">
+                                    <i class="fa-solid fa-upload"></i> Upload Photo
+                                </button>
+                            </form>
+
+                            {% if current_user.profile_photo_url %}
+                            <form method="post" action="{{ url_for('profile.remove_photo') }}" class="w-100">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn-prof-danger w-100 justify-content-center" type="submit">
+                                    <i class="fa-solid fa-trash-can"></i> Remove Photo
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Account Summary Card -->
+                    <div class="admin-profile-card">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-purple"><i class="fa-solid fa-address-card"></i></div>
+                                <div>
+                                    <h3>Account Summary</h3>
+                                    <p>Identity &amp; portal profile</p>
+                                </div>
+                            </div>
+                        </div>
+                        <ul class="list-unstyled mb-0" style="font-size: 13px;">
+                            <li class="d-flex justify-content-between py-2 border-bottom">
+                                <span class="text-secondary fw-semibold"><i class="fa-regular fa-calendar-check me-2 text-primary"></i>Member Since</span>
+                                <span class="fw-bold">{{ current_user.created_at.strftime('%d %b %Y') if current_user.created_at else 'Active' }}</span>
+                            </li>
+                            <li class="d-flex justify-content-between py-2 border-bottom">
+                                <span class="text-secondary fw-semibold"><i class="fa-solid fa-shield-halved me-2 text-purple"></i>Role Tier</span>
+                                <span class="fw-bold">{{ current_user.role.role_name|title if current_user.role else 'Member' }}</span>
+                            </li>
+                            <li class="d-flex justify-content-between py-2 border-bottom">
+                                <span class="text-secondary fw-semibold"><i class="fa-solid fa-map-pin me-2 text-danger"></i>Primary Area</span>
+                                <span class="fw-bold">{{ current_user.preferred_area.area_name if current_user.preferred_area else 'All Campus' }}</span>
+                            </li>
+                            <li class="d-flex justify-content-between py-2">
+                                <span class="text-secondary fw-semibold"><i class="fa-solid fa-key me-2 text-success"></i>Classification</span>
+                                <span class="fw-bold text-capitalize">{{ current_user.email_classification | replace('_', ' ') if current_user.email_classification else 'DIU Community' }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Edit Profile Form -->
+                <div class="col-xl-8 col-lg-7">
+                    <div class="admin-profile-card">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-green"><i class="fa-solid fa-pen-to-square"></i></div>
+                                <div>
+                                    <h2>Edit Profile Details</h2>
+                                    <p>Update your personal information, contact info, and preferences</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form method="post" action="{{ url_for('profile.edit') }}" id="portalProfileEditForm">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <div class="row g-3">
+                                <!-- Full Name -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="portal_full_name">
+                                            <span>Full Name<span class="required">*</span></span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-user admin-input-icon"></i>
+                                            <input class="admin-form-control" id="portal_full_name" name="full_name" type="text" value="{{ current_user.full_name }}" maxlength="120" required placeholder="e.g. John Doe">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Email Address -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="portal_email">
+                                            <span>Email Address<span class="required">*</span></span>
+                                            {% if current_user.email_verified_at %}
+                                            <span class="text-success small fw-semibold"><i class="fa-solid fa-check-circle"></i> Verified</span>
+                                            {% endif %}
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-envelope admin-input-icon"></i>
+                                            <input class="admin-form-control" id="portal_email" name="email" type="email" value="{{ current_user.email }}" maxlength="150" required placeholder="user@diu.edu.bd">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Phone Number -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="portal_phone">
+                                            <span>Phone Number</span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-phone admin-input-icon"></i>
+                                            <input class="admin-form-control" id="portal_phone" name="phone" type="tel" value="{{ current_user.phone or '' }}" maxlength="30" placeholder="+880 1XXXXXXXXX">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Date of Birth -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="portal_date_of_birth">
+                                            <span>Date of Birth</span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-calendar admin-input-icon"></i>
+                                            <input class="admin-form-control" id="portal_date_of_birth" name="date_of_birth" type="date" value="{{ current_user.date_of_birth.isoformat() if current_user.date_of_birth else '' }}" max="{{ today.isoformat() }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Preferred Area -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="portal_preferred_area_id">
+                                            <span>Preferred Campus Area</span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-location-dot admin-input-icon"></i>
+                                            <select class="admin-form-control" id="portal_preferred_area_id" name="preferred_area_id">
+                                                <option value="">Not set / Global</option>
+                                                {% for area in areas %}
+                                                <option value="{{ area.area_id }}" {{ 'selected' if current_user.preferred_area_id == area.area_id }}>{{ area.area_name }}, {{ area.city }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Street Address -->
+                                <div class="col-md-6">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="portal_address">
+                                            <span>Address / Hall / Location</span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-map-pin admin-input-icon"></i>
+                                            <input class="admin-form-control" id="portal_address" name="address" type="text" value="{{ current_user.address or '' }}" maxlength="255" placeholder="e.g. Hall 3, Room 204">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bio -->
+                                <div class="col-12">
+                                    <div class="admin-form-group">
+                                        <label class="admin-form-label" for="portal_bio">
+                                            <span>Bio &amp; Notes</span>
+                                            <span class="small text-muted" id="portalBioCounter">Max 2000 chars</span>
+                                        </label>
+                                        <div class="admin-input-group">
+                                            <i class="fa-solid fa-quote-left admin-input-icon" style="top: 14px;"></i>
+                                            <textarea class="admin-form-control" id="portal_bio" name="bio" rows="3" maxlength="2000" placeholder="Brief statement about your interest in food safety, stall preferences, or notes...">{{ current_user.bio or '' }}</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Security Password Confirmation for Sensitive Changes -->
+                                <div class="col-12">
+                                    <div class="security-notice-box">
+                                        <div class="security-notice-header">
+                                            <i class="fa-solid fa-shield-halved text-primary"></i> Security Confirmation
+                                        </div>
+                                        <p class="security-notice-text">
+                                            If you change your <strong>Email address</strong> or <strong>Phone number</strong>, enter your current password below to authorize the change.
+                                        </p>
+                                        <div class="admin-input-group" style="max-width: 380px;">
+                                            <i class="fa-solid fa-lock admin-input-icon"></i>
+                                            <input class="admin-form-control" id="portal_current_password" name="current_password" type="password" autocomplete="current-password" placeholder="Enter current password">
+                                            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('portal_current_password', this)" aria-label="Toggle password visibility">
+                                                <i class="fa-regular fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-3 mt-4 pt-2">
+                                <button class="btn-prof-primary" type="submit">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+                                </button>
+                            </div>
                         </form>
-                    </section>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="tab-pane fade" id="activity-pane" role="tabpanel" aria-labelledby="activity-tab">
-            {% if reviews is none %}
-            <section class="portal-card">
-                <p class="text-secondary mb-0"><i class="fa-solid fa-circle-info"></i> Activity tracking (reviews and complaints) is available for student accounts.</p>
-            </section>
-            {% else %}
+        <!-- ==========================================
+             Tab 2: Security & Sign-In Activity
+             ========================================== -->
+        <div class="tab-pane fade" id="portal-pane-security" role="tabpanel" aria-labelledby="portal-tab-security">
             <div class="row g-4">
-                <div class="col-lg-6">
-                    <section class="portal-card">
-                        <h3><i class="fa-solid fa-star"></i> My reviews</h3>
-                        {% if reviews %}
-                        <table class="table portal-table">
-                            <thead><tr><th>Stall</th><th>Rating</th><th>Date</th></tr></thead>
-                            <tbody>
-                                {% for review in reviews %}
-                                <tr>
-                                    <td>{{ review.stall.stall_name }}</td>
-                                    <td>{{ review.rating }} / 5</td>
-                                    <td>{{ review.created_at.strftime('%d %b %Y') }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                <!-- Change Password Card -->
+                <div class="col-xl-5 col-lg-6">
+                    <div class="admin-profile-card">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-orange"><i class="fa-solid fa-key"></i></div>
+                                <div>
+                                    <h2>Change Password</h2>
+                                    <p>Keep your account secure with a strong password</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if not current_user.password_hash %}
+                        <div class="text-center py-4">
+                            <div class="mb-3">
+                                <i class="fa-brands fa-google text-danger fs-1"></i>
+                            </div>
+                            <h4 class="h6 fw-bold">Google Authentication Active</h4>
+                            <p class="text-secondary small mb-0">Your account logs in securely with Google Single Sign-On and does not require a local password.</p>
+                        </div>
                         {% else %}
-                        <p class="empty text-secondary mb-0">You haven't written any reviews yet.</p>
+                        <form method="post" action="{{ url_for('profile.change_password') }}" id="portalChangePasswordForm">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            
+                            <div class="admin-form-group">
+                                <label class="admin-form-label" for="portal_current_password_sec">Current Password<span class="required">*</span></label>
+                                <div class="admin-input-group">
+                                    <i class="fa-solid fa-lock admin-input-icon"></i>
+                                    <input class="admin-form-control" id="portal_current_password_sec" name="current_password" type="password" autocomplete="current-password" required placeholder="Enter existing password">
+                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('portal_current_password_sec', this)" aria-label="Toggle password visibility">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="admin-form-group">
+                                <label class="admin-form-label" for="portal_new_password">New Password<span class="required">*</span></label>
+                                <div class="admin-input-group">
+                                    <i class="fa-solid fa-shield-halved admin-input-icon"></i>
+                                    <input class="admin-form-control" id="portal_new_password" name="new_password" type="password" autocomplete="new-password" minlength="8" required placeholder="Minimum 8 characters" oninput="checkPortalPasswordStrength(this.value)">
+                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('portal_new_password', this)" aria-label="Toggle password visibility">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="password-meter-wrap">
+                                    <div class="password-meter-bar">
+                                        <div class="password-meter-fill" id="portalPasswordStrengthBar"></div>
+                                    </div>
+                                    <div class="password-requirements">
+                                        <span class="req-item" id="portalReqLength"><i class="fa-regular fa-circle-check"></i> 8+ Characters</span>
+                                        <span class="req-item" id="portalReqMatch"><i class="fa-regular fa-circle-check"></i> Passwords match</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="admin-form-group">
+                                <label class="admin-form-label" for="portal_confirm_password">Confirm New Password<span class="required">*</span></label>
+                                <div class="admin-input-group">
+                                    <i class="fa-solid fa-check-double admin-input-icon"></i>
+                                    <input class="admin-form-control" id="portal_confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required placeholder="Repeat new password" oninput="checkPortalPasswordMatch()">
+                                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('portal_confirm_password', this)" aria-label="Toggle password visibility">
+                                        <i class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button class="btn-prof-primary w-100 justify-content-center mt-3" type="submit">
+                                <i class="fa-solid fa-key"></i> Update Password
+                            </button>
+                        </form>
                         {% endif %}
-                    </section>
+                    </div>
                 </div>
-                <div class="col-lg-6">
-                    <section class="portal-card">
-                        <h3><i class="fa-regular fa-message"></i> My complaints</h3>
-                        {% if complaints %}
-                        <table class="table portal-table">
-                            <thead><tr><th>Title</th><th>Status</th><th>Date</th></tr></thead>
-                            <tbody>
-                                {% for complaint in complaints %}
-                                <tr>
-                                    <td>{{ complaint.title }}</td>
-                                    <td><span class="risk-badge status-{{ complaint.status }}">{{ complaint.status | replace('_', ' ') | title }}</span></td>
-                                    <td>{{ complaint.submitted_at.strftime('%d %b %Y') }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+
+                <!-- Recent Sign-in Sessions -->
+                <div class="col-xl-7 col-lg-6">
+                    <div class="admin-profile-card">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-blue"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                                <div>
+                                    <h2>Recent Sign-In Sessions</h2>
+                                    <p>Security and authentication history for your account</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if recent_logins %}
+                        <div class="prof-table-wrap">
+                            <table class="prof-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date &amp; Time</th>
+                                        <th>Event</th>
+                                        <th>IP Address</th>
+                                        <th>Provider</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in recent_logins %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ entry.created_at.strftime('%d %b %Y') }}</strong>
+                                            <small class="text-secondary">{{ entry.created_at.strftime('%I:%M %p') }}</small>
+                                        </td>
+                                        <td>
+                                            {% if entry.event == 'login_success' %}
+                                            <span class="event-pill event-success"><i class="fa-solid fa-circle-check"></i> Login Success</span>
+                                            {% elif entry.event == 'logout' %}
+                                            <span class="event-pill event-neutral"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</span>
+                                            {% elif 'fail' in entry.event %}
+                                            <span class="event-pill event-danger"><i class="fa-solid fa-circle-exclamation"></i> Failed</span>
+                                            {% else %}
+                                            <span class="event-pill event-neutral">{{ entry.event | replace('_', ' ') | title }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="ip-badge">{{ entry.ip_address or '127.0.0.1' }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-secondary small fw-semibold text-capitalize">{{ entry.auth_provider or 'Local' }}</span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                         {% else %}
-                        <p class="empty text-secondary mb-0">You haven't submitted any complaints yet.</p>
+                        <div class="text-center py-5 text-secondary">
+                            <i class="fa-solid fa-shield-cat fs-1 mb-2 text-muted"></i>
+                            <p class="mb-0">No sign-in records found for this account.</p>
+                        </div>
                         {% endif %}
-                    </section>
+                    </div>
                 </div>
             </div>
-            {% endif %}
         </div>
 
-        <div class="tab-pane fade" id="security-pane" role="tabpanel" aria-labelledby="security-tab">
-            <section class="portal-card" style="max-width: 480px;">
-                <h3><i class="fa-solid fa-key"></i> Change password</h3>
-                {% if not current_user.password_hash %}
-                <p class="text-secondary mb-0"><i class="fa-solid fa-circle-info"></i> Your account signs in with Google and has no password to change.</p>
-                {% else %}
-                <form method="post" action="{{ url_for('profile.change_password') }}">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
-                        <label for="current_password_sec">Current password</label>
-                        <input class="form-control" id="current_password_sec" name="current_password" type="password" autocomplete="current-password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="new_password">New password</label>
-                        <input class="form-control" id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="8" required>
-                        <div class="form-text">Use at least 8 characters.</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="confirm_password">Confirm new password</label>
-                        <input class="form-control" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required>
-                    </div>
-                    <button class="btn btn-success w-100" type="submit"><i class="fa-solid fa-key"></i> Change password</button>
-                </form>
-                {% endif %}
-            </section>
+        <!-- ==========================================
+             Tab 3: Role Specific Details
+             ========================================== -->
+        {% if current_user.role_name == 'student' %}
+        <div class="tab-pane fade" id="portal-pane-activity" role="tabpanel" aria-labelledby="portal-tab-activity">
+            <div class="row g-4">
+                <!-- My Reviews Card -->
+                <div class="col-lg-6">
+                    <div class="admin-profile-card">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-orange"><i class="fa-solid fa-star"></i></div>
+                                <div>
+                                    <h2>My Stall Reviews</h2>
+                                    <p>Ratings and feedback you've submitted</p>
+                                </div>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill">{{ reviews|length if reviews else 0 }}</span>
+                        </div>
 
-            <section class="portal-card mt-4" style="max-width: 480px;">
-                <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent sign-in activity</h3>
-                {% if recent_logins %}
-                <table class="table portal-table">
-                    <thead><tr><th>When</th><th>Event</th><th>From</th></tr></thead>
-                    <tbody>
-                        {% for entry in recent_logins %}
-                        <tr>
-                            <td>{{ entry.created_at.strftime('%d %b %Y, %H:%M') }}</td>
-                            <td>{{ entry.event | replace('_',' ') | title }}</td>
-                            <td class="text-secondary">{{ entry.ip_address or '—' }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-secondary mb-0">No sign-in activity recorded yet.</p>
-                {% endif %}
-            </section>
+                        {% if reviews %}
+                        <div class="prof-table-wrap">
+                            <table class="prof-table">
+                                <thead>
+                                    <tr>
+                                        <th>Stall</th>
+                                        <th>Rating</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for review in reviews %}
+                                    <tr>
+                                        <td><strong>{{ review.stall.stall_name }}</strong></td>
+                                        <td>
+                                            <span class="badge bg-warning-subtle text-dark px-2 py-1 rounded-pill fw-bold">
+                                                <i class="fa-solid fa-star text-warning me-1"></i>{{ review.rating }} / 5
+                                            </span>
+                                        </td>
+                                        <td><small class="text-secondary">{{ review.created_at.strftime('%d %b %Y') }}</small></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-secondary">
+                            <i class="fa-regular fa-star fs-1 mb-2 text-muted"></i>
+                            <p class="mb-0">You haven't written any food reviews yet.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- My Complaints Card -->
+                <div class="col-lg-6">
+                    <div class="admin-profile-card">
+                        <div class="admin-profile-card-header">
+                            <div class="card-title-group">
+                                <div class="card-icon-badge card-icon-red"><i class="fa-regular fa-message"></i></div>
+                                <div>
+                                    <h2>My Complaints</h2>
+                                    <p>Food safety concerns you have reported</p>
+                                </div>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary rounded-pill">{{ complaints|length if complaints else 0 }}</span>
+                        </div>
+
+                        {% if complaints %}
+                        <div class="prof-table-wrap">
+                            <table class="prof-table">
+                                <thead>
+                                    <tr>
+                                        <th>Issue / Title</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for complaint in complaints %}
+                                    <tr>
+                                        <td><strong>{{ complaint.title }}</strong></td>
+                                        <td>
+                                            <span class="event-pill event-neutral">{{ complaint.status | replace('_', ' ') | title }}</span>
+                                        </td>
+                                        <td><small class="text-secondary">{{ complaint.submitted_at.strftime('%d %b %Y') }}</small></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-secondary">
+                            <i class="fa-regular fa-comments fs-1 mb-2 text-muted"></i>
+                            <p class="mb-0">You haven't submitted any complaints.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
+        {% elif current_user.role_name == 'vendor' and current_user.vendor_profile %}
+        <div class="tab-pane fade" id="portal-pane-vendor" role="tabpanel" aria-labelledby="portal-tab-vendor">
+            <div class="admin-profile-card">
+                <div class="admin-profile-card-header">
+                    <div class="card-title-group">
+                        <div class="card-icon-badge card-icon-green"><i class="fa-solid fa-store"></i></div>
+                        <div>
+                            <h2>Vendor Business Information</h2>
+                            <p>Official registration credentials and operational details</p>
+                        </div>
+                    </div>
+                    <span class="event-pill event-success">{{ current_user.vendor_profile.status | replace('_', ' ') | title }}</span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <small class="text-secondary fw-bold text-uppercase d-block mb-1" style="font-size: 11px;">Business / Stall Name</small>
+                            <strong class="fs-6 text-dark">{{ current_user.vendor_profile.business_name }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <small class="text-secondary fw-bold text-uppercase d-block mb-1" style="font-size: 11px;">Trade License Number</small>
+                            <strong class="fs-6 text-dark font-monospace">{{ current_user.vendor_profile.license_number }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <small class="text-secondary fw-bold text-uppercase d-block mb-1" style="font-size: 11px;">License Expiry Date</small>
+                            <strong class="fs-6 text-dark">{{ current_user.vendor_profile.license_expiry_date.strftime('%d %b %Y') if current_user.vendor_profile.license_expiry_date else 'Permanent / Unset' }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3">
+                            <small class="text-secondary fw-bold text-uppercase d-block mb-1" style="font-size: 11px;">National ID / NID</small>
+                            <strong class="fs-6 text-dark font-monospace">{{ current_user.vendor_profile.national_id or 'Verified on File' }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elif current_user.role_name == 'inspector' and current_user.inspector_profile %}
+        <div class="tab-pane fade" id="portal-pane-inspector" role="tabpanel" aria-labelledby="portal-tab-inspector">
+            <div class="admin-profile-card">
+                <div class="admin-profile-card-header">
+                    <div class="card-title-group">
+                        <div class="card-icon-badge card-icon-purple"><i class="fa-solid fa-user-shield"></i></div>
+                        <div>
+                            <h2>Inspector Identity &amp; Jurisdiction</h2>
+                            <p>Official deployment details and assigned inspection area</p>
+                        </div>
+                    </div>
+                    <span class="event-pill event-success"><i class="fa-solid fa-circle-check"></i> Active Authority</span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3">
+                            <small class="text-secondary fw-bold text-uppercase d-block mb-1" style="font-size: 11px;">Employee Code</small>
+                            <strong class="fs-6 text-dark font-monospace">{{ current_user.inspector_profile.employee_code }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3">
+                            <small class="text-secondary fw-bold text-uppercase d-block mb-1" style="font-size: 11px;">Official Designation</small>
+                            <strong class="fs-6 text-dark">{{ current_user.inspector_profile.designation or 'Food Safety Inspector' }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3">
+                            <small class="text-secondary fw-bold text-uppercase d-block mb-1" style="font-size: 11px;">Assigned Jurisdiction</small>
+                            <strong class="fs-6 text-dark">{{ current_user.inspector_profile.assigned_area.area_name if current_user.inspector_profile.assigned_area else 'All Campus Areas' }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<script>
+// Client-side interactions for shared portal profile
+(function() {
+    // Instant image preview on file input select
+    const portalPhotoInput = document.getElementById('portalPhotoInput');
+    const portalPreviewCircle = document.getElementById('portalPhotoPreviewCircle');
+    const portalDropzoneText = document.getElementById('portalDropzoneText');
+
+    if (portalPhotoInput && portalPreviewCircle) {
+        portalPhotoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (portalDropzoneText) {
+                    portalDropzoneText.textContent = file.name;
+                }
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    portalPreviewCircle.innerHTML = '<img src="' + event.target.result + '" alt="Preview" style="width:100%;height:100%;object-fit:cover;">';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Bio character counter
+    const portalBio = document.getElementById('portal_bio');
+    const portalBioCounter = document.getElementById('portalBioCounter');
+    if (portalBio && portalBioCounter) {
+        portalBio.addEventListener('input', function() {
+            const left = 2000 - portalBio.value.length;
+            portalBioCounter.textContent = left + ' chars left';
+        });
+    }
+})();
+
+// Password strength meter for portals
+function checkPortalPasswordStrength(password) {
+    const bar = document.getElementById('portalPasswordStrengthBar');
+    const reqLength = document.getElementById('portalReqLength');
+    if (!bar) return;
+
+    let score = 0;
+    if (password.length >= 8) {
+        score += 1;
+        if (reqLength) reqLength.classList.add('valid');
+    } else {
+        if (reqLength) reqLength.classList.remove('valid');
+    }
+    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+    if (/[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password)) score += 1;
+
+    bar.className = 'password-meter-fill';
+    if (password.length === 0) {
+        bar.style.width = '0%';
+    } else if (score <= 1) {
+        bar.classList.add('weak');
+    } else if (score === 2) {
+        bar.classList.add('medium');
+    } else {
+        bar.classList.add('strong');
+    }
+    checkPortalPasswordMatch();
+}
+
+function checkPortalPasswordMatch() {
+    const newPass = document.getElementById('portal_new_password');
+    const confirmPass = document.getElementById('portal_confirm_password');
+    const reqMatch = document.getElementById('portalReqMatch');
+    if (!newPass || !confirmPass || !reqMatch) return;
+
+    if (newPass.value && confirmPass.value && newPass.value === confirmPass.value) {
+        reqMatch.classList.add('valid');
+    } else {
+        reqMatch.classList.remove('valid');
+    }
+}
+</script>

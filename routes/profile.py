@@ -76,8 +76,16 @@ def view():
     )
     role_audit_logs = []
     admin_permissions = []
-    total_logins = 0
-    last_login = None
+    total_logins = AuthAuditLog.query.filter_by(
+        user_id=current_user.user_id, event="login_success"
+    ).count()
+    last_login = (
+        AuthAuditLog.query.filter_by(
+            user_id=current_user.user_id, event="login_success"
+        )
+        .order_by(AuthAuditLog.audit_id.desc())
+        .first()
+    )
     if is_admin_tier:
         template_name = "profile/view_admin.html"
         role_audit_logs = (
@@ -93,16 +101,6 @@ def view():
             admin_permissions = sorted(
                 current_user.role.permissions, key=lambda p: p.code
             )
-        total_logins = AuthAuditLog.query.filter_by(
-            user_id=current_user.user_id, event="login_success"
-        ).count()
-        last_login = (
-            AuthAuditLog.query.filter_by(
-                user_id=current_user.user_id, event="login_success"
-            )
-            .order_by(AuthAuditLog.audit_id.desc())
-            .first()
-        )
     elif current_user.role_name == "student":
         template_name = "profile/view_student.html"
     elif current_user.role_name == "vendor":
