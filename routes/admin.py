@@ -39,7 +39,7 @@ from models import (
     User,
     Vendor,
 )
-from routes import permission_required, super_admin_required
+from routes import admin_tier_required, permission_required, super_admin_required
 from services.auth_audit import record_auth_event
 from services.complaints import (
     COMPLAINT_STATUSES,
@@ -151,6 +151,7 @@ def _render_vendors_list(search="", reopen_modal=None, status_code=200):
 
 @admin_bp.route("/api/dashboard-details/<category>")
 @login_required
+@admin_tier_required
 def api_dashboard_details(category):
     category = category.lower().strip()
     if category in ("total_vendors", "vendors"):
@@ -324,6 +325,7 @@ def api_dashboard_details(category):
 
 @admin_bp.route("/api/entity-detail/<entity_type>/<int:entity_id>")
 @login_required
+@admin_tier_required
 def api_entity_detail(entity_type, entity_id):
     entity_type = entity_type.lower().strip()
     if entity_type == "vendor":
