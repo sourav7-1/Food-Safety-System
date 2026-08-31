@@ -24,15 +24,17 @@
                 </p>
                 <div class="hero-cta reveal">
                     {% if current_user.is_authenticated %}
-                        <a class="btn btn-success btn-lg" href="{{ url_for('auth.dashboard_redirect') }}">
+                        <a class="btn btn-success btn-lg btn-sheen btn-pulse-glow" href="{{ url_for('auth.dashboard_redirect') }}">
                             <span>Open Dashboard</span>
                             <i class="bi bi-arrow-right-short fs-5"></i>
                         </a>
                     {% else %}
-                        <a class="btn btn-success btn-lg" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">
+                        <a class="btn btn-success btn-lg btn-sheen btn-pulse-glow" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>
                             <span>Sign In</span>
                         </a>
-                        <a class="btn btn-outline-success btn-lg" href="{{ url_for('auth.register') }}" aria-label="Create a new account">
+                        <a class="btn btn-outline-success btn-lg btn-sheen" href="{{ url_for('auth.register') }}" aria-label="Create a new account">
+                            <i class="bi bi-person-plus me-1"></i>
                             <span>Create Account</span>
                         </a>
                     {% endif %}
@@ -256,15 +258,17 @@
         <h2>Experience safer dining today.</h2>
         <p>Join the DIU Food Safety network to inspect, manage, or discover hygienic food on campus.</p>
         {% if current_user.is_authenticated %}
-            <a class="btn btn-light btn-lg" href="{{ url_for('auth.dashboard_redirect') }}">
+            <a class="btn btn-light btn-lg btn-sheen" href="{{ url_for('auth.dashboard_redirect') }}">
                 <span>Open Dashboard</span>
                 <i class="bi bi-arrow-right ms-1"></i>
             </a>
         {% else %}
-            <a class="btn btn-light btn-lg me-2" href="{{ url_for('auth.register') }}" aria-label="Create a new account">
+            <a class="btn btn-light btn-lg me-2 btn-sheen" href="{{ url_for('auth.register') }}" aria-label="Create a new account">
+                <i class="bi bi-rocket-takeoff me-1"></i>
                 <span>Get Started</span>
             </a>
-            <a class="btn btn-outline-light btn-lg" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">
+            <a class="btn btn-outline-light btn-lg btn-sheen" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">
+                <i class="bi bi-box-arrow-in-right me-1"></i>
                 <span>Sign In</span>
             </a>
         {% endif %}

@@ -224,19 +224,149 @@ html {
     position: relative;
     overflow: hidden;
     transition: transform 0.25s var(--apple-spring), box-shadow 0.25s var(--apple-spring), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .btn:hover {
-    transform: scale(1.02);
+    transform: translateY(-2px) scale(1.02);
 }
 
 .btn:active {
-    transform: scale(0.97);
+    transform: translateY(1px) scale(0.97);
+    transition-duration: 0.1s !important;
 }
 
 .btn:focus-visible {
     outline: none;
     box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.3) !important;
+}
+
+/* Button Icon Micro-Animations */
+.btn i, .apple-link i, .dropdown-item i {
+    display: inline-block;
+    transition: transform 0.25s var(--apple-spring);
+}
+
+.btn:hover i.bi-arrow-right,
+.btn:hover i.bi-arrow-right-short,
+.btn:hover i.bi-box-arrow-in-right,
+.btn:hover i.bi-chevron-right {
+    transform: translateX(4px);
+}
+
+.btn:hover i.bi-person-plus {
+    transform: scale(1.2);
+}
+
+.btn:hover i.bi-rocket-takeoff {
+    transform: translateY(-2px) translateX(2px) rotate(8deg);
+}
+
+.btn:hover i.bi-box-arrow-right {
+    transform: translateX(3px);
+}
+
+/* Shimmer Sheen Sweep Animation on Button Hover */
+.btn-sheen {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-sheen::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -80%;
+    width: 50%;
+    height: 200%;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(25deg);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.btn-sheen:hover::after {
+    opacity: 1;
+    animation: btn-sheen-sweep 0.75s ease-out;
+}
+
+@keyframes btn-sheen-sweep {
+    0% { left: -80%; }
+    100% { left: 160%; }
+}
+
+/* Ambient Pulse Glow for Primary Hero/CTA Buttons */
+.btn-pulse-glow {
+    animation: btn-glow-pulse 3s infinite ease-in-out;
+}
+
+@keyframes btn-glow-pulse {
+    0%, 100% {
+        box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35), 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+    50% {
+        box-shadow: 0 8px 24px rgba(5, 150, 105, 0.5), 0 0 0 8px rgba(16, 185, 129, 0);
+    }
+}
+
+/* Interactive Click Ripple Wave */
+.btn-ripple-wave {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
+    transform: scale(0);
+    animation: btn-ripple-anim 0.6s cubic-bezier(0.2, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 10;
+}
+
+.btn-light .btn-ripple-wave,
+.btn-outline-success .btn-ripple-wave,
+.apple-link .btn-ripple-wave {
+    background: rgba(5, 150, 105, 0.25);
+}
+
+@keyframes btn-ripple-anim {
+    to {
+        transform: scale(3.5);
+        opacity: 0;
+    }
+}
+
+/* Button Loading & Spinner States */
+.btn-loading {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: wait !important;
+    pointer-events: none;
+}
+
+.btn-loading .btn-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: site-btn-spin 0.6s linear infinite;
+}
+
+.btn-light.btn-loading .btn-spinner,
+.btn-outline-success.btn-loading .btn-spinner {
+    border-color: rgba(5, 150, 105, 0.3);
+    border-top-color: #059669;
+}
+
+@keyframes site-btn-spin {
+    to { transform: rotate(360deg); }
 }
 
 /* Apple Primary Button (Blue Pill) */
@@ -249,7 +379,7 @@ html {
 
 .btn-primary:hover {
     background: var(--apple-blue-hover) !important;
-    box-shadow: 0 6px 20px -2px rgba(0, 113, 227, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 8px 24px -2px rgba(0, 113, 227, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Apple Emerald Button (Health & Safety Theme) */
@@ -257,31 +387,33 @@ html {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
     color: #ffffff !important;
     border-color: #047857 !important;
-    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .btn-success:hover {
     background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
-    box-shadow: 0 8px 24px -4px rgba(5, 150, 105, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 10px 28px -4px rgba(5, 150, 105, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
 }
 
 /* Apple Secondary / Ghost Button */
 .btn-outline-success {
-    background: transparent !important;
+    background: rgba(255, 255, 255, 0.8) !important;
     color: var(--apple-green) !important;
     border: 1.5px solid var(--apple-green) !important;
+    backdrop-filter: blur(8px);
 }
 
 .btn-outline-success:hover {
-    background: var(--apple-green-light) !important;
-    color: #047857 !important;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2) !important;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35) !important;
 }
 
 .btn-outline-light {
     background: rgba(255, 255, 255, 0.12) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.32) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
     backdrop-filter: blur(10px);
 }
 
@@ -289,7 +421,7 @@ html {
     background: #ffffff !important;
     color: #1d1d1f !important;
     border-color: #ffffff !important;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
 }
 
 .btn-light {
@@ -301,9 +433,9 @@ html {
 
 .btn-light:hover {
     background: #f8fafc !important;
-    color: var(--apple-blue) !important;
+    color: var(--apple-green) !important;
     border-color: rgba(0, 0, 0, 0.15) !important;
-    box-shadow: var(--apple-shadow-md) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
 }
 
 .btn-danger {
@@ -354,7 +486,7 @@ html {
 
 .apple-link i {
     font-size: 0.75rem;
-    transition: transform 0.2s ease;
+    transition: transform 0.25s var(--apple-spring);
 }
 
 .apple-link:hover {
@@ -719,13 +851,13 @@ html {
     border: 1px solid var(--apple-border);
     border-radius: var(--radius-card);
     height: 100%;
-    transition: transform 0.35s var(--apple-spring), box-shadow 0.35s var(--apple-spring), border-color 0.3s ease !important;
+    transition: transform 0.35s var(--apple-spring), box-shadow 0.35s var(--apple-spring), border-color 0.3s ease, background-color 0.3s ease !important;
 }
 
 .feature-card:hover {
-    transform: translateY(-8px);
+    transform: translateY(-8px) scale(1.01);
     box-shadow: var(--apple-shadow-xl) !important;
-    border-color: rgba(0, 0, 0, 0.12) !important;
+    border-color: rgba(16, 185, 129, 0.25) !important;
     background: #ffffff;
 }
 
@@ -741,6 +873,22 @@ html {
     margin-bottom: 1.5rem;
     border: 1px solid var(--apple-border);
     box-shadow: var(--apple-shadow-sm);
+    transition: transform 0.35s var(--apple-spring), background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+    transform: scale(1.12) translateY(-2px);
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    color: #047857;
+    border-color: #a7f3d0;
+}
+
+.feature-card:hover .feature-icon i {
+    transform: scale(1.15) rotate(5deg);
+}
+
+.feature-icon i {
+    transition: transform 0.35s var(--apple-spring);
 }
 
 .feature-card h3 {
@@ -749,6 +897,11 @@ html {
     color: var(--apple-text-primary);
     margin-bottom: 0.75rem;
     letter-spacing: -0.025em;
+    transition: color 0.2s ease;
+}
+
+.feature-card:hover h3 {
+    color: var(--apple-green);
 }
 
 .feature-card p {
@@ -772,12 +925,13 @@ html {
     background: #ffffff;
     border: 1px solid var(--apple-border);
     box-shadow: var(--apple-shadow-sm);
-    transition: all 0.3s var(--apple-spring);
+    transition: transform 0.35s var(--apple-spring), box-shadow 0.35s var(--apple-spring), border-color 0.3s ease;
 }
 
 .stat-item:hover {
-    transform: translateY(-6px);
+    transform: translateY(-6px) scale(1.02);
     box-shadow: var(--apple-shadow-lg);
+    border-color: rgba(16, 185, 129, 0.25);
 }
 
 .stat-icon {
@@ -785,6 +939,12 @@ html {
     color: var(--apple-green);
     margin-bottom: 0.85rem;
     display: inline-block;
+    transition: transform 0.35s var(--apple-spring), color 0.25s ease;
+}
+
+.stat-item:hover .stat-icon {
+    transform: scale(1.18) translateY(-2px);
+    color: var(--apple-green-bright);
 }
 
 .stat-number {
@@ -825,12 +985,13 @@ html {
     padding: 2.5rem 2rem;
     position: relative;
     box-shadow: var(--apple-shadow-sm);
-    transition: all 0.35s var(--apple-spring);
+    transition: transform 0.35s var(--apple-spring), box-shadow 0.35s var(--apple-spring), border-color 0.3s ease;
 }
 
 .how-step:hover {
-    transform: translateY(-6px);
+    transform: translateY(-6px) scale(1.01);
     box-shadow: var(--apple-shadow-lg);
+    border-color: rgba(16, 185, 129, 0.25);
 }
 
 .how-step__number {
@@ -844,6 +1005,12 @@ html {
     display: grid;
     place-items: center;
     margin-bottom: 1.5rem;
+    transition: transform 0.35s var(--apple-spring), background 0.3s ease;
+}
+
+.how-step:hover .how-step__number {
+    transform: scale(1.15) rotate(-5deg);
+    background: linear-gradient(135deg, #059669, #10b981);
 }
 
 .how-step h3 {
@@ -888,12 +1055,26 @@ html {
     display: flex;
     align-items: flex-start;
     gap: 1.2rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-card-sm);
+    transition: transform 0.25s var(--apple-spring), background-color 0.2s ease;
+}
+
+.about-panel__item:hover {
+    transform: translateX(6px);
+    background: #ffffff;
+    box-shadow: var(--apple-shadow-sm);
 }
 
 .about-panel__item i {
     font-size: 1.6rem;
     color: var(--apple-green);
     margin-top: 0.2rem;
+    transition: transform 0.25s var(--apple-spring);
+}
+
+.about-panel__item:hover i {
+    transform: scale(1.2);
 }
 
 .about-panel__item strong {
@@ -911,11 +1092,28 @@ html {
 
 /* Apple-Style CTA Banner */
 .cta-banner {
-    padding: 6rem 0;
-    background: #1d1d1f;
+    padding: 6.5rem 0;
+    background: linear-gradient(135deg, #0f172a 0%, #064e3b 50%, #0f172a 100%);
     color: #ffffff;
     position: relative;
     overflow: hidden;
+}
+
+.cta-banner::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(52, 211, 153, 0.18) 0%, transparent 60%);
+    animation: cta-ambient-drift 12s infinite alternate ease-in-out;
+    pointer-events: none;
+}
+
+@keyframes cta-ambient-drift {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(40px, 25px); }
 }
 
 .cta-banner h2 {
@@ -1160,5 +1358,141 @@ html {
 .alert.fade:not(.show) {
     opacity: 0;
     transform: translateY(-6px);
+}
+
+/* ==========================================================================
+   Loading Animations, Top Progress Bar & Shimmer Skeletons
+   ========================================================================== */
+
+/* Top Global Progress Bar */
+.site-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3.5px;
+    z-index: 99999;
+    pointer-events: none;
+    opacity: 0;
+    overflow: hidden;
+    background: rgba(16, 185, 129, 0.12);
+    transition: opacity 0.2s ease;
+}
+
+.site-progress-bar.active {
+    opacity: 1;
+}
+
+.site-progress-bar::before {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 45%;
+    background: linear-gradient(90deg, #059669 0%, #10b981 50%, #34d399 100%);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.9), 0 0 4px #34d399;
+    animation: site-progress-slide 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes site-progress-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(320%); }
+}
+
+/* Content Swapping Opacity Transition */
+#main-content, .dashboard-main, .portal-shell, .customer-shell {
+    transition: opacity 0.25s ease, filter 0.25s ease;
+}
+
+#main-content.is-loading,
+.dashboard-main.is-loading,
+.portal-shell.is-loading,
+.customer-shell.is-loading {
+    opacity: 0.5;
+    filter: saturate(70%) blur(0.5px);
+    pointer-events: none;
+    cursor: wait;
+}
+
+/* Universal Spinner Component */
+.site-panel-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3.5rem 1rem;
+    color: var(--apple-text-secondary);
+    font-size: 0.92rem;
+    font-weight: 500;
+    gap: 0.85rem;
+}
+
+.spinner-ring {
+    width: 38px;
+    height: 38px;
+    border: 3px solid rgba(16, 185, 129, 0.18);
+    border-top-color: #059669;
+    border-right-color: #10b981;
+    border-radius: 50%;
+    animation: site-spinner-spin 0.75s linear infinite;
+}
+
+.spinner-ring--sm {
+    width: 20px;
+    height: 20px;
+    border-width: 2.5px;
+}
+
+.spinner-ring--lg {
+    width: 48px;
+    height: 48px;
+    border-width: 4px;
+}
+
+@keyframes site-spinner-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Skeleton Loading Shimmer Placeholders */
+.skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+    background: #e2e8f0;
+    border-radius: 8px;
+}
+
+.skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.65) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    animation: skeleton-sweep 1.5s infinite ease-in-out;
+}
+
+@keyframes skeleton-sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.skeleton-text {
+    height: 14px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.skeleton-title {
+    height: 22px;
+    width: 60%;
+    margin-bottom: 12px;
+    border-radius: 6px;
+}
+
+.skeleton-circle {
+    border-radius: 50%;
 }
 

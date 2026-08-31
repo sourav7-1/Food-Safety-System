@@ -447,6 +447,30 @@
                 window.addEventListener("scroll", onScroll, { passive: true });
             }
 
+            // Interactive Button Ripple Micro-Animation
+            document.addEventListener("pointerdown", function (event) {
+                var btn = event.target.closest(".btn, .btn-google, .apple-link, .nav-user-dropdown, .dashboard-notification-btn");
+                if (!btn || btn.classList.contains("btn-loading")) {
+                    return;
+                }
+                var rect = btn.getBoundingClientRect();
+                var size = Math.max(rect.width, rect.height);
+                var x = event.clientX - rect.left - size / 2;
+                var y = event.clientY - rect.top - size / 2;
+
+                var ripple = document.createElement("span");
+                ripple.className = "btn-ripple-wave";
+                ripple.style.width = ripple.style.height = size + "px";
+                ripple.style.left = x + "px";
+                ripple.style.top = y + "px";
+
+                btn.appendChild(ripple);
+
+                ripple.addEventListener("animationend", function () {
+                    ripple.remove();
+                }, { once: true });
+            });
+
             var revealEls = document.querySelectorAll(".reveal");
             if (!revealEls.length) {
                 return;

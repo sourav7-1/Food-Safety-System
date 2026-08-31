@@ -1328,8 +1328,12 @@ html.sidebar-collapsed .admin-sidebar .sidebar-logout button {
     align-items: center;
     justify-content: center;
     padding: 60px 0;
-    color: var(--ink-tertiary);
-    font-size: 26px;
+    color: var(--apple-blue);
+    font-size: 28px;
+}
+
+.admin-panel-spinner i {
+    animation: admin-btn-spin 0.75s linear infinite;
 }
 
 .status-dot-active {
