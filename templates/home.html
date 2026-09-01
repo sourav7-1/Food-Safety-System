@@ -5,7 +5,7 @@
 
 {% block content %}
 
-<!-- Apple-Style Hero Section -->
+<!-- Hero Section -->
 <section class="hero-section" aria-labelledby="hero-heading">
     <div class="container position-relative">
         <div class="row align-items-center g-5">
@@ -20,40 +20,40 @@
                 </h1>
                 <p class="hero-lead reveal">
                     DIU Food Safety System empowers university health officers, campus vendors, and students with 
-                    live hygiene scoring, real-time risk alerts, and auditable inspections. Built for total safety and transparency.
+                    live hygiene scoring, real-time risk alerts, and auditable inspections. Built for safety, accountability, and transparency.
                 </p>
                 <div class="hero-cta reveal">
                     {% if current_user.is_authenticated %}
-                        <a class="btn btn-success btn-lg btn-sheen btn-pulse-glow" href="{{ url_for('auth.dashboard_redirect') }}">
+                        <a class="btn btn-success btn-lg" href="{{ url_for('auth.dashboard_redirect') }}">
                             <span>Open Dashboard</span>
-                            <i class="bi bi-arrow-right-short fs-5"></i>
+                            <i class="fa-solid fa-arrow-right ms-1"></i>
                         </a>
                     {% else %}
-                        <a class="btn btn-success btn-lg btn-sheen btn-pulse-glow" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">
-                            <i class="bi bi-box-arrow-in-right me-1"></i>
+                        <a class="btn btn-success btn-lg" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">
+                            <i class="fa-solid fa-arrow-right-to-bracket me-1"></i>
                             <span>Sign In</span>
                         </a>
-                        <a class="btn btn-outline-success btn-lg btn-sheen" href="{{ url_for('auth.register') }}" aria-label="Create a new account">
-                            <i class="bi bi-person-plus me-1"></i>
+                        <a class="btn btn-outline-success btn-lg" href="{{ url_for('auth.register') }}" aria-label="Create a new account">
+                            <i class="fa-solid fa-user-plus me-1"></i>
                             <span>Create Account</span>
                         </a>
                     {% endif %}
                     <a class="apple-link ms-md-2 d-inline-flex" href="{{ url_for('customer_portal.search_stalls') }}">
                         <span>Explore Campus Stalls</span>
-                        <i class="bi bi-chevron-right"></i>
+                        <i class="fa-solid fa-chevron-right ms-1"></i>
                     </a>
                 </div>
                 <div class="hero-trustline reveal">
-                    <i class="bi bi-patch-check-fill" aria-hidden="true"></i>
-                    <span>Trusted by university food safety inspection teams for verified hygiene</span>
+                    <i class="fa-solid fa-shield-check" aria-hidden="true"></i>
+                    <span>Official health inspection standards verified across all campus dining zones</span>
                 </div>
             </div>
             
-            <!-- Apple Glass Showcase with Ambient Glow Aura -->
+            <!-- Live Overview Showcase -->
             <div class="col-lg-6">
                 <div class="showcase-wrapper">
                     <div class="ambient-glow-aura"></div>
-                    <div class="preview-card reveal reveal--right" role="img" aria-label="Preview of vendor risk dashboard">
+                    <div class="preview-card reveal" role="img" aria-label="Preview of campus hygiene overview">
                         <div class="preview-card__header">
                             <div class="preview-card__title">
                                 <span class="preview-dot preview-dot--live" aria-hidden="true"></span>
@@ -68,9 +68,9 @@
                                 </div>
                                 <div>
                                     <p class="preview-score__label">Overall Safety Score</p>
-                                    <p class="preview-score__status"><i class="bi bi-shield-check me-1"></i> Grade A &middot; Low Risk</p>
+                                    <p class="preview-score__status"><i class="fa-solid fa-shield-halved me-1"></i> Grade A &middot; Low Risk</p>
                                 </div>
-                                <span class="preview-score__chip"><i class="bi bi-arrow-up-short"></i>+6 pts this month</span>
+                                <span class="preview-score__chip"><i class="fa-solid fa-arrow-trend-up me-1"></i>+6 pts this month</span>
                             </div>
                             <ul class="preview-list">
                                 <li>
@@ -109,28 +109,28 @@
         <div class="row g-4 text-center">
             <div class="col-6 col-lg-3">
                 <div class="stat-item reveal">
-                    <i class="bi bi-shop-window stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-store stat-icon" aria-hidden="true"></i>
                     <p class="stat-number">{{ "{:,}".format(stats.vendors) }}</p>
                     <p class="stat-label">Campus Stalls Tracked</p>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
                 <div class="stat-item reveal">
-                    <i class="bi bi-clipboard2-check stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-clipboard-check stat-icon" aria-hidden="true"></i>
                     <p class="stat-number">{{ "{:,}".format(stats.inspections) }}</p>
                     <p class="stat-label">Inspections Logged</p>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
                 <div class="stat-item reveal">
-                    <i class="bi bi-shield-check stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-shield-virus stat-icon" aria-hidden="true"></i>
                     <p class="stat-number">{{ "{:,}".format(stats.risk_alerts_resolved) }}</p>
                     <p class="stat-label">Corrective Actions</p>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
                 <div class="stat-item reveal">
-                    <i class="bi bi-geo-alt stat-icon" aria-hidden="true"></i>
+                    <i class="fa-solid fa-map-location-dot stat-icon" aria-hidden="true"></i>
                     <p class="stat-number">{{ "{:,}".format(stats.cities) }}</p>
                     <p class="stat-label">Campus Zones</p>
                 </div>
@@ -139,7 +139,7 @@
     </div>
 </section>
 
-<!-- Apple Bento Features Grid -->
+<!-- Bento Features Grid -->
 <section id="features" class="features-section" aria-labelledby="features-heading">
     <div class="container">
         <div class="section-heading reveal">
@@ -149,28 +149,28 @@
         <div class="row g-4">
             <div class="col-md-6 col-lg-3">
                 <div class="feature-card reveal">
-                    <div class="feature-icon"><i class="bi bi-clipboard2-pulse" aria-hidden="true"></i></div>
+                    <div class="feature-icon"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i></div>
                     <h3>Inspection Records</h3>
                     <p>Log and track full audit histories with photos, notes, and weighted checklist scoring in real time.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="feature-card reveal">
-                    <div class="feature-icon"><i class="bi bi-shop" aria-hidden="true"></i></div>
+                    <div class="feature-icon"><i class="fa-solid fa-shop" aria-hidden="true"></i></div>
                     <h3>Stall Profiles</h3>
                     <p>Centralized food vendor directories, licensing, menu catalogs, and safety verification badges.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="feature-card reveal">
-                    <div class="feature-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></div>
+                    <div class="feature-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></div>
                     <h3>Risk Engine</h3>
                     <p>Automated database risk classification per vendor based on live MySQL weighted algorithms.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-3">
                 <div class="feature-card reveal">
-                    <div class="feature-icon"><i class="bi bi-bar-chart-line" aria-hidden="true"></i></div>
+                    <div class="feature-icon"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></div>
                     <h3>Reports &amp; Analytics</h3>
                     <p>Comprehensive operational dashboards, compliance distribution charts, and reinspection schedules.</p>
                 </div>
@@ -179,7 +179,7 @@
     </div>
 </section>
 
-<!-- Apple Keynote 3-Step Workflow -->
+<!-- 3-Step Keynote Workflow -->
 <section id="how-it-works" class="how-section" aria-labelledby="how-heading">
     <div class="container">
         <div class="section-heading reveal">
@@ -206,7 +206,7 @@
     </div>
 </section>
 
-<!-- About / Impact Section -->
+<!-- About Section -->
 <section id="about" class="about-section" aria-labelledby="about-heading">
     <div class="container position-relative">
         <div class="row align-items-center g-5">
@@ -224,23 +224,23 @@
                 </p>
             </div>
             <div class="col-lg-5">
-                <div class="about-panel reveal reveal--right">
+                <div class="about-panel reveal">
                     <div class="about-panel__item">
-                        <i class="bi bi-eye" aria-hidden="true"></i>
+                        <i class="fa-solid fa-magnifying-glass-chart" aria-hidden="true"></i>
                         <div>
                             <strong>Total Transparency</strong>
                             <span>Open, verifiable hygiene grades for every campus dining spot.</span>
                         </div>
                     </div>
                     <div class="about-panel__item">
-                        <i class="bi bi-heart-pulse" aria-hidden="true"></i>
+                        <i class="fa-solid fa-heart-pulse" aria-hidden="true"></i>
                         <div>
                             <strong>Safer Dining</strong>
                             <span>Early detection of safety risks before health issues arise.</span>
                         </div>
                     </div>
                     <div class="about-panel__item">
-                        <i class="bi bi-cpu" aria-hidden="true"></i>
+                        <i class="fa-solid fa-server" aria-hidden="true"></i>
                         <div>
                             <strong>Data-Driven Auditing</strong>
                             <span>Automated prioritization directing inspectors where they're needed most.</span>
@@ -252,23 +252,23 @@
     </div>
 </section>
 
-<!-- Apple-Style Keynote CTA Banner -->
+<!-- Keynote CTA Banner -->
 <section class="cta-banner">
     <div class="container text-center position-relative reveal">
         <h2>Experience safer dining today.</h2>
         <p>Join the DIU Food Safety network to inspect, manage, or discover hygienic food on campus.</p>
         {% if current_user.is_authenticated %}
-            <a class="btn btn-light btn-lg btn-sheen" href="{{ url_for('auth.dashboard_redirect') }}">
+            <a class="btn btn-light btn-lg" href="{{ url_for('auth.dashboard_redirect') }}">
                 <span>Open Dashboard</span>
-                <i class="bi bi-arrow-right ms-1"></i>
+                <i class="fa-solid fa-arrow-right ms-1"></i>
             </a>
         {% else %}
-            <a class="btn btn-light btn-lg me-2 btn-sheen" href="{{ url_for('auth.register') }}" aria-label="Create a new account">
-                <i class="bi bi-rocket-takeoff me-1"></i>
+            <a class="btn btn-light btn-lg me-2" href="{{ url_for('auth.register') }}" aria-label="Create a new account">
+                <i class="fa-solid fa-rocket me-1"></i>
                 <span>Get Started</span>
             </a>
-            <a class="btn btn-outline-light btn-lg btn-sheen" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">
-                <i class="bi bi-box-arrow-in-right me-1"></i>
+            <a class="btn btn-outline-light btn-lg" href="{{ url_for('auth.login') }}" aria-label="Sign in to your account">
+                <i class="fa-solid fa-arrow-right-to-bracket me-1"></i>
                 <span>Sign In</span>
             </a>
         {% endif %}
@@ -276,3 +276,4 @@
 </section>
 
 {% endblock %}
+

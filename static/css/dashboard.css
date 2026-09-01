@@ -1,24 +1,24 @@
-/* Customer portal dashboard shell — used by templates/portal_base.html.
-   Mirrors the admin panel's sidebar-shell structure (admin.css) but on
-   brand green instead of navy, and lives inside the site's normal
-   #main-content (so it keeps the global no-reload AJAX layer, footer,
-   and top brand bar from templates/base.html for free). */
+/* ==========================================================================
+   DIU Food Safety System — Student Dashboard & Leaderboard Shell
+   Modern, Accessible, Standardized Design System
+   ========================================================================== */
 
 :root {
-    --dash-green: #1f7a4d;
-    --dash-green-dark: #145c39;
-    --dash-sidebar-bg: #0f3d26;
-    --dash-sidebar-bg-soft: #154a30;
-    --dash-page: #f4f8f6;
-    --dash-ink: #16212e;
+    --dash-green: #059669;
+    --dash-green-dark: #064e3b;
+    --dash-sidebar-bg: #064e3b;
+    --dash-sidebar-bg-soft: #047857;
+    --dash-page: #f8fafc;
+    --dash-ink: #0f172a;
+    --dash-ink-secondary: #475569;
     --dash-muted: #64748b;
-    --dash-line: #e4eaf1;
+    --dash-line: #e2e8f0;
 }
 
 .dashboard-viewport { padding: 0 !important; max-width: 100% !important; }
 
 .dashboard-shell {
-    min-height: 70vh;
+    min-height: 75vh;
     display: flex;
     align-items: stretch;
     background: var(--dash-page);
@@ -27,8 +27,8 @@
 
 /* ---------- Sidebar ---------- */
 .dashboard-sidebar {
-    width: 258px;
-    min-width: 258px;
+    width: 260px;
+    min-width: 260px;
     background: var(--dash-sidebar-bg);
     position: sticky;
     top: 0;
@@ -40,18 +40,20 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 22px 15px 16px;
+    padding: 1.5rem 1rem;
     background: var(--dash-sidebar-bg);
-    color: #fff;
+    color: #ffffff;
 }
 
 .dashboard-brand {
     display: flex;
     align-items: center;
-    gap: 11px;
-    padding: 0 8px 20px;
-    color: #fff;
+    gap: 0.75rem;
+    padding: 0 0.5rem 1.25rem;
+    color: #ffffff;
     text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    margin-bottom: 1rem;
 }
 
 .dashboard-brand .brand-logo {
@@ -65,7 +67,7 @@
 }
 
 .dashboard-brand strong { display: block; font-size: 16px; letter-spacing: -.3px; }
-.dashboard-brand small { display: block; color: #7fd6a8; font-size: 8.5px; letter-spacing: 1.6px; margin-top: 2px; }
+.dashboard-brand small { display: block; color: #9fd9bb; font-size: 10px; letter-spacing: 1.2px; margin-top: 2px; }
 
 .dashboard-user {
     display: flex;
@@ -424,9 +426,9 @@
 }
 
 .dashboard-notification-btn:hover {
-    background: var(--brand-green-light);
-    border-color: var(--brand-accent);
-    color: var(--brand-green-dark);
+    background: var(--brand-primary-light);
+    border-color: var(--dash-green);
+    color: var(--dash-green-dark);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
 }

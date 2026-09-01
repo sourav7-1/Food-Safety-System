@@ -1,12 +1,29 @@
 {% extends "base.html" %}
 
-{% block title %}Access denied · Street Food Safety{% endblock %}
+{% block title %}Access Denied (403) · DIU Food Safety System{% endblock %}
 
 {% block content %}
-<div class="text-center py-5">
-    <p class="display-4 fw-bold text-success mb-2">403</p>
-    <h1 class="h3">Access denied</h1>
-    <p class="text-secondary">Your account does not have permission to open this page.</p>
-    <a class="btn btn-success" href="{{ url_for('auth.dashboard_redirect') }}">Return to dashboard</a>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="portal-card text-center p-4 p-md-5">
+                <div class="avatar-circle-sm mx-auto mb-3" style="background: rgba(220,38,38,0.1); color: #dc2626; width: 68px; height: 68px; border-radius: 50%; display: grid; place-items: center; font-size: 1.85rem;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <span class="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill fw-bold mb-2">HTTP 403</span>
+                <h1 class="h3 fw-bold text-dark mb-2">Access Denied</h1>
+                <p class="text-secondary mb-4">You do not have administrative or role-level permissions to access this requested area or action.</p>
+                
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+                    <a class="btn btn-success px-4 rounded-pill fw-semibold" href="{{ url_for('auth.dashboard_redirect') }}">
+                        <i class="fa-solid fa-gauge-high me-1"></i> Return to Dashboard
+                    </a>
+                    <a class="btn btn-outline-secondary px-4 rounded-pill fw-semibold" href="{{ url_for('home') }}">
+                        <i class="fa-solid fa-house me-1"></i> Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

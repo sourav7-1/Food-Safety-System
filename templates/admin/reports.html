@@ -190,13 +190,13 @@ new Chart(document.getElementById("inspectionTrendReport"),{
         labels:{{ trend_labels|tojson }},
         datasets:[{
             data:{{ trend_values|tojson }},
-            borderColor:"#6366f1",
-            backgroundColor:"rgba(99,102,241,.12)",
+            borderColor:"#059669",
+            backgroundColor:"rgba(5, 150, 105, 0.12)",
             fill:true,
-            tension:.4,
+            tension:.38,
             pointRadius:3,
-            pointBackgroundColor:"#6366f1",
-            pointBorderColor:"#ffffff",
+            pointBackgroundColor:"#ffffff",
+            pointBorderColor:"#059669",
             pointBorderWidth:2
         }]
     },
@@ -214,7 +214,7 @@ new Chart(document.getElementById("riskDistributionReport"),{
         labels:["Low","Medium","High","Critical"],
         datasets:[{
             data:{{ [risk_map.low,risk_map.medium,risk_map.high,risk_map.critical]|tojson }},
-            backgroundColor:["#10b981","#f59e0b","#f97316","#ef4444"],
+            backgroundColor:["#059669","#d97706","#ea580c","#dc2626"],
             borderWidth:0,
             spacing:3
         }]
@@ -222,7 +222,7 @@ new Chart(document.getElementById("riskDistributionReport"),{
     options:{
         responsive:true,
         maintainAspectRatio:false,
-        cutout:"68%",
+        cutout:"70%",
         plugins:{legend:{position:"bottom",labels:{usePointStyle:true,padding:14}}}
     }
 });

@@ -154,7 +154,7 @@
         weekday: "short", day: "2-digit", month: "short", year: "numeric"
     }).format(new Date());
 
-    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+    Chart.defaults.font.family = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif";
     Chart.defaults.color = "#64748b";
 
     new Chart(document.getElementById("inspectionTrend"), {
@@ -164,13 +164,14 @@
             datasets: [{
                 label: "Inspections",
                 data: {{ trend_values | tojson }},
-                borderColor: "#4f46e5",
-                backgroundColor: "rgba(79, 70, 229, .12)",
+                borderColor: "#059669",
+                backgroundColor: "rgba(5, 150, 105, 0.12)",
                 fill: true,
-                tension: .42,
+                tension: 0.38,
                 pointRadius: 4,
-                pointBackgroundColor: "#fff",
-                pointBorderWidth: 3
+                pointBackgroundColor: "#ffffff",
+                pointBorderColor: "#059669",
+                pointBorderWidth: 2
             }]
         },
         options: {
@@ -190,7 +191,7 @@
             labels: ["Low", "Medium", "High", "Critical"],
             datasets: [{
                 data: {{ [risk_counts.low, risk_counts.medium, risk_counts.high, risk_counts.critical] | tojson }},
-                backgroundColor: ["#22c55e", "#f59e0b", "#f97316", "#ef4444"],
+                backgroundColor: ["#059669", "#d97706", "#ea580c", "#dc2626"],
                 borderWidth: 0,
                 spacing: 3
             }]

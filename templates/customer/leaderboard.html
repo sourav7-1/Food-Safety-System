@@ -195,21 +195,24 @@
     var chart = null;
     if (chartEl && window.Chart) {
         var initial = {{ risk_distribution|tojson }};
+        Chart.defaults.font.family = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif";
+        Chart.defaults.color = "#64748b";
         chart = new Chart(chartEl, {
             type: "doughnut",
             data: {
                 labels: ["Low", "Medium", "High", "Critical"],
                 datasets: [{
                     data: [initial.low, initial.medium, initial.high, initial.critical],
-                    backgroundColor: ["#22c55e", "#f59e0b", "#f97316", "#ef4444"],
+                    backgroundColor: ["#059669", "#d97706", "#ea580c", "#dc2626"],
                     borderWidth: 0,
+                    spacing: 3
                 }],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: "68%",
-                plugins: { legend: { position: "bottom", labels: { usePointStyle: true } } },
+                cutout: "70%",
+                plugins: { legend: { position: "bottom", labels: { usePointStyle: true, padding: 14 } } },
                 onClick: function (event, activeElements) {
                     if (activeElements && activeElements.length > 0) {
                         var index = activeElements[0].index;

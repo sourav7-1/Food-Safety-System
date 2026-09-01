@@ -125,9 +125,11 @@ def view():
     )
 
 
-@profile_bp.route("/edit", methods=["POST"])
+@profile_bp.route("/edit", methods=["GET", "POST"])
 @login_required
 def edit():
+    if request.method == "GET":
+        return redirect(url_for("profile.view"))
     full_name = request.form.get("full_name", "").strip()
     bio = request.form.get("bio", "").strip() or None
     address = request.form.get("address", "").strip() or None

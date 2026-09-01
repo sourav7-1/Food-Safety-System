@@ -17,18 +17,20 @@
                 </span>
             </div>
         </div>
-        <h1 class="portal-hero-title">{% block portal_title %}{% endblock %}</h1>
-        <p class="portal-hero-subtitle">{% block portal_subtitle %}{% endblock %}</p>
-        
-        <nav class="portal-nav-bar" aria-label="Vendor navigation">
-            <a href="{{ url_for('vendor_portal.dashboard') }}" class="{{ 'active' if request.endpoint == 'vendor_portal.dashboard' }}">
-                <i class="fa-solid fa-gauge-high"></i> Dashboard
-            </a>
-            <a href="{{ url_for('vendor_portal.complaints') }}" class="{{ 'active' if request.endpoint == 'vendor_portal.complaints' }}">
-                <i class="fa-regular fa-message"></i> Complaints
-            </a>
-        </nav>
+        <div class="portal-hero-title-group">
+            <h1>{% block portal_title %}{% endblock %}</h1>
+            <p>{% block portal_subtitle %}{% endblock %}</p>
+        </div>
     </div>
+    
+    <nav class="portal-nav-bar" aria-label="Vendor navigation">
+        <a href="{{ url_for('vendor_portal.dashboard') }}" class="portal-nav-link {{ 'active' if request.endpoint == 'vendor_portal.dashboard' }}">
+            <i class="fa-solid fa-gauge-high"></i> Dashboard
+        </a>
+        <a href="{{ url_for('vendor_portal.complaints') }}" class="portal-nav-link {{ 'active' if request.endpoint == 'vendor_portal.complaints' }}">
+            <i class="fa-regular fa-message"></i> Complaints
+        </a>
+    </nav>
 
     {% block portal_content %}{% endblock %}
 </div>

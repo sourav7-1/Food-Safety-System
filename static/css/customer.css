@@ -1,27 +1,23 @@
 /* ==========================================================================
-   Customer Portal - Apple Design System (iOS & VisionOS Inspired)
+   DIU Food Safety System — Customer & Student Discovery Portal
+   Accessible, High-Contrast, Modern Stall Search & Hygiene Ratings
    ========================================================================== */
 
 .customer-shell {
-    --cf-canvas: #f5f5f7;
+    --cf-canvas: #f8fafc;
     --cf-surface: #ffffff;
-    --cf-surface-glass: rgba(255, 255, 255, 0.85);
-    --cf-border: rgba(0, 0, 0, 0.08);
-    --cf-border-light: rgba(0, 0, 0, 0.04);
-    --cf-border-glass: rgba(255, 255, 255, 0.6);
+    --cf-border: #e2e8f0;
+    --cf-border-light: #f1f5f9;
     
-    --cf-ink: #1d1d1f;
-    --cf-ink-secondary: #86868b;
-    --cf-ink-tertiary: #6e6e73;
+    --cf-ink: #0f172a;
+    --cf-ink-secondary: #475569;
+    --cf-ink-tertiary: #64748b;
     
-    --cf-blue: #0071e3;
-    --cf-blue-hover: #0077ed;
     --cf-green: #059669;
-    --cf-green-bright: #10b981;
     --cf-green-soft: #ecfdf5;
     --cf-green-border: #a7f3d0;
     
-    --cf-amber: #f59e0b;
+    --cf-amber: #d97706;
     --cf-amber-soft: #fffbeb;
     --cf-amber-border: #fde68a;
     
@@ -29,25 +25,26 @@
     --cf-orange-soft: #fff7ed;
     --cf-orange-border: #ffedd5;
     
-    --cf-red: #ef4444;
+    --cf-red: #dc2626;
     --cf-red-soft: #fef2f2;
     --cf-red-border: #fecaca;
     
-    --cf-grey: #86868b;
-    --cf-grey-soft: #f5f5f7;
-    
     --radius-pill: 9999px;
-    --radius-card: 22px;
-    --radius-card-sm: 16px;
+    --radius-card: 18px;
+    --radius-card-sm: 14px;
+    --radius-card-lg: 22px;
     --radius-control: 12px;
-    
-    --cf-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-    --cf-shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
-    --cf-shadow-lg: 0 20px 48px -10px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
-    --cf-shadow-hover: 0 28px 56px -12px rgba(0, 0, 0, 0.12), 0 6px 16px -2px rgba(0, 0, 0, 0.04);
+
+    --cf-surface-glass: rgba(255, 255, 255, 0.85);
+    --cf-border-glass: rgba(255, 255, 255, 0.6);
+
+    --cf-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+    --cf-shadow-md: 0 4px 14px -1px rgba(15, 23, 42, 0.08);
+    --cf-shadow-lg: 0 12px 30px -4px rgba(15, 23, 42, 0.1);
+    --cf-shadow-hover: 0 20px 40px -8px rgba(15, 23, 42, 0.14);
 }
 
-/* ---------- Apple Frosted Hero Titlebar ---------- */
+/* ---------- Sleek Titlebar Header ---------- */
 .customer-shell .portal-titlebar {
     position: relative;
     display: flex;
@@ -56,40 +53,20 @@
     gap: 1.5rem;
     padding: 2.25rem 2.5rem;
     border-radius: var(--radius-card);
-    background: linear-gradient(145deg, #1d1d1f 0%, #151517 100%);
+    background: radial-gradient(circle at 100% 0%, rgba(5, 150, 105, 0.35) 0%, transparent 60%), linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
     box-shadow: var(--cf-shadow-lg);
+    color: #ffffff;
+    margin-bottom: 2rem;
     overflow: hidden;
-    margin-bottom: 2.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .customer-shell .portal-titlebar::before {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 90% -20%, rgba(16, 185, 129, 0.25), transparent 50%),
-                radial-gradient(circle at 10% 120%, rgba(0, 113, 227, 0.2), transparent 45%);
+    background: radial-gradient(circle at 90% -20%, rgba(5, 150, 105, 0.28), transparent 50%),
+                radial-gradient(circle at 10% 120%, rgba(59, 130, 246, 0.2), transparent 45%);
     pointer-events: none;
-}
-
-.customer-shell .portal-category-badge {
-    color: #34d399;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 0.35rem;
-}
-
-.customer-shell .portal-titlebar h1 {
-    color: #ffffff;
-    font-size: clamp(1.8rem, 2.6vw, 2.3rem);
-    font-weight: 800;
-    letter-spacing: -0.035em;
-    margin: 0 0 0.25rem;
 }
 
 .customer-shell .portal-titlebar p {
@@ -390,7 +367,7 @@
     flex-direction: column;
     box-shadow: var(--cf-shadow-md);
     position: relative;
-    transition: transform 0.35s var(--apple-spring), box-shadow 0.35s var(--apple-spring), border-color 0.3s ease !important;
+    transition: transform 0.35s var(--ease-standard, cubic-bezier(0.16,1,0.3,1)), box-shadow 0.35s var(--ease-standard, cubic-bezier(0.16,1,0.3,1)), border-color 0.3s ease !important;
 }
 
 .modern-stall-card:hover {
@@ -414,7 +391,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.5s var(--apple-spring);
+    transition: transform 0.5s var(--ease-standard, cubic-bezier(0.16,1,0.3,1));
 }
 
 .modern-stall-card:hover .stall-photo img {
@@ -424,11 +401,24 @@
 .customer-shell .stall-photo-fallback {
     position: absolute;
     inset: 0;
-    display: grid;
+    display: none;
     place-items: center;
     color: var(--cf-green);
     font-size: 2.2rem;
     opacity: 0.5;
+    background: #f1f5f9;
+}
+
+/* Only show the placeholder icon when there's no photo at all, or the
+   photo failed to load -- otherwise it sits invisibly on top of every
+   successfully-loaded stall photo. */
+.customer-shell .stall-photo-fallback--empty,
+.customer-shell .stall-photo.photo-error .stall-photo-fallback {
+    display: grid;
+}
+
+.customer-shell .stall-photo.photo-error img {
+    display: none;
 }
 
 /* Apple Floating Frosted Risk Badge */

@@ -81,13 +81,13 @@
             
             <!-- Item Name -->
             <div style="min-width: 180px; flex: 2;">
-                <label class="d-block text-muted" style="font-size: 10px; font-weight: 700; text-transform: uppercase;">Item Name</label>
+                <label class="d-block text-secondary small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.04em;">Item Name</label>
                 <input class="form-control form-control-sm fw-bold" name="item_name" value="{{ item.item_name }}" required>
             </div>
             
             <!-- Category -->
             <div style="min-width: 150px; flex: 1.5;">
-                <label class="d-block text-muted" style="font-size: 10px; font-weight: 700; text-transform: uppercase;">Category</label>
+                <label class="d-block text-secondary small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.04em;">Category</label>
                 <select class="form-select form-select-sm" name="category_id">
                     {% for category in categories %}
                     <option value="{{ category.category_id }}" {{ 'selected' if category.category_id == item.category_id }}>{{ category.category_name }}</option>
@@ -97,7 +97,7 @@
             
             <!-- Price -->
             <div style="min-width: 110px; flex: 1;">
-                <label class="d-block text-muted" style="font-size: 10px; font-weight: 700; text-transform: uppercase;">Price</label>
+                <label class="d-block text-secondary small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.04em;">Price</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light text-secondary">৳</span>
                     <input class="form-control" name="price" type="number" min="0" step=".01" value="{{ item.price if item.price is not none else '' }}">
@@ -116,7 +116,7 @@
             
             <!-- Save Button -->
             <div class="pt-3">
-                <button class="btn btn-sm btn-primary fw-semibold px-3 shadow-sm" type="submit">
+                <button class="btn btn-sm btn-success fw-semibold px-3 shadow-sm" type="submit">
                     <i class="fa-solid fa-floppy-disk me-1"></i> Save
                 </button>
             </div>

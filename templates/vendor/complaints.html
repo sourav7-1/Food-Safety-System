@@ -92,11 +92,11 @@
                             {{ complaint.complaint_type.type_name }}
                         </span>
                         {% if complaint.complaint_type.severity_level %}
-                        <small class="mt-1">
-                            <span class="risk-badge risk-{{ complaint.complaint_type.severity_level }}" style="font-size: 10px; padding: 2px 7px;">
+                        <div class="mt-1">
+                            <span class="risk-badge risk-{{ complaint.complaint_type.severity_level }}" style="font-size: 0.72rem; padding: 2px 8px;">
                                 {{ complaint.complaint_type.severity_level }}
                             </span>
-                        </small>
+                        </div>
                         {% endif %}
                     </td>
                     <td class="text-nowrap">{{ complaint.submitted_at.strftime('%d %b %Y') }}</td>

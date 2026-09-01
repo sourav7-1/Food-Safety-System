@@ -1,3 +1,64 @@
 {% extends "customer/base.html" %}
-{% block title %}My Complaints{% endblock %}{% block portal_title %}My Complaints{% endblock %}{% block portal_subtitle %}Track every concern you have submitted.{% endblock %}
-{% block portal_content %}<div class="complaint-timeline">{% for complaint in complaints %}<article class="portal-card"><div class="d-flex justify-content-between gap-3"><div><span class="code">#{{ complaint.complaint_id }} · {{ complaint.complaint_type.type_name }}</span><h2>{{ complaint.title }}</h2><p>{{ complaint.stall.stall_name }} · submitted {{ complaint.submitted_at.strftime('%d %b %Y') }}</p></div><span class="risk-badge status-{{ complaint.status }}">{{ complaint.status|replace('_',' ') }}</span></div><p class="complaint-description">{{ complaint.description }}</p>{% if complaint.evidence %}<p class="text-secondary small mb-2"><i class="fa-solid fa-paperclip me-1"></i>{{ complaint.evidence|length }} evidence file{{ 's' if complaint.evidence|length != 1 }}</p>{% endif %}{% if complaint.resolved_at %}<small>Closed {{ complaint.resolved_at.strftime('%d %b %Y, %I:%M %p') }}</small>{% endif %}<a class="portal-link" href="{{ url_for('customer_portal.complaint_detail', complaint_id=complaint.complaint_id) }}">View details <i class="fa-solid fa-arrow-right"></i></a></article>{% else %}<div class="portal-card empty">You have not submitted any complaints.</div>{% endfor %}</div>{% endblock %}
+
+{% block title %}My Complaints · Student Portal{% endblock %}
+{% block portal_title %}My Complaints{% endblock %}
+{% block portal_subtitle %}Track every hygiene or service concern you have submitted across campus food stalls.{% endblock %}
+
+{% block portal_content %}
+<div class="row g-4">
+    {% for complaint in complaints %}
+    <div class="col-12 col-lg-6">
+        <article class="portal-card h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                <div>
+                    <span class="badge bg-light text-secondary border px-2 py-1 small fw-semibold">
+                        #{{ complaint.complaint_id }} &middot; {{ complaint.complaint_type.type_name }}
+                    </span>
+                    <h2 class="h5 fw-bold text-dark mt-2 mb-1">{{ complaint.title }}</h2>
+                    <p class="text-secondary small mb-0">
+                        <i class="fa-solid fa-store me-1 text-success"></i><strong>{{ complaint.stall.stall_name }}</strong>
+                        &middot; Filed {{ complaint.submitted_at.strftime('%d %b %Y') }}
+                    </p>
+                </div>
+                <span class="risk-badge status-{{ complaint.status }}">
+                    {{ complaint.status|replace('_',' ') }}
+                </span>
+            </div>
+
+            <p class="text-secondary small mb-3 flex-grow-1" style="line-height: 1.5;">
+                {{ complaint.description }}
+            </p>
+
+            <div class="pt-3 border-top d-flex justify-content-between align-items-center mt-auto">
+                <div>
+                    {% if complaint.evidence %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 small">
+                        <i class="fa-solid fa-paperclip me-1"></i>{{ complaint.evidence|length }} evidence file{{ 's' if complaint.evidence|length != 1 }}
+                    </span>
+                    {% endif %}
+                    {% if complaint.resolved_at %}
+                    <span class="text-muted small d-block mt-1">
+                        <i class="fa-regular fa-clock me-1"></i>Closed {{ complaint.resolved_at.strftime('%d %b %Y') }}
+                    </span>
+                    {% endif %}
+                </div>
+                <a class="btn btn-outline-success btn-sm rounded-pill px-3 fw-semibold" href="{{ url_for('customer_portal.complaint_detail', complaint_id=complaint.complaint_id) }}">
+                    View Details <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </article>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="portal-card text-center py-5">
+            <i class="fa-regular fa-face-smile fs-1 text-success mb-3 d-block"></i>
+            <h3 class="h5 fw-bold text-dark">No Complaints Submitted</h3>
+            <p class="text-secondary small mb-3">You haven't reported any hygiene or food safety issues yet.</p>
+            <a class="btn btn-success px-4 rounded-pill" href="{{ url_for('customer_portal.search_stalls') }}">
+                <i class="fa-solid fa-magnifying-glass me-1"></i> Browse Campus Stalls
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

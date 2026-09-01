@@ -504,13 +504,13 @@ def resend_verification():
     return render_template("auth/resend_verification.html")
 
 
-@auth_bp.route("/logout", methods=["POST"])
-@login_required
+@auth_bp.route("/logout", methods=["GET", "POST"])
 def logout():
-    record_auth_event("logout", user=current_user)
-    db.session.commit()
-    logout_user()
-    flash("You have been logged out.", "info")
+    if current_user.is_authenticated:
+        record_auth_event("logout", user=current_user)
+        db.session.commit()
+        logout_user()
+        flash("You have been logged out.", "info")
     return redirect(url_for("auth.login"))
 
 

@@ -35,27 +35,27 @@
 {% else %}
 <form class="portal-card" method="post">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-    <h3 class="panel-heading"><i class="fa-solid fa-store"></i> Business details</h3>
-    <div class="row g-3 mb-3">
+    <h3 class="panel-heading"><i class="fa-solid fa-store text-success me-1"></i> Business details</h3>
+    <div class="row g-3 mb-4">
         <div class="col-md-6">
-            <label>Business name</label>
-            <input class="form-control" name="business_name" required maxlength="150">
+            <label class="form-label fw-semibold">Business name</label>
+            <input class="form-control" name="business_name" required maxlength="150" placeholder="e.g. Dhaka Express Kitchen">
         </div>
         <div class="col-md-6">
-            <label>Licence number</label>
-            <input class="form-control" name="license_number" required maxlength="80">
+            <label class="form-label fw-semibold">Trade Licence number</label>
+            <input class="form-control" name="license_number" required maxlength="80" placeholder="e.g. TRAD/DIU/2026/089">
         </div>
     </div>
 
-    <h3 class="panel-heading mt-2"><i class="fa-solid fa-shop"></i> Proposed stall</h3>
-    <p class="text-secondary small">This is what you'd like to list &mdash; an administrator creates the actual stall record once your application is approved.</p>
-    <div class="row g-3 mb-3">
+    <h3 class="panel-heading mt-2"><i class="fa-solid fa-shop text-primary me-1"></i> Proposed stall</h3>
+    <p class="text-secondary small mb-3">This is what you'd like to list &mdash; an administrator activates the actual stall record once your application is approved.</p>
+    <div class="row g-3 mb-4">
         <div class="col-md-6">
-            <label>Stall name</label>
-            <input class="form-control" name="requested_stall_name" required maxlength="150">
+            <label class="form-label fw-semibold">Stall name</label>
+            <input class="form-control" name="requested_stall_name" required maxlength="150" placeholder="e.g. Main Cafe Snack Corner">
         </div>
         <div class="col-md-6">
-            <label>Area</label>
+            <label class="form-label fw-semibold">Campus Area</label>
             <select class="form-select" name="requested_area_id" required>
                 <option value="">Select area</option>
                 {% for area in areas %}
@@ -64,12 +64,14 @@
             </select>
         </div>
         <div class="col-12">
-            <label>Full address</label>
-            <input class="form-control" name="requested_address" required maxlength="255">
+            <label class="form-label fw-semibold">Full location address</label>
+            <input class="form-control" name="requested_address" required maxlength="255" placeholder="e.g. Ground Floor, Knowledge Tower Building 4">
         </div>
     </div>
 
-    <button class="btn btn-success" type="submit">Submit application</button>
+    <button class="btn btn-success px-4 rounded-pill fw-semibold" type="submit">
+        <i class="fa-solid fa-paper-plane me-1"></i> Submit application
+    </button>
 </form>
 {% endif %}
 {% endblock %}

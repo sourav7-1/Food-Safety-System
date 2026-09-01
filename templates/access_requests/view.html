@@ -19,7 +19,7 @@
                 <form method="post">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
-                        <label for="requested_role">Role you're requesting</label>
+                        <label class="form-label fw-semibold" for="requested_role">Role you're requesting</label>
                         <select class="form-select" id="requested_role" name="requested_role" required>
                             <option value="">Select a role</option>
                             <option value="inspector">Inspector</option>
@@ -27,10 +27,10 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="reason">Why do you need this access? <span class="text-secondary">(optional)</span></label>
-                        <textarea class="form-control" id="reason" name="reason" rows="3" maxlength="500"></textarea>
+                        <label class="form-label fw-semibold" for="reason">Why do you need this access? <span class="text-secondary fw-normal">(optional)</span></label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" maxlength="500" placeholder="State your campus role, department, or administrative justification..."></textarea>
                     </div>
-                    <button class="btn btn-success w-100" type="submit"><i class="fa-solid fa-paper-plane"></i> Submit request</button>
+                    <button class="btn btn-success w-100" type="submit"><i class="fa-solid fa-paper-plane me-1"></i> Submit request</button>
                 </form>
             </section>
         </div>
@@ -38,23 +38,25 @@
             <section class="portal-card">
                 <h3><i class="fa-solid fa-clock-rotate-left"></i> Your requests</h3>
                 {% if requests %}
-                <table class="table portal-table">
-                    <thead><tr><th>Role</th><th>Submitted</th><th>Status</th></tr></thead>
-                    <tbody>
-                        {% for req in requests %}
-                        <tr>
-                            <td>{{ req.requested_role | title }}</td>
-                            <td>{{ req.requested_at.strftime('%d %b %Y') }}</td>
-                            <td>
-                                <span class="risk-badge status-{{ req.status }}">{{ req.status | title }}</span>
-                                {% if req.status == 'rejected' and req.rejection_reason %}
-                                <br><small class="text-secondary">{{ req.rejection_reason }}</small>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table portal-table">
+                        <thead><tr><th>Role</th><th>Submitted</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for req in requests %}
+                            <tr>
+                                <td>{{ req.requested_role | title }}</td>
+                                <td>{{ req.requested_at.strftime('%d %b %Y') }}</td>
+                                <td>
+                                    <span class="risk-badge status-{{ req.status }}">{{ req.status | title }}</span>
+                                    {% if req.status == 'rejected' and req.rejection_reason %}
+                                    <br><small class="text-secondary">{{ req.rejection_reason }}</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 {% else %}
                 <p class="text-secondary mb-0">You haven't submitted any access requests yet.</p>
                 {% endif %}

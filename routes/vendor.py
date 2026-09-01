@@ -223,11 +223,15 @@ def food_items(stall_id):
 
 
 @vendor_bp.route(
-    "/stalls/<int:stall_id>/food-items/new", methods=["POST"]
+    "/stalls/<int:stall_id>/food-items/new", methods=["GET", "POST"]
 )
 @login_required
 @role_required("vendor")
 def food_item_create(stall_id):
+    if request.method == "GET":
+        return redirect(
+            url_for("vendor_portal.food_items", stall_id=stall_id)
+        )
     vendor = _vendor()
     stall = _owned_stall(vendor, stall_id)
     try:

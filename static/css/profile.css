@@ -1,63 +1,316 @@
 /* ==========================================================================
-   Food Safety System - Modern Profile UI Design System
-   Apple-Inspired Glassmorphism, Micro-Interactions, and Responsive Layouts
+   DIU Food Safety System — Profile & Account Workspace
+   Modern, Accessible, Multi-Role Identity & Security Hub
    ========================================================================== */
 
 :root {
-    --prof-primary: #0071e3;
-    --prof-primary-hover: #0077ed;
-    --prof-primary-light: #e8f2ff;
-    --prof-primary-glow: rgba(0, 113, 227, 0.22);
-    --prof-success: #10b981;
-    --prof-success-light: #ecfdf5;
-    --prof-warning: #f59e0b;
-    --prof-warning-light: #fffbeb;
-    --prof-danger: #ef4444;
-    --prof-danger-light: #fef2f2;
-    --prof-purple: #8b5cf6;
-    --prof-purple-light: #f5f3ff;
+    --prof-primary: #059669;
+    --prof-primary-hover: #047857;
+    --prof-primary-light: #ecfdf5;
+    --prof-primary-glow: rgba(5, 150, 105, 0.2);
     
-    --prof-bg-card: #ffffff;
-    --prof-border: rgba(0, 0, 0, 0.08);
-    --prof-border-focus: #0071e3;
-    --prof-text-main: #1d1d1f;
-    --prof-text-muted: #6e6e73;
-    --prof-text-subtle: #86868b;
+    --prof-border: #e2e8f0;
+    --prof-border-focus: #059669;
+    --prof-text-main: #0f172a;
+    --prof-text-muted: #475569;
+    --prof-text-subtle: #64748b;
     
-    --prof-shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.03);
-    --prof-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.05);
-    --prof-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.08);
-    --prof-shadow-glow: 0 0 20px rgba(0, 113, 227, 0.15);
-    --prof-radius: 20px;
+    --prof-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+    --prof-shadow-md: 0 4px 14px -1px rgba(15, 23, 42, 0.08);
+    --prof-shadow-lg: 0 12px 30px -4px rgba(15, 23, 42, 0.1);
+    --prof-radius: 18px;
     --prof-radius-sm: 12px;
+
+    --prof-bg-card: #ffffff;
+    --prof-danger: #dc2626;
+    --prof-success: #059669;
+    --prof-warning: #d97706;
 }
 
 .profile-page,
 .admin-profile-workspace {
-    max-width: 1280px;
+    max-width: 1320px;
     margin: 0 auto;
-    padding-bottom: 2.5rem;
+    padding: 1.5rem 1rem 3.5rem;
 }
 
 /* ==========================================================================
    Executive Profile Hero Banner
    ========================================================================== */
+
 .admin-profile-hero {
     position: relative;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
+    background: radial-gradient(circle at 100% 0%, rgba(5, 150, 105, 0.35) 0%, transparent 60%), linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     border-radius: var(--prof-radius);
-    padding: 2.25rem;
+    padding: 2.25rem 2.5rem;
     color: #ffffff;
-    margin-bottom: 1.75rem;
-    overflow: hidden;
-    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.18);
+    margin-bottom: 2rem;
+    box-shadow: var(--prof-shadow-lg);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
 }
 
 .admin-profile-hero.hero-student {
-    background: linear-gradient(135deg, #064e3b 0%, #047857 55%, #059669 100%);
-    box-shadow: 0 14px 36px rgba(5, 150, 105, 0.25);
+    background: radial-gradient(circle at 100% 0%, rgba(5, 150, 105, 0.4) 0%, transparent 60%), linear-gradient(135deg, #064e3b 0%, #047857 55%, #064e3b 100%);
 }
+
+.admin-hero-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.admin-hero-identity {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.admin-avatar-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.admin-avatar-img {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    background: #ffffff;
+}
+
+.admin-avatar-placeholder {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: #ffffff;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    border: 3px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.admin-hero-title-group h1 {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.03em;
+}
+
+.admin-hero-badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.role-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+.role-badge-pill.active {
+    background: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+}
+
+/* Hero Metrics Box */
+.admin-hero-metrics {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.hero-metric-box {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+    padding: 0.85rem 1.25rem;
+    text-align: center;
+    min-width: 110px;
+}
+
+.hero-metric-box small {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #cbd5e1;
+    margin-bottom: 0.2rem;
+}
+
+.hero-metric-box strong {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.1;
+}
+
+/* ==========================================================================
+   Profile Navigation Tabs
+   ========================================================================== */
+
+.profile-tabs-wrapper {
+    display: flex;
+    gap: 0.35rem;
+    background: #ffffff;
+    border: 1px solid var(--prof-border);
+    border-radius: 9999px;
+    padding: 0.35rem;
+    box-shadow: var(--prof-shadow-sm);
+    margin-bottom: 2rem;
+    overflow-x: auto;
+}
+
+.profile-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.35rem;
+    border-radius: 9999px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--prof-text-muted);
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.18s ease;
+}
+
+.profile-tab-btn:hover {
+    color: var(--prof-text-main);
+    background: #f1f5f9;
+}
+
+.profile-tab-btn.active {
+    background: var(--prof-primary);
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
+/* ==========================================================================
+   Profile Cards & Content Panes
+   ========================================================================== */
+
+.admin-profile-card {
+    background: #ffffff;
+    border: 1px solid var(--prof-border);
+    border-radius: var(--prof-radius);
+    padding: 2rem;
+    box-shadow: var(--prof-shadow-sm);
+    margin-bottom: 2rem;
+}
+
+.admin-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.admin-card-header h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--prof-text-main);
+    margin: 0;
+}
+
+.admin-card-header p {
+    font-size: 0.85rem;
+    color: var(--prof-text-muted);
+    margin: 0.2rem 0 0;
+}
+
+/* Form Controls */
+.admin-form-control {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.65rem 1rem;
+    border-radius: var(--prof-radius-sm);
+    border: 1px solid var(--prof-border);
+    background: #ffffff;
+    color: var(--prof-text-main);
+    font-size: 0.925rem;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: all 0.18s ease;
+}
+
+.admin-form-control:focus {
+    border-color: var(--prof-primary);
+    box-shadow: 0 0 0 3px var(--prof-primary-glow);
+    outline: none;
+}
+
+.admin-form-control:disabled,
+.admin-form-control[readonly] {
+    background-color: #f8fafc;
+    color: var(--prof-text-subtle);
+    cursor: not-allowed;
+}
+
+/* Password Strength Meter */
+.password-meter-bar {
+    height: 5px;
+    border-radius: 9999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.password-meter-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 9999px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.password-meter-fill.weak { width: 30%; background: #ef4444; }
+.password-meter-fill.medium { width: 65%; background: #f59e0b; }
+.password-meter-fill.strong { width: 100%; background: #10b981; }
+
+@media (max-width: 991.98px) {
+    .admin-profile-hero {
+        padding: 1.75rem;
+    }
+    .admin-hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .admin-hero-metrics {
+        width: 100%;
+    }
+}
+
 
 .admin-profile-hero.hero-vendor {
     background: linear-gradient(135deg, #134e4a 0%, #0f766e 55%, #047857 100%);
@@ -806,9 +1059,9 @@ select.admin-form-control {
 .prof-table th {
     background: #f8fafc;
     color: #64748b;
-    font-size: 10.5px;
+    font-size: 0.72rem;
     font-weight: 800;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     padding: 12px 16px;
     border-bottom: 1px solid #e2e8f0;

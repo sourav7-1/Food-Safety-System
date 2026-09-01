@@ -5,22 +5,51 @@
 {% block main_class %}container py-3 py-md-4{% endblock %}
 
 {% block content %}
-<div class="auth-card card border-0 shadow-sm mx-auto">
-    <div class="card-body p-4 p-md-5">
+<div class="login-shell mx-auto">
+    <section class="login-role-panel">
+        <div class="login-logo-lockup">
+            <img src="{{ url_for('static', filename='images/food-safety-logo.png') }}" alt="Smart Food Safety Inspection logo">
+            <span>Smart Food Safety Inspection</span>
+        </div>
         {% if request.args.get('role') == 'vendor' %}
-        <div class="alert alert-success border-0 shadow-sm d-flex align-items-start gap-3 p-3 mb-4" style="background: rgba(25, 135, 84, 0.08); border-left: 4px solid var(--brand-green) !important;">
-            <i class="bi bi-shop-window text-success fs-4 mt-1"></i>
-            <div>
-                <strong class="text-success d-block mb-1" style="font-size: 0.95rem;">Vendor Registration Info</strong>
-                <span class="small text-secondary" style="font-size: 0.85rem; line-height: 1.4; display: block;">Step 1 of 2: Create your personal user account below. Once registered and logged in, you can fill in your business details and stall address to apply for Vendor approval.</span>
+        <span class="login-eyebrow">VENDOR SIGN-UP &middot; STEP 1 OF 2</span>
+        <h1>Create your vendor account</h1>
+        <p>
+            Start with your personal login below. Once you're registered and
+            signed in, you'll fill in your business details and stall address
+            to apply for vendor approval.
+        </p>
+        {% else %}
+        <span class="login-eyebrow">STUDENT SIGN-UP</span>
+        <h1>Create your student account</h1>
+        <p>
+            Register with your official DIU student email to search stalls,
+            check hygiene scores, and track your complaints.
+        </p>
+        {% endif %}
+
+        <div class="login-role-list">
+            <div class="login-role-item">
+                <span class="role-symbol"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <div><strong>Search &amp; compare stalls</strong><small>Hygiene scores, grades and reviews</small></div>
+            </div>
+            <div class="login-role-item">
+                <span class="role-symbol"><i class="fa-solid fa-flag"></i></span>
+                <div><strong>Report an issue</strong><small>File and track complaints</small></div>
+            </div>
+            <div class="login-role-item">
+                <span class="role-symbol"><i class="fa-solid fa-star"></i></span>
+                <div><strong>Leave reviews</strong><small>Share your dining experience</small></div>
             </div>
         </div>
-        <h1 class="h3 mb-2">Create Vendor Account</h1>
-        <p class="text-secondary mb-4">Register your account to begin the vendor application.</p>
-        {% else %}
-        <h1 class="h3 mb-2">Create student account</h1>
-        <p class="text-secondary mb-4">Register to access public food-safety services.</p>
-        {% endif %}
+    </section>
+
+    <section class="login-form-panel">
+        <div class="mb-4">
+            <span class="login-eyebrow text-success">ACCOUNT DETAILS</span>
+            <h2 class="h3 mb-2">{{ 'Create your account' if request.args.get('role') == 'vendor' else 'Create student account' }}</h2>
+            <p class="text-secondary mb-0">Fill in your details to get started.</p>
+        </div>
 
         <form method="post" data-no-ajax>
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -42,21 +71,33 @@
             </div>
             <div class="mb-3">
                 <label class="form-label" for="password">Password</label>
-                <input class="form-control" id="password" name="password" type="password"
-                       autocomplete="new-password" minlength="8" required>
+                <div class="input-group-password">
+                    <input class="form-control" id="password" name="password" type="password"
+                           autocomplete="new-password" minlength="8" placeholder="Create a secure password" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('password', this)" aria-label="Toggle password visibility">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
                 <div class="form-text">Use at least 8 characters.</div>
             </div>
             <div class="mb-4">
                 <label class="form-label" for="confirm_password">Confirm password</label>
-                <input class="form-control" id="confirm_password" name="confirm_password"
-                       type="password" autocomplete="new-password" minlength="8" required>
+                <div class="input-group-password">
+                    <input class="form-control" id="confirm_password" name="confirm_password"
+                           type="password" autocomplete="new-password" minlength="8" placeholder="Confirm your password" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('confirm_password', this)" aria-label="Toggle password visibility">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
             </div>
             {% if config.TURNSTILE_SITE_KEY %}
             <div class="mb-4">
                 <div class="cf-turnstile" data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"></div>
             </div>
             {% endif %}
-            <button class="btn btn-success btn-lg w-100 btn-sheen" type="submit">Create account</button>
+            <button class="btn btn-success btn-lg w-100" type="submit">
+                <i class="fa-solid fa-user-plus me-2"></i> Create account
+            </button>
         </form>
 
         {% include "auth/_google_button.html" %}
@@ -65,7 +106,7 @@
             Already registered?
             <a href="{{ url_for('auth.login') }}">Login</a>
         </p>
-    </div>
+    </section>
 </div>
 {% endblock %}
 
@@ -73,4 +114,24 @@
 {% if config.TURNSTILE_SITE_KEY %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endif %}
+<script>
+function togglePasswordVisibility(inputId, btn) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    var icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) {
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    } else {
+        input.type = 'password';
+        if (icon) {
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+}
+</script>
 {% endblock %}

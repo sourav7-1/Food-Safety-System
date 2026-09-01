@@ -134,10 +134,14 @@
             <div class="stall-photo">
                 {% if result.stall.photo_url %}
                 <img src="{{ result.stall.photo_url }}" alt="{{ result.stall.stall_name }}" loading="lazy" onerror="this.closest('.stall-photo').classList.add('photo-error')">
-                {% endif %}
                 <div class="stall-photo-fallback">
                     <i class="fa-solid fa-utensils"></i>
                 </div>
+                {% else %}
+                <div class="stall-photo-fallback stall-photo-fallback--empty">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                {% endif %}
                 
                 <!-- Floating Glassy Risk Badge -->
                 <div class="floating-risk-badge risk-badge-{{ result.risk or 'unrated' }}">

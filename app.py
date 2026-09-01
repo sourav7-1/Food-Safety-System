@@ -176,6 +176,14 @@ def create_app(config_class=Config):
     def forbidden(_error):
         return render_template("errors/403.html"), 403
 
+    @app.errorhandler(404)
+    def not_found(_error):
+        return render_template("errors/404.html"), 404
+
+    @app.errorhandler(500)
+    def server_error(_error):
+        return render_template("errors/500.html"), 500
+
     @app.cli.command("create-admin")
     @click.option("--name", prompt="Full name")
     @click.option("--email", prompt="Email address")

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found (404) · DIU Food Safety System{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="portal-card text-center p-4 p-md-5">
+                <div class="avatar-circle-sm mx-auto mb-3" style="background: rgba(14,165,233,0.1); color: #0284c7; width: 68px; height: 68px; border-radius: 50%;
+                                              display: grid; place-items: center; font-size: 1.85rem;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <span class="badge bg-info-subtle text-info-emphasis px-3 py-1 rounded-pill fw-bold mb-2">HTTP 404</span>
+                <h1 class="h3 fw-bold text-dark mb-2">Page Not Found</h1>
+                <p class="text-secondary mb-4">The page, food stall, or report you are looking for might have been moved, removed, or does not exist.</p>
+                
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+                    <a class="btn btn-success px-4 rounded-pill fw-semibold" href="{{ url_for('home') }}">
+                        <i class="fa-solid fa-house me-1"></i> Go to Home
+                    </a>
+                    <a class="btn btn-outline-secondary px-4 rounded-pill fw-semibold" href="{{ url_for('customer_portal.search_stalls') }}">
+                        <i class="fa-solid fa-store me-1"></i> Browse Stalls
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

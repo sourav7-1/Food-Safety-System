@@ -1,11 +1,143 @@
 {% extends "admin/base.html" %}
+
 {% block content %}
-<div class="list-heading"><div><p class="eyebrow mb-1">SYSTEM CONFIGURATION</p><h2>Settings</h2><p>Reference data currently used by forms and the MySQL risk engine.</p></div></div>
+<div class="page-actionbar mb-4">
+    <div>
+        <p class="eyebrow mb-1">SYSTEM CONFIGURATION</p>
+        <h2 class="h3 fw-bold mb-1">System Settings &amp; Reference Data</h2>
+        <p class="text-secondary mb-0">Underlying lookup criteria, complaint taxonomies, and campus parameters used by the MySQL risk engine.</p>
+    </div>
+</div>
+
 <div class="row g-4">
-  <div class="col-xl-6"><section class="panel-card"><h3>Inspection criteria</h3><div class="table-responsive"><table class="table admin-table"><thead><tr><th>Criterion</th><th>Maximum</th><th>Weight</th><th>Active</th></tr></thead><tbody>{% for item in criteria %}<tr><td>{{ item.criteria_name }}</td><td>{{ item.max_score }}</td><td>{{ item.weight }}</td><td>{{ 'Yes' if item.is_active else 'No' }}</td></tr>{% endfor %}</tbody></table></div></section></div>
-  <div class="col-xl-6"><section class="panel-card"><h3>Complaint types</h3><div class="table-responsive"><table class="table admin-table"><thead><tr><th>Type</th><th>Severity</th></tr></thead><tbody>{% for item in complaint_types %}<tr><td>{{ item.type_name }}</td><td><span class="status-pill risk-{{ item.severity_level }}">{{ item.severity_level }}</span></td></tr>{% endfor %}</tbody></table></div></section></div>
-  <div class="col-xl-4"><section class="panel-card"><h3>Roles</h3><p>{{ roles|map(attribute='role_name')|join(', ') }}</p></section></div>
-  <div class="col-xl-4"><section class="panel-card"><h3>Food categories</h3><p>{{ categories|map(attribute='category_name')|join(', ') }}</p></section></div>
-  <div class="col-xl-4"><section class="panel-card"><h3>Areas</h3><p>{{ areas|length }} configured</p></section></div>
+    <!-- Inspection Criteria Card -->
+    <div class="col-xl-6">
+        <section class="panel-card h-100 p-0 overflow-hidden">
+            <div class="panel-header p-3 border-bottom">
+                <h3 class="h6 fw-bold mb-0"><i class="fa-solid fa-clipboard-check text-success me-2"></i>Inspection Criteria</h3>
+                <span class="badge bg-light text-secondary border">{{ criteria|length }} Active</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table admin-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Criterion Name</th>
+                            <th class="text-center">Max Pts</th>
+                            <th class="text-center">Weight</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in criteria %}
+                        <tr>
+                            <td>
+                                <strong class="text-dark">{{ item.criteria_name }}</strong>
+                                {% if item.description %}<small class="text-muted d-block">{{ item.description }}</small>{% endif %}
+                            </td>
+                            <td class="text-center"><span class="badge bg-light text-dark border">{{ item.max_score }}</span></td>
+                            <td class="text-center">{{ item.weight }}</td>
+                            <td class="text-center">
+                                <span class="status-pill {{ 'status-active' if item.is_active else 'status-inactive' }}">
+                                    {{ 'Active' if item.is_active else 'Inactive' }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Complaint Types Card -->
+    <div class="col-xl-6">
+        <section class="panel-card h-100 p-0 overflow-hidden">
+            <div class="panel-header p-3 border-bottom">
+                <h3 class="h6 fw-bold mb-0"><i class="fa-regular fa-message text-warning me-2"></i>Complaint Types &amp; Severity</h3>
+                <span class="badge bg-light text-secondary border">{{ complaint_types|length }} Types</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table admin-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Type Name</th>
+                            <th>Severity Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in complaint_types %}
+                        <tr>
+                            <td>
+                                <strong class="text-dark">{{ item.type_name }}</strong>
+                                {% if item.description %}<small class="text-muted d-block">{{ item.description }}</small>{% endif %}
+                            </td>
+                            <td>
+                                <span class="status-pill risk-{{ item.severity_level }}">{{ item.severity_level }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Summary Stats Strip -->
+    <div class="col-xl-4">
+        <section class="panel-card h-100">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="avatar-circle-sm" style="background: rgba(5,150,105,0.12); color: #059669; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 1.1rem;">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div>
+                    <h3 class="h6 fw-bold mb-0">System Roles</h3>
+                    <small class="text-muted">{{ roles|length }} configured roles</small>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-1 mt-3">
+                {% for role in roles %}
+                <span class="badge bg-light text-dark border px-2 py-1">{{ role.role_name|title }}</span>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <div class="col-xl-4">
+        <section class="panel-card h-100">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="avatar-circle-sm" style="background: rgba(14,165,233,0.12); color: #0284c7; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 1.1rem;">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <div>
+                    <h3 class="h6 fw-bold mb-0">Food Categories</h3>
+                    <small class="text-muted">{{ categories|length }} catalog items</small>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-1 mt-3">
+                {% for cat in categories %}
+                <span class="badge bg-light text-dark border px-2 py-1">{{ cat.category_name }}</span>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <div class="col-xl-4">
+        <section class="panel-card h-100">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="avatar-circle-sm" style="background: rgba(245,158,11,0.12); color: #d97706; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 1.1rem;">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </div>
+                <div>
+                    <h3 class="h6 fw-bold mb-0">Campus Areas</h3>
+                    <small class="text-muted">{{ areas|length }} dining zones</small>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-1 mt-3">
+                {% for area in areas %}
+                <span class="badge bg-light text-dark border px-2 py-1">{{ area.area_name }}</span>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
 </div>
 {% endblock %}

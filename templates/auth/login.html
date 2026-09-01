@@ -51,16 +51,21 @@
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <div class="mb-3">
                 <label class="form-label" for="email">Email address</label>
-                <input class="form-control form-control-lg" id="email" name="email"
+                <input class="form-control" id="email" name="email"
                        type="email" value="{{ request.form.get('email', '') }}"
                        autocomplete="email" placeholder="name@example.com" required>
             </div>
             <div class="mb-3">
                 <label class="form-label" for="password">Password</label>
-                <input class="form-control form-control-lg" id="password"
-                       name="password" type="password"
-                       autocomplete="current-password"
-                       placeholder="Enter your password" required>
+                <div class="input-group-password">
+                    <input class="form-control" id="password"
+                           name="password" type="password"
+                           autocomplete="current-password"
+                           placeholder="Enter your password" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('password', this)" aria-label="Toggle password visibility">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
             </div>
             <div class="form-check mb-4">
                 <input class="form-check-input" id="remember" name="remember"
@@ -69,8 +74,8 @@
                     Keep me signed in
                 </label>
             </div>
-            <button class="btn btn-success btn-lg w-100 btn-sheen" type="submit">
-                Continue to my dashboard
+            <button class="btn btn-success btn-lg w-100" type="submit">
+                <i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Continue to my dashboard
             </button>
         </form>
 
@@ -92,4 +97,27 @@
         </p>
     </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePasswordVisibility(inputId, btn) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    var icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) {
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    } else {
+        input.type = 'password';
+        if (icon) {
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+}
+</script>
 {% endblock %}
