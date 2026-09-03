@@ -1,4 +1,25 @@
 {% extends "admin/base.html" %}
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<style>
+.stall-location-map {
+    height: 260px;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    margin-top: 6px;
+}
+.stall-location-pin {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #1f7a4d;
+    border: 3px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+</style>
+{% endblock %}
 {% block content %}
 <div class="page-actionbar">
     <div>
@@ -224,13 +245,23 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-dark" for="stallLatitude">Latitude</label>
-                            <input class="form-control" id="stallLatitude" name="latitude" placeholder="23.8765">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-dark" for="stallLongitude">Longitude</label>
-                            <input class="form-control" id="stallLongitude" name="longitude" placeholder="90.3123">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-dark d-flex align-items-center justify-content-between">
+                                <span>Map location <span class="text-secondary fw-normal">(Optional)</span></span>
+                                <span class="d-flex align-items-center gap-2">
+                                    <small class="text-secondary" id="stallCoordsReadout">Not set</small>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="stallUseMyLocationBtn" title="Use my current location as a starting point">
+                                        <i class="fa-solid fa-location-crosshairs me-1"></i>Use my location
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="stallClearLocationBtn" title="Clear the saved location">
+                                        <i class="fa-solid fa-xmark me-1"></i>Clear
+                                    </button>
+                                </span>
+                            </label>
+                            <div id="stallLocationMap" class="stall-location-map"></div>
+                            <div class="form-text">Click the map or drag the pin to set the stall's location. Leave unset if unknown -- it's optional.</div>
+                            <input type="hidden" id="stallLatitude" name="latitude">
+                            <input type="hidden" id="stallLongitude" name="longitude">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-dark" for="stallStatus">Operational Status</label>
@@ -256,9 +287,152 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function () {
     "use strict";
+
+    var DEFAULT_CENTER = { lat: {{ (config.DEFAULT_MAP_CENTER_LAT|default(23.8983))|tojson }}, lng: {{ (config.DEFAULT_MAP_CENTER_LNG|default(90.3196))|tojson }} };
+    var locationMap = null;
+    var locationMarker = null;
+
+    function updateCoordsReadout(lat, lng) {
+        var readout = document.getElementById("stallCoordsReadout");
+        if (!readout) { return; }
+        readout.textContent = (lat != null && lng != null)
+            ? (Number(lat).toFixed(6) + ", " + Number(lng).toFixed(6))
+            : "Not set";
+    }
+
+    function ensureLocationMap() {
+        if (locationMap || !window.L) { return; }
+        var mapEl = document.getElementById("stallLocationMap");
+        if (!mapEl) { return; }
+        // Zoom 15 reads as "DIU campus", not "somewhere in the country"
+        // -- almost every stall an admin adds here will be near it.
+        locationMap = L.map(mapEl, {
+            center: [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng],
+            zoom: 15,
+        });
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+        }).addTo(locationMap);
+        locationMap.on("click", function (event) {
+            setStallLocation(event.latlng.lat, event.latlng.lng);
+        });
+    }
+
+    function setStallLocation(lat, lng) {
+        document.getElementById("stallLatitude").value = lat;
+        document.getElementById("stallLongitude").value = lng;
+        updateCoordsReadout(lat, lng);
+        if (!locationMap) { return; }
+        if (!locationMarker) {
+            locationMarker = L.marker([lat, lng], {
+                draggable: true,
+                icon: L.divIcon({
+                    className: "stall-location-marker",
+                    html: '<span class="stall-location-pin"></span>',
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8],
+                }),
+            }).addTo(locationMap);
+            locationMarker.on("dragend", function () {
+                var pos = locationMarker.getLatLng();
+                setStallLocation(pos.lat, pos.lng);
+            });
+        } else {
+            locationMarker.setLatLng([lat, lng]);
+        }
+    }
+
+    function clearStallLocation() {
+        document.getElementById("stallLatitude").value = "";
+        document.getElementById("stallLongitude").value = "";
+        updateCoordsReadout(null, null);
+        if (locationMarker && locationMap) {
+            locationMap.removeLayer(locationMarker);
+            locationMarker = null;
+        }
+    }
+
+    // Reads whatever is currently in the (hidden) latitude/longitude
+    // inputs and makes the map match -- called once the modal has
+    // finished its Bootstrap show transition, so the map container has
+    // its real on-screen size (Leaflet needs a non-zero pixel height at
+    // init, which a still-animating/hidden modal does not have yet).
+    function syncLocationMapFromInputs() {
+        ensureLocationMap();
+        var latVal = document.getElementById("stallLatitude").value;
+        var lngVal = document.getElementById("stallLongitude").value;
+        if (latVal && lngVal) {
+            var lat = parseFloat(latVal);
+            var lng = parseFloat(lngVal);
+            setStallLocation(lat, lng);
+            if (locationMap) { locationMap.setView([lat, lng], 14); }
+        } else {
+            clearStallLocation();
+            if (locationMap) { locationMap.setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 15); }
+        }
+        if (locationMap) { locationMap.invalidateSize(); }
+    }
+
+    function initStallLocationPicker() {
+        var modalEl = document.getElementById("stallModal");
+        var useLocationBtn = document.getElementById("stallUseMyLocationBtn");
+        var clearBtn = document.getElementById("stallClearLocationBtn");
+        if (!modalEl) { return; }
+
+        // An AJAX content-swap (admin:content-updated) replaces #stallModal
+        // with a fresh DOM node, orphaning any Leaflet map instance still
+        // bound to the old #stallLocationMap div. Tear it down explicitly
+        // instead of leaving it attached to nothing -- ensureLocationMap()
+        // otherwise sees a non-null locationMap and skips creating a new
+        // one for the replacement node.
+        if (locationMap) {
+            locationMap.remove();
+            locationMap = null;
+            locationMarker = null;
+        }
+
+        modalEl.addEventListener("shown.bs.modal", syncLocationMapFromInputs);
+
+        if (useLocationBtn) {
+            if (!("geolocation" in navigator) || !navigator.geolocation) {
+                // Older browser, or geolocation disabled by policy -- disable
+                // up front with an explanatory tooltip rather than letting the
+                // click silently do nothing.
+                useLocationBtn.disabled = true;
+                useLocationBtn.title = "Your browser doesn't support location services.";
+            } else {
+                useLocationBtn.addEventListener("click", function () {
+                    var originalHtml = useLocationBtn.innerHTML;
+                    useLocationBtn.disabled = true;
+                    useLocationBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+                    navigator.geolocation.getCurrentPosition(
+                        function (position) {
+                            setStallLocation(position.coords.latitude, position.coords.longitude);
+                            if (locationMap) { locationMap.setView([position.coords.latitude, position.coords.longitude], 15); }
+                            useLocationBtn.disabled = false;
+                            useLocationBtn.innerHTML = originalHtml;
+                        },
+                        function () {
+                            useLocationBtn.disabled = false;
+                            useLocationBtn.innerHTML = originalHtml;
+                            useLocationBtn.title = "Couldn't get your location -- click the map instead.";
+                        },
+                        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                    );
+                });
+            }
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener("click", clearStallLocation);
+        }
+    }
+
     function initStallModal() {
         var modalEl = document.getElementById("stallModal");
         if (!modalEl) { return; }
@@ -353,7 +527,11 @@
     }
 
     initStallModal();
-    document.addEventListener("admin:content-updated", initStallModal);
+    initStallLocationPicker();
+    document.addEventListener("admin:content-updated", function () {
+        initStallModal();
+        initStallLocationPicker();
+    });
 })();
 </script>
 {% endblock %}

@@ -420,6 +420,10 @@ class Stall(db.Model):
         "Review", back_populates="stall", cascade="all, delete-orphan"
     )
 
+    @property
+    def has_location(self):
+        return self.latitude is not None and self.longitude is not None
+
 
 class Inspector(db.Model):
     __tablename__ = "inspectors"

@@ -325,6 +325,166 @@ def api_risk_stalls(risk_level):
     return jsonify({"stalls": stalls})
 
 
+NEARBY_DEFAULT_RADIUS_KM = 5
+NEARBY_MAX_RADIUS_KM = 25
+NEARBY_RESULT_LIMIT = 100
+
+# Grade -> marker color. Matches get_hygiene_grade's actual scale
+# (database/functions.sql): A >= 85, B >= 70, C >= 50, else D. A NULL
+# grade (no inspection on record yet) is handled by the caller, not this
+# dict, so a lookup miss can never KeyError.
+_NEARBY_GRADE_COLORS = {"A": "green", "B": "green", "C": "amber", "D": "red"}
+
+
+def _nearby_marker_color(hygiene_grade, is_high_risk):
+    # Risk status overrides grade, even for a stall whose latest raw
+    # score would otherwise land in the amber band -- risk_level
+    # (computed by the calculate_stall_risk MySQL procedure) also weighs
+    # unresolved complaints, not just the score, so it can be worse than
+    # the grade alone suggests.
+    if is_high_risk:
+        return "red"
+    if not hygiene_grade:
+        return "gray"
+    return _NEARBY_GRADE_COLORS.get(hygiene_grade, "gray")
+
+
+_NEARBY_STALLS_SQL = text(
+    """
+    SELECT
+        s.stall_id, s.stall_name, s.address, s.latitude, s.longitude,
+        li.hygiene_grade, li.overall_score, li.inspection_date,
+        li.risk_level,
+        (6371 * ACOS(
+            LEAST(1.0, GREATEST(-1.0,
+                COS(RADIANS(:lat)) * COS(RADIANS(s.latitude)) *
+                COS(RADIANS(s.longitude) - RADIANS(:lng)) +
+                SIN(RADIANS(:lat)) * SIN(RADIANS(s.latitude))
+            ))
+        )) AS distance_km
+    FROM stalls AS s
+    LEFT JOIN latest_stall_inspection AS li ON li.stall_id = s.stall_id
+    WHERE s.status = 'active'
+      AND s.latitude IS NOT NULL AND s.longitude IS NOT NULL
+    HAVING distance_km <= :radius_km
+    ORDER BY distance_km ASC
+    LIMIT :row_limit
+    """
+)
+
+
+@customer_bp.route("/nearby")
+@login_required
+@role_required("student")
+def nearby_stalls():
+    return render_template(
+        "customer/nearby_stalls.html",
+        areas=Area.query.order_by(Area.area_name).all(),
+        default_radius_km=NEARBY_DEFAULT_RADIUS_KM,
+        max_radius_km=NEARBY_MAX_RADIUS_KM,
+        default_center={
+            "lat": current_app.config.get("DEFAULT_MAP_CENTER_LAT", 23.8103),
+            "lng": current_app.config.get("DEFAULT_MAP_CENTER_LNG", 90.4125),
+        },
+    )
+
+
+@customer_bp.route("/api/stalls/nearby")
+@login_required
+@role_required("student")
+@limiter.limit("30 per minute")
+def api_nearby_stalls():
+    raw_lat = request.args.get("lat")
+    raw_lng = request.args.get("lng")
+    if raw_lat is None or raw_lng is None:
+        return jsonify(
+            {"error": "lat and lng are required numeric query parameters"}
+        ), 400
+    try:
+        lat = float(raw_lat)
+        lng = float(raw_lng)
+    except ValueError:
+        return jsonify(
+            {"error": "lat and lng are required numeric query parameters"}
+        ), 400
+    if not (-90 <= lat <= 90):
+        return jsonify({"error": "lat must be between -90 and 90"}), 400
+    if not (-180 <= lng <= 180):
+        return jsonify({"error": "lng must be between -180 and 180"}), 400
+
+    raw_radius = request.args.get("radius_km")
+    if raw_radius is None or raw_radius == "":
+        radius_km = NEARBY_DEFAULT_RADIUS_KM
+    else:
+        try:
+            radius_km = float(raw_radius)
+        except ValueError:
+            return jsonify({"error": "radius_km must be a number"}), 400
+        if radius_km <= 0:
+            return jsonify({"error": "radius_km must be positive"}), 400
+        if radius_km > NEARBY_MAX_RADIUS_KM:
+            current_app.logger.debug(
+                "nearby_stalls: clamping radius_km %s to server cap %s",
+                radius_km, NEARBY_MAX_RADIUS_KM,
+            )
+            radius_km = NEARBY_MAX_RADIUS_KM
+
+    try:
+        rows = db.session.execute(
+            _NEARBY_STALLS_SQL,
+            {
+                "lat": lat,
+                "lng": lng,
+                "radius_km": radius_km,
+                "row_limit": NEARBY_RESULT_LIMIT,
+            },
+        ).mappings().all()
+    except SQLAlchemyError:
+        current_app.logger.exception("nearby_stalls: query failed")
+        return jsonify({"error": "Unable to fetch nearby stalls right now"}), 503
+
+    stalls = []
+    for row in rows:
+        is_high_risk = row["risk_level"] in ("high", "critical")
+        stalls.append(
+            {
+                "stall_id": row["stall_id"],
+                "name": row["stall_name"],
+                "address": row["address"],
+                "latitude": float(row["latitude"]),
+                "longitude": float(row["longitude"]),
+                "distance_km": round(float(row["distance_km"]), 2),
+                "hygiene_grade": row["hygiene_grade"],
+                "overall_score": (
+                    float(row["overall_score"])
+                    if row["overall_score"] is not None
+                    else None
+                ),
+                "inspection_date": (
+                    row["inspection_date"].isoformat()
+                    if row["inspection_date"]
+                    else None
+                ),
+                "is_high_risk": is_high_risk,
+                "marker_color": _nearby_marker_color(
+                    row["hygiene_grade"], is_high_risk
+                ),
+                "detail_url": url_for(
+                    "customer_portal.stall_detail", stall_id=row["stall_id"]
+                ),
+            }
+        )
+
+    return jsonify(
+        {
+            "origin": {"lat": lat, "lng": lng},
+            "radius_km": radius_km,
+            "count": len(stalls),
+            "stalls": stalls,
+        }
+    )
+
+
 @customer_bp.route("/stalls")
 @login_required
 @role_required("student")
