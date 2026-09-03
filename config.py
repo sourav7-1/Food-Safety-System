@@ -97,6 +97,14 @@ class Config:
         os.getenv("EMAIL_VERIFICATION_MAX_AGE_SECONDS") or str(24 * 60 * 60)
     )
 
+    # How long a "forgot password" reset link stays valid, in seconds.
+    # Deliberately much shorter than email verification -- a reset link
+    # grants full account takeover if intercepted, so it defaults to 1
+    # hour rather than 24.
+    PASSWORD_RESET_MAX_AGE_SECONDS = int(
+        os.getenv("PASSWORD_RESET_MAX_AGE_SECONDS") or str(60 * 60)
+    )
+
     # Cloudflare Turnstile (registration bot protection). Left blank,
     # verification is skipped so local development keeps working.
     TURNSTILE_SITE_KEY = os.getenv("TURNSTILE_SITE_KEY", "")

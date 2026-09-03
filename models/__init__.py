@@ -289,6 +289,8 @@ class AuthAuditLog(db.Model):
             "role_requested",
             "role_approved",
             "role_rejected",
+            "password_reset_requested",
+            "password_reset_completed",
         ),
         nullable=False,
     )

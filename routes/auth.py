@@ -31,6 +31,13 @@ from services.email_verification import (
     send_verification_email,
     verify_verification_token,
 )
+from services.password_reset import (
+    ResetTokenExpired,
+    ResetTokenInvalid,
+    decode_reset_token,
+    reset_token_matches_user,
+    send_password_reset_email,
+)
 from services.turnstile import verify_turnstile
 
 
@@ -502,6 +509,107 @@ def resend_verification():
         return redirect(url_for("auth.login"))
 
     return render_template("auth/resend_verification.html")
+
+
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(_dashboard_url(current_user))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        user = User.query.filter(func.lower(User.email) == email).first()
+
+        # Only a "local" (email+password) account has a password to
+        # reset -- a Google-only account has no password_hash at all.
+        # Silently skip sending for anyone else, but always show the
+        # same message below regardless of outcome, so this endpoint
+        # can't be used to check which email addresses are registered.
+        if user is not None and user.auth_provider == "local":
+            record_auth_event("password_reset_requested", user=user)
+            db.session.commit()
+            result = send_password_reset_email(user)
+            if current_app.debug and result.dev_link:
+                # DEBUG-only fallback so localhost testing works without
+                # real SMTP credentials configured yet -- see
+                # send_verification_email's identical pattern above.
+                flash(
+                    "Email sending isn't configured yet, so here is your "
+                    "password reset link for local testing: "
+                    + result.dev_link,
+                    "warning",
+                )
+
+        flash(
+            "If that email address is registered with a password, we've "
+            "sent a link to reset it. The link expires in "
+            f"{current_app.config.get('PASSWORD_RESET_MAX_AGE_SECONDS', 3600) // 60} "
+            "minutes.",
+            "info",
+        )
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/forgot_password.html")
+
+
+@auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+@limiter.limit("10 per minute", methods=["POST"])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(_dashboard_url(current_user))
+
+    try:
+        user_id, fingerprint = decode_reset_token(token)
+    except ResetTokenExpired:
+        flash(
+            "This password reset link has expired. Please request a new one.",
+            "danger",
+        )
+        return redirect(url_for("auth.forgot_password"))
+    except ResetTokenInvalid:
+        flash("This password reset link is invalid.", "danger")
+        return redirect(url_for("auth.forgot_password"))
+
+    user = db.session.get(User, user_id)
+    if user is None or not reset_token_matches_user(fingerprint, user):
+        # Covers a deleted account, and the single-use case: once the
+        # password has actually changed, the fingerprint no longer
+        # matches, so a previously emailed link (or a reused browser
+        # back-button submission) can't be replayed.
+        flash(
+            "This password reset link is invalid or has already been used.",
+            "danger",
+        )
+        return redirect(url_for("auth.forgot_password"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        errors = []
+        if len(password) < 8:
+            errors.append("Password must contain at least 8 characters.")
+        if password != confirm_password:
+            errors.append("Passwords do not match.")
+
+        if errors:
+            for error in errors:
+                flash(error, "danger")
+            return render_template("auth/reset_password.html", token=token), 400
+
+        user.set_password(password)
+        record_auth_event("password_reset_completed", user=user)
+        db.session.commit()
+
+        flash(
+            "Your password has been reset. You can now log in with your "
+            "new password.",
+            "success",
+        )
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/reset_password.html", token=token)
 
 
 @auth_bp.route("/logout", methods=["GET", "POST"])

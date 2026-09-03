@@ -90,7 +90,7 @@
 html {
     scroll-behavior: smooth;
     font-size: 16px;
-    overflow-x: hidden;
+    overflow-x: clip;
     width: 100%;
 }
 
@@ -102,7 +102,7 @@ body {
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.6;
     margin: 0;
-    overflow-x: hidden;
+    overflow-x: clip;
     width: 100%;
 }
 
@@ -214,6 +214,86 @@ p {
     background: rgba(255, 255, 255, 0.12);
 }
 
+.site-navbar .navbar-toggler {
+    padding: 0.5rem 0.65rem;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    transition: all var(--transition-fast);
+}
+
+.site-navbar .navbar-toggler:hover,
+.site-navbar .navbar-toggler:focus {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 991.98px) {
+    .site-navbar .navbar-collapse {
+        background: rgba(6, 78, 59, 0.98);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        margin-top: 0.85rem;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+    }
+
+    .site-navbar .navbar-nav {
+        margin: 0.25rem 0 1rem 0 !important;
+        gap: 0.4rem;
+    }
+
+    .site-navbar .navbar-nav .nav-link {
+        padding: 0.65rem 1rem !important;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+    }
+
+    .site-navbar .navbar-nav .nav-link:hover,
+    .site-navbar .navbar-nav .nav-link:focus {
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff !important;
+    }
+
+    .site-navbar .d-flex.align-items-center.gap-2 {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 0.65rem !important;
+        padding-top: 0.85rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .site-navbar .d-flex.align-items-center.gap-2 .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.65rem 1rem;
+    }
+
+    .site-navbar .dropdown {
+        width: 100%;
+    }
+
+    .site-navbar .nav-user-dropdown {
+        width: 100%;
+        justify-content: space-between;
+        padding: 0.65rem 1rem;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius-md);
+    }
+
+    .site-navbar .dropdown-menu {
+        position: static !important;
+        transform: none !important;
+        margin-top: 0.5rem !important;
+        width: 100%;
+    }
+}
+
 /* User Avatar & Dropdown */
 .navbar-avatar {
     width: 34px;
@@ -287,7 +367,8 @@ p {
     border: 1px solid transparent;
     text-decoration: none;
     cursor: pointer;
-    position: relative;
+    position: relative !important;
+    overflow: hidden !important;
     user-select: none;
     transition: transform var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
@@ -465,6 +546,40 @@ p {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Interactive Ripple Micro-Animation */
+.btn,
+.btn-google,
+.apple-link,
+.nav-user-dropdown,
+.dashboard-notification-btn {
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.btn-ripple-wave {
+    position: absolute !important;
+    border-radius: 50% !important;
+    transform: scale(0);
+    animation: btn-ripple-animation 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    background: rgba(255, 255, 255, 0.35);
+    pointer-events: none !important;
+    z-index: 10;
+}
+
+.btn-light .btn-ripple-wave,
+.btn-outline-success .btn-ripple-wave,
+.btn-google .btn-ripple-wave,
+.apple-link .btn-ripple-wave {
+    background: rgba(5, 150, 105, 0.22);
+}
+
+@keyframes btn-ripple-animation {
+    to {
+        transform: scale(2.8);
+        opacity: 0;
+    }
 }
 
 /* ==========================================================================

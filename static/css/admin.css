@@ -1517,6 +1517,23 @@ html.sidebar-collapsed .admin-sidebar .sidebar-logout button {
     to { transform: rotate(360deg); }
 }
 
+.btn-ripple-wave {
+    position: absolute !important;
+    border-radius: 50% !important;
+    transform: scale(0);
+    animation: admin-btn-ripple-animation 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    background: rgba(255, 255, 255, 0.35);
+    pointer-events: none !important;
+    z-index: 10;
+}
+
+@keyframes admin-btn-ripple-animation {
+    to {
+        transform: scale(2.8);
+        opacity: 0;
+    }
+}
+
 .admin-panel-spinner {
     display: flex;
     align-items: center;

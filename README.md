@@ -16,7 +16,8 @@ administrative reporting.
 ## Main modules
 
 - Public landing page with live, database-backed platform statistics
-- Role-based authentication for administrators, inspectors, vendors, and customers
+- Role-based authentication for administrators, inspectors, vendors, and
+  customers, including email verification and self-service password reset
 - Admin dashboard and vendor, stall, inspector, and complaint management
 - Transactional inspector workflow with MySQL score triggers and risk procedure
 - Vendor safety profiles, food item CRUD, corrective actions, and evidence uploads
@@ -142,6 +143,22 @@ Administrators can open `/admin/reports/` for:
 - Reinspection due schedule
 
 Every report dataset is queried from MySQL through SQLAlchemy.
+
+## Account recovery
+
+A "Forgot password?" link on the login page (`/forgot-password`) emails a
+time-limited reset link (`PASSWORD_RESET_MAX_AGE_SECONDS`, default 1 hour) to
+any "local" (email+password) account -- Google-only accounts have no
+password to reset. The response is identical whether or not the email is
+registered, so the endpoint can't be used to enumerate accounts. The link
+itself is a signed, stateless token (no extra database table): it embeds a
+one-way fingerprint of the account's current password hash, so it stops
+working the instant the password actually changes, making it single-use
+without any server-side revocation list. Every request and completed reset
+is recorded in the existing auth audit trail. Uses the same `MAIL_SERVER` /
+`FLASK_DEBUG` dev-link fallback as email verification: with no SMTP server
+configured, `FLASK_DEBUG=True` shows the link directly on the page instead
+of failing silently (see `.env.example`).
 
 ## Evidence uploads
 

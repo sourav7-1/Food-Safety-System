@@ -171,7 +171,7 @@ create table auth_audit_log (
   audit_id int not null auto_increment,
   user_id int null,
   email_attempted varchar(150) null,
-  event enum('login_success', 'login_failed', 'logout', 'account_created', 'account_suspended', 'account_reactivated', 'role_requested', 'role_approved', 'role_rejected') not null,
+  event enum('login_success', 'login_failed', 'logout', 'account_created', 'account_suspended', 'account_reactivated', 'role_requested', 'role_approved', 'role_rejected', 'password_reset_requested', 'password_reset_completed') not null,
   auth_provider enum('local', 'google') null,
   ip_address varchar(45) null,
   user_agent varchar(255) null,

@@ -190,6 +190,8 @@
             if (!button || button.classList.contains("btn-loading")) {
                 return;
             }
+            button.querySelectorAll(".btn-ripple-wave").forEach(function (r) { r.remove(); });
+            button.dataset.originalContent = button.innerHTML;
             button.style.minWidth = button.offsetWidth + "px";
             button.style.minHeight = button.offsetHeight + "px";
             button.classList.add("btn-loading");
@@ -198,18 +200,15 @@
         }
 
         // Anchor tags styled as buttons (nav CTAs like Login/Register/
-        // Dashboard) trigger a real navigation, not a form submit, so the
-        // handler above never sees them. Give them the same spinner for
-        // the moment before the browser actually navigates away.
+        // Dashboard) trigger a real navigation, not a form submit.
+        // Activate progress bar without erasing the link label or distorting size.
         function setLinkLoading(link) {
             if (!link || link.classList.contains("btn-loading")) {
                 return;
             }
-            link.dataset.originalContent = link.innerHTML;
-            link.style.minWidth = link.offsetWidth + "px";
-            link.style.minHeight = link.offsetHeight + "px";
+            link.querySelectorAll(".btn-ripple-wave").forEach(function (r) { r.remove(); });
+            showProgress();
             link.classList.add("btn-loading");
-            link.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
         }
 
         document.addEventListener("click", function (event) {
@@ -238,22 +237,19 @@
             setLinkLoading(link);
         });
 
-        // A back/forward navigation can restore this page from the
-        // browser's bfcache with a button still stuck mid-spinner from
-        // before the user left -- put every such button back the way it
-        // was rather than leaving it permanently disabled.
-        window.addEventListener("pageshow", function (event) {
-            if (!event.persisted) {
-                return;
-            }
-            document.querySelectorAll("a.btn-loading").forEach(function (link) {
-                link.classList.remove("btn-loading");
-                if (link.dataset.originalContent !== undefined) {
-                    link.innerHTML = link.dataset.originalContent;
-                    delete link.dataset.originalContent;
+        // A back/forward navigation can restore this page with a button
+        // still in loading state -- restore all buttons gracefully.
+        window.addEventListener("pageshow", function () {
+            hideProgress();
+            document.querySelectorAll(".btn-loading, a.btn-loading, button.btn-loading").forEach(function (btn) {
+                btn.classList.remove("btn-loading");
+                btn.disabled = false;
+                if (btn.dataset.originalContent !== undefined) {
+                    btn.innerHTML = btn.dataset.originalContent;
+                    delete btn.dataset.originalContent;
                 }
-                link.style.removeProperty("min-width");
-                link.style.removeProperty("min-height");
+                btn.style.removeProperty("min-width");
+                btn.style.removeProperty("min-height");
             });
         });
 
@@ -454,6 +450,13 @@
                 if (!btn || btn.classList.contains("btn-loading")) {
                     return;
                 }
+                var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                if (reduceMotion) {
+                    return;
+                }
+                // Clear any leftover ripples first
+                btn.querySelectorAll(".btn-ripple-wave").forEach(function (r) { r.remove(); });
+
                 var rect = btn.getBoundingClientRect();
                 var size = Math.max(rect.width, rect.height);
                 var x = event.clientX - rect.left - size / 2;
@@ -467,9 +470,30 @@
 
                 btn.appendChild(ripple);
 
-                ripple.addEventListener("animationend", function () {
-                    ripple.remove();
-                }, { once: true });
+                var removed = false;
+                function removeRipple() {
+                    if (removed) return;
+                    removed = true;
+                    if (ripple.parentNode) {
+                        ripple.remove();
+                    }
+                }
+
+                ripple.addEventListener("animationend", removeRipple, { once: true });
+                setTimeout(removeRipple, 600);
+            });
+
+            // Mobile navigation auto-close on link click
+            document.addEventListener("click", function (event) {
+                var navLink = event.target.closest("#primaryNav .nav-link, #primaryNav a.btn");
+                if (!navLink) return;
+                var navCollapse = document.getElementById("primaryNav");
+                if (navCollapse && navCollapse.classList.contains("show") && window.bootstrap && window.bootstrap.Collapse) {
+                    var instance = bootstrap.Collapse.getInstance(navCollapse);
+                    if (instance) {
+                        instance.hide();
+                    }
+                }
             });
 
             var revealEls = document.querySelectorAll(".reveal");
