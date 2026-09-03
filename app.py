@@ -135,6 +135,16 @@ def create_app(config_class=Config):
         # those specific origins plus 'unsafe-inline' rather than using a
         # nonce-based policy, instead of a default-src 'self' policy that
         # would break the existing templates.
+        #
+        # img-src additionally allowlists OpenStreetMap's tile subdomains
+        # for the Leaflet maps on the admin stall-location picker and the
+        # customer /nearby page -- those render raster tile images
+        # fetched directly by the browser as <img> requests, which
+        # img-src 'self' data: alone would otherwise block (the map
+        # would render with no basemap under the pins). Nothing else
+        # changed: still no img-src wildcard, still no new script-src
+        # origin (Leaflet itself loads from the already-allowlisted
+        # cdn.jsdelivr.net).
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' "
@@ -144,7 +154,7 @@ def create_app(config_class=Config):
             "https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com "
             "https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "img-src 'self' data:; "
+            "img-src 'self' data: https://*.tile.openstreetmap.org; "
             "connect-src 'self'; "
             "frame-src https://challenges.cloudflare.com; "
             "frame-ancestors 'none'; "

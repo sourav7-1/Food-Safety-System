@@ -1,0 +1,431 @@
+{% extends "portal_base.html" %}
+{% block title %}Nearby Stalls{% endblock %}
+{% block dashboard_title %}Nearby Stalls{% endblock %}
+{% block dashboard_subtitle %}Find verified food stalls near your current location.{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="nearby-toolbar">
+    <div class="nearby-radius-group" id="nearbyRadiusGroup" role="group" aria-label="Search radius">
+        {% for km in (1, 3, 5, 10) %}
+        <button type="button" class="nearby-radius-btn {{ 'active' if km == default_radius_km }}" data-radius="{{ km }}">{{ km }} km</button>
+        {% endfor %}
+    </div>
+    <div class="nearby-legend">
+        <span class="nearby-legend-item"><span class="nearby-swatch nearby-swatch-green"></span>Good (A/B)</span>
+        <span class="nearby-legend-item"><span class="nearby-swatch nearby-swatch-amber"></span>Fair (C)</span>
+        <span class="nearby-legend-item"><span class="nearby-swatch nearby-swatch-red"></span>Poor / high risk</span>
+        <span class="nearby-legend-item"><span class="nearby-swatch nearby-swatch-gray"></span>Not yet inspected</span>
+    </div>
+</div>
+
+<div id="nearbyStatusBanner" class="alert nearby-status-banner d-none" role="status"></div>
+
+<div id="nearbyAreaFallback" class="portal-card nearby-area-fallback d-none">
+    <label class="form-label small fw-bold mb-2" for="nearbyAreaSelect">Browse by area instead</label>
+    <div class="d-flex gap-2 flex-wrap">
+        <select class="form-select" id="nearbyAreaSelect" style="max-width: 320px;">
+            <option value="">Select an area…</option>
+            {% for area in areas %}
+            <option value="{{ area.area_id }}">{{ area.area_name }} — {{ area.city }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" class="btn btn-success" id="nearbyAreaGoBtn">Browse stalls in this area</button>
+        <button type="button" class="btn btn-outline-secondary" id="nearbyRetryLocationBtn">
+            <i class="fa-solid fa-location-crosshairs me-1"></i>Try location again
+        </button>
+    </div>
+</div>
+
+<div class="nearby-map-card">
+    <div id="nearbyMap"></div>
+    <div id="nearbyMapLoading" class="nearby-map-loading">
+        <div class="spinner-border text-success" role="status"><span class="visually-hidden">Loading…</span></div>
+        <span>Getting your location…</span>
+    </div>
+</div>
+
+<style>
+.nearby-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.nearby-radius-group {
+    display: flex;
+    gap: 6px;
+}
+.nearby-radius-btn {
+    border: 1px solid #d1d9e0;
+    background: #fff;
+    color: #334155;
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.nearby-radius-btn:hover { background: #f4fdf8; }
+.nearby-radius-btn.active {
+    background: #1f7a4d;
+    border-color: #1f7a4d;
+    color: #fff;
+}
+.nearby-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+.nearby-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #475569;
+    font-weight: 600;
+}
+.nearby-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.nearby-swatch-green { background: #059669; }
+.nearby-swatch-amber { background: #d97706; }
+.nearby-swatch-red { background: #dc2626; }
+.nearby-swatch-gray { background: #94a3b8; }
+
+.nearby-status-banner {
+    margin-bottom: 14px;
+}
+.nearby-status-banner .btn { margin-left: 10px; }
+
+.nearby-area-fallback { margin-bottom: 14px; }
+
+.nearby-map-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+#nearbyMap {
+    height: 480px;
+    width: 100%;
+    background: #eef2f6;
+}
+.nearby-map-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.85);
+    font-weight: 600;
+    color: #334155;
+    font-size: 0.9rem;
+    z-index: 500;
+}
+.nearby-map-loading.d-none { display: none; }
+
+.nearby-pin-dot {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+.nearby-user-dot {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2563eb;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+}
+.nearby-popup .grade-badge-sm { display: inline-block; margin-bottom: 4px; }
+.nearby-popup h6 { margin-bottom: 4px; font-weight: 800; }
+.nearby-popup p { margin: 0 0 4px; font-size: 0.82rem; color: #475569; }
+.nearby-popup a.btn { margin-top: 6px; }
+
+@media (max-width: 576px) {
+    #nearbyMap { height: 360px; }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+    "use strict";
+
+    var DEFAULT_CENTER = {{ default_center|tojson }};
+    var DEFAULT_RADIUS_KM = {{ default_radius_km|tojson }};
+    var API_URL = {{ url_for('customer_portal.api_nearby_stalls')|tojson }};
+    var SEARCH_STALLS_URL = {{ url_for('customer_portal.search_stalls')|tojson }};
+
+    var mapEl = document.getElementById("nearbyMap");
+    if (!mapEl || !window.L) { return; }
+
+    var loadingEl = document.getElementById("nearbyMapLoading");
+    var statusBanner = document.getElementById("nearbyStatusBanner");
+    var areaFallback = document.getElementById("nearbyAreaFallback");
+    var areaSelect = document.getElementById("nearbyAreaSelect");
+    var areaGoBtn = document.getElementById("nearbyAreaGoBtn");
+    var retryLocationBtn = document.getElementById("nearbyRetryLocationBtn");
+    var radiusGroup = document.getElementById("nearbyRadiusGroup");
+
+    var currentRadiusKm = DEFAULT_RADIUS_KM;
+    var userLatLng = null;
+    var userMarker = null;
+    var stallMarkers = [];
+    var fetchSeq = 0;
+    var abortController = null;
+
+    function escapeHtml(value) {
+        return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+        });
+    }
+
+    // Zoom 15 reads as "DIU campus", not "somewhere in the country" --
+    // every stall this app tracks is near there, so this is already a
+    // useful view before geolocation resolves (or if it's denied and
+    // the area-fallback banner takes over below).
+    var map = L.map(mapEl, {
+        center: [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng],
+        zoom: 15,
+    });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+    }).addTo(map);
+    // Leaflet needs a non-zero pixel height at init; #nearbyMap has one via
+    // CSS, but re-check once the surrounding layout (webfonts, sidebar)
+    // has settled, and again on every window resize -- a container whose
+    // own size changes without a matching window resize event (rare here,
+    // since the map isn't inside a collapsible panel) would otherwise
+    // render at a stale size.
+    window.setTimeout(function () { map.invalidateSize(); }, 150);
+    window.addEventListener("resize", function () { map.invalidateSize(); });
+
+    var USER_ICON = L.divIcon({
+        className: "nearby-user-icon",
+        html: '<span class="nearby-user-dot"></span>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+    });
+
+    var MARKER_COLOR_HEX = { green: "#059669", amber: "#d97706", red: "#dc2626", gray: "#94a3b8" };
+
+    function stallIcon(markerColor) {
+        var hex = MARKER_COLOR_HEX[markerColor] || MARKER_COLOR_HEX.gray;
+        return L.divIcon({
+            className: "nearby-stall-icon",
+            html: '<span class="nearby-pin-dot" style="background:' + hex + '"></span>',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+        });
+    }
+
+    function showLoading(text) {
+        loadingEl.querySelector("span:last-child").textContent = text;
+        loadingEl.classList.remove("d-none");
+    }
+    function hideLoading() {
+        loadingEl.classList.add("d-none");
+    }
+
+    function showStatus(message, variant, withRetryFetch) {
+        statusBanner.className = "alert nearby-status-banner alert-" + variant;
+        statusBanner.textContent = message;
+        if (withRetryFetch) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn btn-sm btn-outline-" + variant;
+            btn.textContent = "Retry";
+            btn.addEventListener("click", fetchNearby);
+            statusBanner.appendChild(btn);
+        }
+        statusBanner.classList.remove("d-none");
+    }
+    function hideStatus() {
+        statusBanner.classList.add("d-none");
+    }
+
+    function showAreaFallback() {
+        areaFallback.classList.remove("d-none");
+    }
+    function hideAreaFallback() {
+        areaFallback.classList.add("d-none");
+    }
+
+    function clearStallMarkers() {
+        stallMarkers.forEach(function (marker) { map.removeLayer(marker); });
+        stallMarkers = [];
+    }
+
+    function popupHtml(stall) {
+        var gradeBlock = stall.hygiene_grade
+            ? '<span class="grade-badge-sm grade-' + escapeHtml(stall.hygiene_grade.toLowerCase()) + '">Grade ' + escapeHtml(stall.hygiene_grade) + '</span>'
+            : '<span class="text-secondary small">Not yet inspected</span>';
+        var dateText = stall.inspection_date ? escapeHtml(stall.inspection_date) : "Not yet inspected";
+        return (
+            '<div class="nearby-popup">' +
+            '<h6>' + escapeHtml(stall.name) + '</h6>' +
+            gradeBlock +
+            '<p>' + escapeHtml(stall.address) + '</p>' +
+            '<p>' + stall.distance_km.toFixed(2) + ' km away &middot; Inspected: ' + dateText + '</p>' +
+            '<a class="btn btn-sm btn-success" href="' + escapeHtml(stall.detail_url) + '">View stall</a>' +
+            '</div>'
+        );
+    }
+
+    function renderStalls(data) {
+        clearStallMarkers();
+        if (!data.stalls || data.stalls.length === 0) {
+            showStatus(
+                "No stalls found within " + data.radius_km + " km — try a larger radius.",
+                "info",
+                false
+            );
+            return;
+        }
+        hideStatus();
+        data.stalls.forEach(function (stall) {
+            var marker = L.marker([stall.latitude, stall.longitude], { icon: stallIcon(stall.marker_color) })
+                .addTo(map)
+                .bindPopup(popupHtml(stall));
+            stallMarkers.push(marker);
+        });
+    }
+
+    function fetchNearby() {
+        if (!userLatLng) { return; }
+        var seq = ++fetchSeq;
+        if (abortController) { abortController.abort(); }
+        abortController = ("AbortController" in window) ? new AbortController() : null;
+        hideStatus();
+
+        var url = API_URL + "?lat=" + encodeURIComponent(userLatLng.lat) +
+            "&lng=" + encodeURIComponent(userLatLng.lng) +
+            "&radius_km=" + encodeURIComponent(currentRadiusKm);
+
+        fetch(url, { headers: { Accept: "application/json" }, signal: abortController ? abortController.signal : undefined })
+            .then(function (response) {
+                if (seq !== fetchSeq) { return null; }
+                if (!response.ok) {
+                    return response.json().catch(function () { return {}; }).then(function (body) {
+                        throw new Error(body.error || "Request failed (" + response.status + ")");
+                    });
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                if (data === null || seq !== fetchSeq) { return; }
+                renderStalls(data);
+            })
+            .catch(function (error) {
+                if (seq !== fetchSeq) { return; }
+                if (error && error.name === "AbortError") { return; }
+                clearStallMarkers();
+                showStatus("Couldn't load nearby stalls, try again.", "danger", true);
+            });
+    }
+
+    function placeUserMarker() {
+        if (userMarker) { map.removeLayer(userMarker); }
+        userMarker = L.marker([userLatLng.lat, userLatLng.lng], { icon: USER_ICON, zIndexOffset: 1000 })
+            .addTo(map)
+            .bindPopup("You are here");
+    }
+
+    function onLocated(position) {
+        userLatLng = { lat: position.coords.latitude, lng: position.coords.longitude };
+        hideLoading();
+        hideAreaFallback();
+        hideStatus();
+        map.setView([userLatLng.lat, userLatLng.lng], 14);
+        placeUserMarker();
+        fetchNearby();
+    }
+
+    function onLocationError(error) {
+        hideLoading();
+        clearStallMarkers();
+        if (error && error.code === error.PERMISSION_DENIED) {
+            showStatus("Location access was declined — pick an area instead.", "warning", false);
+        } else {
+            // TIMEOUT or POSITION_UNAVAILABLE
+            showStatus("Couldn't determine your location — pick an area instead.", "warning", false);
+        }
+        showAreaFallback();
+    }
+
+    // navigator.geolocation requires a secure context (HTTPS) in every
+    // modern browser, with one exception: http://localhost and
+    // http://127.0.0.1 are still treated as secure for local development,
+    // so `flask run` over plain HTTP is enough to test this locally --
+    // no adhoc cert needed. It only becomes a real blocker once this is
+    // tested from a LAN IP or a real device instead of the dev machine
+    // itself; in that case run behind HTTPS (e.g. `flask run --cert=adhoc`
+    // and accept the browser's self-signed-cert warning) to get a real
+    // permission prompt.
+    function locateUser() {
+        hideAreaFallback();
+        if (!("geolocation" in navigator) || !navigator.geolocation) {
+            hideLoading();
+            showStatus("Your browser doesn't support location services — pick an area instead.", "warning", false);
+            showAreaFallback();
+            return;
+        }
+        showLoading("Getting your location…");
+        navigator.geolocation.getCurrentPosition(onLocated, onLocationError, {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 60000,
+        });
+    }
+
+    if (radiusGroup) {
+        radiusGroup.querySelectorAll(".nearby-radius-btn").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                radiusGroup.querySelectorAll(".nearby-radius-btn").forEach(function (b) {
+                    b.classList.remove("active");
+                });
+                btn.classList.add("active");
+                currentRadiusKm = parseFloat(btn.getAttribute("data-radius"));
+                fetchNearby();
+            });
+        });
+    }
+
+    if (areaGoBtn && areaSelect) {
+        areaGoBtn.addEventListener("click", function () {
+            if (!areaSelect.value) { return; }
+            window.location.href = SEARCH_STALLS_URL + "?area_id=" + encodeURIComponent(areaSelect.value);
+        });
+    }
+
+    if (retryLocationBtn) {
+        retryLocationBtn.addEventListener("click", locateUser);
+    }
+
+    locateUser();
+})();
+</script>
+{% endblock %}

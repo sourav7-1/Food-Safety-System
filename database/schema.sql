@@ -302,6 +302,7 @@ create index idx_stalls_vendor_id on stalls (vendor_id);
 create index idx_stalls_area_id on stalls (area_id);
 create index idx_stalls_status on stalls (status);
 create index idx_stalls_created_at on stalls (created_at);
+create index idx_stalls_lat_lng on stalls (latitude, longitude);
 
 create table food_categories (
   category_id int not null auto_increment,

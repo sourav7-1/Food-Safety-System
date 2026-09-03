@@ -95,6 +95,52 @@ def _parse_decimal(value, field_name):
         raise ValueError(f"{field_name} must be a valid number.") from error
 
 
+def _parse_stall_coordinates(form):
+    """Validate the paired latitude/longitude fields from the stall
+    create/edit modal (templates/admin/stalls/list.html). Location is
+    optional, but never partially set -- the map picker's two hidden
+    inputs are always written together, so exactly one populated field
+    means either a JS bug or a hand-crafted request, not a legitimate
+    "I only know one coordinate" case.
+
+    Range/parseability is checked here even though the DB column also
+    has a CHECK constraint (chk_stalls_latitude / chk_stalls_longitude
+    in database/schema.sql): CHECK constraints are silently ignored on
+    MySQL 8.0.0-8.0.15, and a 400 with a field-level message is a much
+    better experience than a raw IntegrityError either way.
+    """
+    raw_lat = (form.get("latitude") or "").strip()
+    raw_lng = (form.get("longitude") or "").strip()
+
+    if not raw_lat and not raw_lng:
+        return None, None
+    if bool(raw_lat) != bool(raw_lng):
+        raise ValueError(
+            "Both latitude and longitude are required together, or leave "
+            "both blank."
+        )
+
+    try:
+        latitude = Decimal(raw_lat)
+        longitude = Decimal(raw_lng)
+    except InvalidOperation as error:
+        raise ValueError("Latitude and longitude must be valid numbers.") from error
+
+    if not (-90 <= latitude <= 90):
+        raise ValueError("Latitude must be between -90 and 90.")
+    if not (-180 <= longitude <= 180):
+        raise ValueError("Longitude must be between -180 and 180.")
+
+    # Match the column's own precision (DECIMAL(10,8) / DECIMAL(11,8)) so
+    # a value with more decimal places than the column keeps isn't
+    # silently truncated by MySQL without the admin knowing.
+    quantum = Decimal("0.00000001")
+    return (
+        latitude.quantize(quantum),
+        longitude.quantize(quantum),
+    )
+
+
 def _role(role_name):
     return Role.query.filter_by(role_name=role_name).first()
 
@@ -679,6 +725,7 @@ def stall_create():
         if status not in STALL_STATUSES:
             raise ValueError("Select a valid stall status.")
         stall_code = request.form.get("stall_code", "").strip()
+        latitude, longitude = _parse_stall_coordinates(request.form)
         stall = Stall(
             vendor_id=int(request.form["vendor_id"]),
             area_id=int(request.form["area_id"]),
@@ -688,10 +735,8 @@ def stall_create():
             photo_url=cache_photo(
                 request.form.get("photo_url", ""), stall_code
             ),
-            latitude=_parse_decimal(request.form.get("latitude"), "Latitude"),
-            longitude=_parse_decimal(
-                request.form.get("longitude"), "Longitude"
-            ),
+            latitude=latitude,
+            longitude=longitude,
             status=status,
         )
         db.session.add(stall)
@@ -724,12 +769,7 @@ def stall_edit(stall_id):
         stall.photo_url = cache_photo(
             request.form.get("photo_url", ""), stall.stall_code
         )
-        stall.latitude = _parse_decimal(
-            request.form.get("latitude"), "Latitude"
-        )
-        stall.longitude = _parse_decimal(
-            request.form.get("longitude"), "Longitude"
-        )
+        stall.latitude, stall.longitude = _parse_stall_coordinates(request.form)
         status = request.form.get("status", "active").strip() or "active"
         if status not in STALL_STATUSES:
             raise ValueError("Select a valid stall status.")
