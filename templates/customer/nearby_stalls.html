@@ -23,6 +23,17 @@
     </div>
 </div>
 
+<div class="nearby-category-group" id="nearbyCategoryGroup" role="group" aria-label="Stall type filter">
+    <span class="nearby-category-label">Show:</span>
+    {% for value, label in stall_category_labels.items() %}
+    <label class="nearby-category-chip">
+        <input type="checkbox" value="{{ value }}" checked>
+        <i class="fa-solid {{ {'street_stall': 'fa-cart-shopping', 'food_court': 'fa-utensils', 'hall_canteen': 'fa-building'}[value] }}"></i>
+        {{ label }}
+    </label>
+    {% endfor %}
+</div>
+
 <div id="nearbyStatusBanner" class="alert nearby-status-banner d-none" role="status"></div>
 
 <div id="nearbyAreaFallback" class="portal-card nearby-area-fallback d-none">
@@ -104,6 +115,39 @@
 .nearby-swatch-red { background: #dc2626; }
 .nearby-swatch-gray { background: #94a3b8; }
 
+.nearby-category-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.nearby-category-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+}
+.nearby-category-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #334155;
+    border: 1px solid #d1d9e0;
+    background: #fff;
+    padding: 5px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    user-select: none;
+}
+.nearby-category-chip input { accent-color: #1f7a4d; }
+.nearby-category-chip:has(input:checked) {
+    background: #f4fdf8;
+    border-color: #1f7a4d;
+    color: #1f7a4d;
+}
+
 .nearby-status-banner {
     margin-bottom: 14px;
 }
@@ -140,12 +184,16 @@
 .nearby-map-loading.d-none { display: none; }
 
 .nearby-pin-dot {
-    display: block;
-    width: 16px;
-    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     border: 2px solid #fff;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    color: #fff;
+    font-size: 9px;
 }
 .nearby-user-dot {
     display: block;
@@ -155,6 +203,13 @@
     background: #2563eb;
     border: 3px solid #fff;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+}
+.nearby-popup p.nearby-popup-category {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    font-weight: 700;
 }
 .nearby-popup .grade-badge-sm { display: inline-block; margin-bottom: 4px; }
 .nearby-popup h6 { margin-bottom: 4px; font-weight: 800; }
@@ -188,6 +243,7 @@
     var areaGoBtn = document.getElementById("nearbyAreaGoBtn");
     var retryLocationBtn = document.getElementById("nearbyRetryLocationBtn");
     var radiusGroup = document.getElementById("nearbyRadiusGroup");
+    var categoryGroup = document.getElementById("nearbyCategoryGroup");
 
     var currentRadiusKm = DEFAULT_RADIUS_KM;
     var userLatLng = null;
@@ -243,15 +299,33 @@
     });
 
     var MARKER_COLOR_HEX = { green: "#059669", amber: "#d97706", red: "#dc2626", gray: "#94a3b8" };
+    // Marker color already encodes hygiene grade/risk (see MARKER_COLOR_HEX
+    // above) -- this glyph is a second, independent visual channel so a
+    // customer can tell a food-court stall from a street stall from a hall
+    // canteen at a glance without that meaning colliding with the grade.
+    var CATEGORY_GLYPH = {
+        street_stall: "fa-cart-shopping",
+        food_court: "fa-utensils",
+        hall_canteen: "fa-building",
+    };
 
-    function stallIcon(markerColor) {
+    function stallIcon(markerColor, category) {
         var hex = MARKER_COLOR_HEX[markerColor] || MARKER_COLOR_HEX.gray;
+        var glyph = CATEGORY_GLYPH[category] || CATEGORY_GLYPH.street_stall;
         return L.divIcon({
             className: "nearby-stall-icon",
-            html: '<span class="nearby-pin-dot" style="background:' + hex + '"></span>',
-            iconSize: [16, 16],
-            iconAnchor: [8, 8],
+            html: '<span class="nearby-pin-dot" style="background:' + hex + '"><i class="fa-solid ' + glyph + '"></i></span>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
         });
+    }
+
+    function selectedCategories() {
+        if (!categoryGroup) { return []; }
+        return Array.prototype.map.call(
+            categoryGroup.querySelectorAll('input[type="checkbox"]:checked'),
+            function (input) { return input.value; }
+        );
     }
 
     function showLoading(text) {
@@ -299,6 +373,7 @@
         return (
             '<div class="nearby-popup">' +
             '<h6>' + escapeHtml(stall.name) + '</h6>' +
+            '<p class="nearby-popup-category">' + escapeHtml(stall.category_label) + '</p>' +
             gradeBlock +
             '<p>' + escapeHtml(stall.address) + '</p>' +
             '<p>' + stall.distance_km.toFixed(2) + ' km away &middot; Inspected: ' + dateText + '</p>' +
@@ -319,7 +394,7 @@
         }
         hideStatus();
         data.stalls.forEach(function (stall) {
-            var marker = L.marker([stall.latitude, stall.longitude], { icon: stallIcon(stall.marker_color) })
+            var marker = L.marker([stall.latitude, stall.longitude], { icon: stallIcon(stall.marker_color, stall.category) })
                 .addTo(map)
                 .bindPopup(popupHtml(stall));
             stallMarkers.push(marker);
@@ -328,6 +403,12 @@
 
     function fetchNearby() {
         if (!userLatLng) { return; }
+        var categories = selectedCategories();
+        if (categoryGroup && categories.length === 0) {
+            clearStallMarkers();
+            showStatus("Select at least one stall type to show on the map.", "info", false);
+            return;
+        }
         var seq = ++fetchSeq;
         if (abortController) { abortController.abort(); }
         abortController = ("AbortController" in window) ? new AbortController() : null;
@@ -336,6 +417,9 @@
         var url = API_URL + "?lat=" + encodeURIComponent(userLatLng.lat) +
             "&lng=" + encodeURIComponent(userLatLng.lng) +
             "&radius_km=" + encodeURIComponent(currentRadiusKm);
+        categories.forEach(function (category) {
+            url += "&category=" + encodeURIComponent(category);
+        });
 
         fetch(url, { headers: { Accept: "application/json" }, signal: abortController ? abortController.signal : undefined })
             .then(function (response) {
@@ -423,6 +507,12 @@
                 currentRadiusKm = parseFloat(btn.getAttribute("data-radius"));
                 fetchNearby();
             });
+        });
+    }
+
+    if (categoryGroup) {
+        categoryGroup.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
+            input.addEventListener("change", fetchNearby);
         });
     }
 

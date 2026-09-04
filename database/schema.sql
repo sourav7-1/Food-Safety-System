@@ -278,6 +278,7 @@ create table stalls (
   address varchar(255) not null,
   latitude decimal(10,8) null,
   longitude decimal(11,8) null,
+  category enum('street_stall', 'food_court', 'hall_canteen') not null default 'street_stall',
   photo_url varchar(1000) null,
   status enum('active', 'closed', 'suspended') not null default 'active',
   created_at timestamp not null default current_timestamp,
@@ -303,6 +304,7 @@ create index idx_stalls_area_id on stalls (area_id);
 create index idx_stalls_status on stalls (status);
 create index idx_stalls_created_at on stalls (created_at);
 create index idx_stalls_lat_lng on stalls (latitude, longitude);
+create index idx_stalls_category on stalls (category);
 
 create table food_categories (
   category_id int not null auto_increment,

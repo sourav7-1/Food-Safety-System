@@ -377,6 +377,21 @@ class Area(db.Model):
     inspectors = db.relationship("Inspector", back_populates="assigned_area")
 
 
+# A stall's category is a display/filter concept layered on top of the
+# existing inspection workflow -- every category still goes through the
+# same hygiene grading (get_hygiene_grade), so this stays a plain column
+# on the existing table rather than a separate model. Kept here (not in
+# routes/admin.py alongside STALL_STATUSES) because both routes/admin.py
+# (the only place stalls are created/edited) and routes/customer.py (the
+# nearby-stalls map) need the same value set and labels.
+STALL_CATEGORIES = {"street_stall", "food_court", "hall_canteen"}
+STALL_CATEGORY_LABELS = {
+    "street_stall": "Street Stall",
+    "food_court": "Food Court",
+    "hall_canteen": "Hall Canteen",
+}
+
+
 class Stall(db.Model):
     __tablename__ = "stalls"
 
@@ -397,6 +412,12 @@ class Stall(db.Model):
     latitude = db.Column(db.Numeric(10, 8))
     longitude = db.Column(db.Numeric(11, 8))
     photo_url = db.Column(db.String(1000))
+    category = db.Column(
+        db.Enum("street_stall", "food_court", "hall_canteen"),
+        nullable=False,
+        default="street_stall",
+        server_default="street_stall",
+    )
     status = db.Column(
         db.Enum("active", "closed", "suspended"),
         nullable=False,

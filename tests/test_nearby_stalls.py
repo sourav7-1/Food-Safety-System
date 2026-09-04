@@ -150,6 +150,20 @@ class NearbyApiValidationTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_unknown_category_is_400(self):
+        self._login()
+        response = self.client.get(
+            "/customer/api/stalls/nearby?lat=23.8&lng=90.4&category=food_truck"
+        )
+        self.assertEqual(response.status_code, 400)
+
+    # A request with a known category (and no matching stalls table --
+    # this test class uses sqlite:///:memory:, which lacks the MySQL
+    # latest_stall_inspection view the query joins against) would need to
+    # actually execute the Haversine query, so the "known category
+    # succeeds" case lives in tests/live_nearby_smoke.py against real
+    # MySQL alongside the other query-execution cases.
+
     def test_requires_login(self):
         # No _login() call -- @login_required should redirect, not 200.
         response = self.client.get("/customer/api/stalls/nearby?lat=23.8&lng=90.4")
@@ -241,6 +255,7 @@ class AdminStallLocationTests(unittest.TestCase):
             "photo_url": "",
             "latitude": "",
             "longitude": "",
+            "category": "street_stall",
             "status": "active",
         }
         form.update(overrides)
@@ -343,6 +358,68 @@ class AdminStallLocationTests(unittest.TestCase):
             stall = db.session.get(Stall, stall_id)
             self.assertAlmostEqual(float(stall.latitude), 24.00, places=2)
             self.assertAlmostEqual(float(stall.longitude), 91.00, places=2)
+
+    def test_create_with_missing_category_rejected(self):
+        self._login_admin()
+        token = self._csrf_token()
+        form = self._base_form()
+        del form["category"]
+        form["_csrf_token"] = token
+        response = self.client.post("/admin/stalls", data=form)
+        self.assertEqual(response.status_code, 400)
+
+        from models import Stall
+        with self.app.app_context():
+            self.assertIsNone(Stall.query.filter_by(stall_code="TS-001").first())
+
+    def test_create_with_invalid_category_rejected(self):
+        self._login_admin()
+        token = self._csrf_token()
+        form = self._base_form(category="food_truck")
+        form["_csrf_token"] = token
+        response = self.client.post("/admin/stalls", data=form)
+        self.assertEqual(response.status_code, 400)
+
+    def test_create_with_each_valid_category_saves(self):
+        for category in ("street_stall", "food_court", "hall_canteen"):
+            with self.subTest(category=category):
+                self._login_admin()
+                token = self._csrf_token()
+                form = self._base_form(
+                    stall_code=f"TS-{category}", category=category
+                )
+                form["_csrf_token"] = token
+                response = self.client.post("/admin/stalls", data=form)
+                self.assertEqual(response.status_code, 302)
+
+                from models import Stall
+                with self.app.app_context():
+                    stall = Stall.query.filter_by(
+                        stall_code=f"TS-{category}"
+                    ).first()
+                    self.assertIsNotNone(stall)
+                    self.assertEqual(stall.category, category)
+
+    def test_edit_updates_category(self):
+        self._login_admin()
+        token = self._csrf_token()
+        create_form = self._base_form(category="street_stall")
+        create_form["_csrf_token"] = token
+        self.client.post("/admin/stalls", data=create_form)
+
+        from models import Stall
+        with self.app.app_context():
+            stall_id = Stall.query.filter_by(stall_code="TS-001").first().stall_id
+
+        token = self._csrf_token()
+        edit_form = self._base_form(category="hall_canteen")
+        edit_form["_csrf_token"] = token
+        response = self.client.post(f"/admin/stalls/{stall_id}/edit", data=edit_form)
+        self.assertEqual(response.status_code, 302)
+
+        with self.app.app_context():
+            stall = db.session.get(Stall, stall_id)
+            self.assertEqual(stall.category, "hall_canteen")
 
     def test_edit_without_touching_location_preserves_it(self):
         self._login_admin()

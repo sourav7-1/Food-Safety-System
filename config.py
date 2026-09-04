@@ -107,14 +107,14 @@ class Config:
 
     # Fallback map center for the admin stall-location picker and the
     # customer /nearby page's "no location yet" / "no location fix yet"
-    # state. Defaults to DIU's Daffodil Smart City campus (Birulia,
-    # Ashulia, Savar) -- every stall this app tracks is near there, so
+    # state. Defaults to Birulia, Savar (Plus Code 7MMGV8GC+Q3 -- decoded
+    # from the short code "V8GC+Q3 Birulia" the project owner gave for
+    # this deployment) -- every stall this app tracks is near there, so
     # the map should already be useful before geolocation resolves,
-    # rather than opening on a country-wide view. Best-effort geocode,
-    # not verified against a real address lookup -- adjust here (or via
-    # DEFAULT_MAP_CENTER_LAT/LNG in .env) if it's off.
-    DEFAULT_MAP_CENTER_LAT = float(os.getenv("DEFAULT_MAP_CENTER_LAT") or "23.8983")
-    DEFAULT_MAP_CENTER_LNG = float(os.getenv("DEFAULT_MAP_CENTER_LNG") or "90.3196")
+    # rather than opening on a country-wide view. Adjust here (or via
+    # DEFAULT_MAP_CENTER_LAT/LNG in .env) if the deployment area changes.
+    DEFAULT_MAP_CENTER_LAT = float(os.getenv("DEFAULT_MAP_CENTER_LAT") or "23.876938")
+    DEFAULT_MAP_CENTER_LNG = float(os.getenv("DEFAULT_MAP_CENTER_LNG") or "90.320188")
 
     # Cloudflare Turnstile (registration bot protection). Left blank,
     # verification is skipped so local development keeps working.

@@ -12,7 +12,7 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
-from sqlalchemy import func, or_, text
+from sqlalchemy import bindparam, func, or_, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from extensions import db, limiter
@@ -27,6 +27,8 @@ from models import (
     Notification,
     Review,
     Stall,
+    STALL_CATEGORIES,
+    STALL_CATEGORY_LABELS,
     Vendor,
 )
 from routes import role_required
@@ -353,6 +355,7 @@ _NEARBY_STALLS_SQL = text(
     """
     SELECT
         s.stall_id, s.stall_name, s.address, s.latitude, s.longitude,
+        s.category,
         li.hygiene_grade, li.overall_score, li.inspection_date,
         li.risk_level,
         (6371 * ACOS(
@@ -366,11 +369,12 @@ _NEARBY_STALLS_SQL = text(
     LEFT JOIN latest_stall_inspection AS li ON li.stall_id = s.stall_id
     WHERE s.status = 'active'
       AND s.latitude IS NOT NULL AND s.longitude IS NOT NULL
+      AND s.category IN :categories
     HAVING distance_km <= :radius_km
     ORDER BY distance_km ASC
     LIMIT :row_limit
     """
-)
+).bindparams(bindparam("categories", expanding=True))
 
 
 @customer_bp.route("/nearby")
@@ -383,9 +387,10 @@ def nearby_stalls():
         default_radius_km=NEARBY_DEFAULT_RADIUS_KM,
         max_radius_km=NEARBY_MAX_RADIUS_KM,
         default_center={
-            "lat": current_app.config.get("DEFAULT_MAP_CENTER_LAT", 23.8103),
-            "lng": current_app.config.get("DEFAULT_MAP_CENTER_LNG", 90.4125),
+            "lat": current_app.config.get("DEFAULT_MAP_CENTER_LAT", 23.876938),
+            "lng": current_app.config.get("DEFAULT_MAP_CENTER_LNG", 90.320188),
         },
+        stall_category_labels=STALL_CATEGORY_LABELS,
     )
 
 
@@ -429,6 +434,21 @@ def api_nearby_stalls():
             )
             radius_km = NEARBY_MAX_RADIUS_KM
 
+    # Repeatable ?category=street_stall&category=food_court -- omitted
+    # entirely (the common case) means "every category", not "none".
+    raw_categories = request.args.getlist("category")
+    if raw_categories:
+        categories = set(raw_categories)
+        if not categories.issubset(STALL_CATEGORIES):
+            return jsonify(
+                {
+                    "error": "category must be one of: "
+                    + ", ".join(sorted(STALL_CATEGORIES))
+                }
+            ), 400
+    else:
+        categories = STALL_CATEGORIES
+
     try:
         rows = db.session.execute(
             _NEARBY_STALLS_SQL,
@@ -437,6 +457,7 @@ def api_nearby_stalls():
                 "lng": lng,
                 "radius_km": radius_km,
                 "row_limit": NEARBY_RESULT_LIMIT,
+                "categories": list(categories),
             },
         ).mappings().all()
     except SQLAlchemyError:
@@ -453,6 +474,10 @@ def api_nearby_stalls():
                 "address": row["address"],
                 "latitude": float(row["latitude"]),
                 "longitude": float(row["longitude"]),
+                "category": row["category"],
+                "category_label": STALL_CATEGORY_LABELS.get(
+                    row["category"], row["category"]
+                ),
                 "distance_km": round(float(row["distance_km"]), 2),
                 "hygiene_grade": row["hygiene_grade"],
                 "overall_score": (

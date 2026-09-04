@@ -36,6 +36,8 @@ from models import (
     RoleAuditLog,
     RoleRequest,
     Stall,
+    STALL_CATEGORIES,
+    STALL_CATEGORY_LABELS,
     User,
     Vendor,
 )
@@ -139,6 +141,13 @@ def _parse_stall_coordinates(form):
         latitude.quantize(quantum),
         longitude.quantize(quantum),
     )
+
+
+def _parse_stall_category(form):
+    category = (form.get("category") or "").strip()
+    if category not in STALL_CATEGORIES:
+        raise ValueError("Select a valid stall category.")
+    return category
 
 
 def _role(role_name):
@@ -405,6 +414,8 @@ def api_entity_detail(entity_type, entity_id):
             "code": stall.stall_code,
             "area": stall.area.area_name if stall.area else "—",
             "address": stall.address or "Campus Area",
+            "category": stall.category,
+            "category_label": STALL_CATEGORY_LABELS.get(stall.category, stall.category),
             "status": stall.status.title(),
             "risk": risk_level,
             "score": score,
@@ -701,6 +712,7 @@ def _render_stalls_list(search="", reopen_modal=None, status_code=200):
             stall_risk=stall_risk,
             vendors=Vendor.query.order_by(Vendor.business_name).all(),
             areas=Area.query.order_by(Area.area_name).all(),
+            stall_category_labels=STALL_CATEGORY_LABELS,
             search=search,
             reopen_modal=reopen_modal,
         ),
@@ -726,6 +738,7 @@ def stall_create():
             raise ValueError("Select a valid stall status.")
         stall_code = request.form.get("stall_code", "").strip()
         latitude, longitude = _parse_stall_coordinates(request.form)
+        category = _parse_stall_category(request.form)
         stall = Stall(
             vendor_id=int(request.form["vendor_id"]),
             area_id=int(request.form["area_id"]),
@@ -737,6 +750,7 @@ def stall_create():
             ),
             latitude=latitude,
             longitude=longitude,
+            category=category,
             status=status,
         )
         db.session.add(stall)
@@ -770,6 +784,7 @@ def stall_edit(stall_id):
             request.form.get("photo_url", ""), stall.stall_code
         )
         stall.latitude, stall.longitude = _parse_stall_coordinates(request.form)
+        stall.category = _parse_stall_category(request.form)
         status = request.form.get("status", "active").strip() or "active"
         if status not in STALL_STATUSES:
             raise ValueError("Select a valid stall status.")

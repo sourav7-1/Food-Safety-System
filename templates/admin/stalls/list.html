@@ -105,6 +105,16 @@
                 </span>
             </div>
 
+            <!-- Category Line -->
+            <div class="stall-meta-line mb-1.5">
+                <div class="meta-icon-wrap">
+                    {% if stall.category == 'food_court' %}<i class="fa-solid fa-utensils"></i>
+                    {% elif stall.category == 'hall_canteen' %}<i class="fa-solid fa-building"></i>
+                    {% else %}<i class="fa-solid fa-cart-shopping"></i>{% endif %}
+                </div>
+                <span class="text-truncate text-secondary">{{ stall_category_labels.get(stall.category, stall.category) }}</span>
+            </div>
+
             <!-- Vendor Line -->
             <div class="stall-meta-line mb-1.5">
                 <div class="meta-icon-wrap"><i class="fa-solid fa-store"></i></div>
@@ -158,6 +168,7 @@
                         data-photo-url="{{ stall.photo_url or '' }}"
                         data-latitude="{{ stall.latitude if stall.latitude is not none else '' }}"
                         data-longitude="{{ stall.longitude if stall.longitude is not none else '' }}"
+                        data-category="{{ stall.category }}"
                         data-status="{{ stall.status }}"
                     ><i class="fa-solid fa-pen-to-square"></i></button>
                     {% endif %}
@@ -264,6 +275,14 @@
                             <input type="hidden" id="stallLongitude" name="longitude">
                         </div>
                         <div class="col-md-4">
+                            <label class="form-label small fw-bold text-dark" for="stallCategory">Stall type</label>
+                            <select class="form-select" id="stallCategory" name="category" required>
+                                {% for value, label in stall_category_labels.items() %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
                             <label class="form-label small fw-bold text-dark" for="stallStatus">Operational Status</label>
                             <select class="form-select" id="stallStatus" name="status">
                                 {% for value in ['active','closed','suspended'] %}
@@ -292,7 +311,7 @@
 (function () {
     "use strict";
 
-    var DEFAULT_CENTER = { lat: {{ (config.DEFAULT_MAP_CENTER_LAT|default(23.8983))|tojson }}, lng: {{ (config.DEFAULT_MAP_CENTER_LNG|default(90.3196))|tojson }} };
+    var DEFAULT_CENTER = { lat: {{ (config.DEFAULT_MAP_CENTER_LAT|default(23.876938))|tojson }}, lng: {{ (config.DEFAULT_MAP_CENTER_LNG|default(90.320188))|tojson }} };
     var locationMap = null;
     var locationMarker = null;
 
@@ -509,6 +528,7 @@
                 document.getElementById("stallPhotoUrl").value = photoUrl;
                 document.getElementById("stallLatitude").value = button.getAttribute("data-latitude") || "";
                 document.getElementById("stallLongitude").value = button.getAttribute("data-longitude") || "";
+                document.getElementById("stallCategory").value = button.getAttribute("data-category") || "street_stall";
                 document.getElementById("stallStatus").value = button.getAttribute("data-status") || "active";
 
                 updatePhotoPreview(photoUrl);
@@ -531,6 +551,7 @@
                 document.getElementById("stallPhotoUrl").value = values.photo_url || "";
                 document.getElementById("stallLatitude").value = values.latitude || "";
                 document.getElementById("stallLongitude").value = values.longitude || "";
+                document.getElementById("stallCategory").value = values.category || "street_stall";
                 document.getElementById("stallStatus").value = values.status || "active";
                 updatePhotoPreview(values.photo_url || "");
                 modal.show();
