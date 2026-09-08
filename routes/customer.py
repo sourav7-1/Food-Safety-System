@@ -32,6 +32,7 @@ from models import (
     Vendor,
 )
 from routes import role_required
+from services.ar_matching import bearing_degrees, confidence_band, confidence_score
 from services.evidence import (
     EvidenceValidationError,
     delete_stored_complaint_files,
@@ -377,6 +378,23 @@ _NEARBY_STALLS_SQL = text(
 ).bindparams(bindparam("categories", expanding=True))
 
 
+def _nearby_candidate_stalls(lat, lng, radius_km, categories, row_limit):
+    """Shared by /api/stalls/nearby (Map mode) and /api/ar/match (AR Scan
+    mode) so both read the same Haversine distance query instead of two
+    copies of the same SQL. Callers are responsible for catching
+    SQLAlchemyError around this."""
+    return db.session.execute(
+        _NEARBY_STALLS_SQL,
+        {
+            "lat": lat,
+            "lng": lng,
+            "radius_km": radius_km,
+            "row_limit": row_limit,
+            "categories": list(categories),
+        },
+    ).mappings().all()
+
+
 @customer_bp.route("/nearby")
 @login_required
 @role_required("student")
@@ -450,16 +468,9 @@ def api_nearby_stalls():
         categories = STALL_CATEGORIES
 
     try:
-        rows = db.session.execute(
-            _NEARBY_STALLS_SQL,
-            {
-                "lat": lat,
-                "lng": lng,
-                "radius_km": radius_km,
-                "row_limit": NEARBY_RESULT_LIMIT,
-                "categories": list(categories),
-            },
-        ).mappings().all()
+        rows = _nearby_candidate_stalls(
+            lat, lng, radius_km, categories, NEARBY_RESULT_LIMIT
+        )
     except SQLAlchemyError:
         current_app.logger.exception("nearby_stalls: query failed")
         return jsonify({"error": "Unable to fetch nearby stalls right now"}), 503
@@ -506,6 +517,136 @@ def api_nearby_stalls():
             "radius_km": radius_km,
             "count": len(stalls),
             "stalls": stalls,
+        }
+    )
+
+
+# AR Scan only ever looks at stalls this close -- distinct from the
+# Map mode's user-selectable NEARBY_DEFAULT_RADIUS_KM/NEARBY_MAX_RADIUS_KM
+# above, since pointing a phone camera down a street stops being a
+# meaningful "which shop is this" signal well before 1km.
+AR_MATCH_RADIUS_KM = 0.05  # 50 meters
+AR_MATCH_RESULT_LIMIT = 10
+
+
+@customer_bp.route("/ar-scan")
+@login_required
+@role_required("student")
+def ar_scan():
+    return render_template(
+        "customer/ar_scan.html",
+        default_center={
+            "lat": current_app.config.get("DEFAULT_MAP_CENTER_LAT", 23.876938),
+            "lng": current_app.config.get("DEFAULT_MAP_CENTER_LNG", 90.320188),
+        },
+    )
+
+
+@customer_bp.route("/api/ar/match")
+@login_required
+@role_required("student")
+@limiter.limit("30 per minute")
+def api_ar_match():
+    raw_lat = request.args.get("lat")
+    raw_lng = request.args.get("lng")
+    if raw_lat is None or raw_lng is None:
+        return jsonify(
+            {"error": "lat and lng are required numeric query parameters"}
+        ), 400
+    try:
+        lat = float(raw_lat)
+        lng = float(raw_lng)
+    except ValueError:
+        return jsonify(
+            {"error": "lat and lng are required numeric query parameters"}
+        ), 400
+    if not (-90 <= lat <= 90):
+        return jsonify({"error": "lat must be between -90 and 90"}), 400
+    if not (-180 <= lng <= 180):
+        return jsonify({"error": "lng must be between -180 and 180"}), 400
+
+    # heading is optional -- omitted (no compass permission/support) means
+    # that scoring signal contributes 0, it is never guessed.
+    raw_heading = request.args.get("heading")
+    heading = None
+    if raw_heading not in (None, ""):
+        try:
+            heading = float(raw_heading)
+        except ValueError:
+            return jsonify(
+                {"error": "heading must be a number between 0 and 360"}
+            ), 400
+        if not (0 <= heading < 360):
+            return jsonify(
+                {"error": "heading must be a number between 0 and 360"}
+            ), 400
+
+    ocr_text = request.args.get("ocr_text", "").strip()
+
+    try:
+        rows = _nearby_candidate_stalls(
+            lat, lng, AR_MATCH_RADIUS_KM, STALL_CATEGORIES, AR_MATCH_RESULT_LIMIT
+        )
+    except SQLAlchemyError:
+        current_app.logger.exception("api_ar_match: query failed")
+        return jsonify({"error": "Unable to check nearby stalls right now"}), 503
+
+    candidates = []
+    for row in rows:
+        distance_m = float(row["distance_km"]) * 1000
+        bearing_deg = bearing_degrees(
+            lat, lng, float(row["latitude"]), float(row["longitude"])
+        )
+        score = confidence_score(
+            distance_m=distance_m,
+            ocr_text=ocr_text,
+            stall_name=row["stall_name"],
+            user_heading_deg=heading,
+            bearing_deg=bearing_deg,
+        )
+        is_high_risk = row["risk_level"] in ("high", "critical")
+        candidates.append(
+            {
+                "stall_id": row["stall_id"],
+                "name": row["stall_name"],
+                "address": row["address"],
+                "category": row["category"],
+                "category_label": STALL_CATEGORY_LABELS.get(
+                    row["category"], row["category"]
+                ),
+                "distance_m": round(distance_m, 1),
+                "bearing_deg": round(bearing_deg, 1),
+                "hygiene_grade": row["hygiene_grade"],
+                "overall_score": (
+                    float(row["overall_score"])
+                    if row["overall_score"] is not None
+                    else None
+                ),
+                "inspection_date": (
+                    row["inspection_date"].isoformat()
+                    if row["inspection_date"]
+                    else None
+                ),
+                "is_high_risk": is_high_risk,
+                "marker_color": _nearby_marker_color(
+                    row["hygiene_grade"], is_high_risk
+                ),
+                "score": score,
+                "detail_url": url_for(
+                    "customer_portal.stall_detail", stall_id=row["stall_id"]
+                ),
+            }
+        )
+
+    candidates.sort(key=lambda candidate: candidate["score"]["total"], reverse=True)
+    band = confidence_band(candidates[0]["score"]["total"]) if candidates else "none"
+
+    return jsonify(
+        {
+            "origin": {"lat": lat, "lng": lng},
+            "heading": heading,
+            "band": band,
+            "candidates": candidates,
         }
     )
 

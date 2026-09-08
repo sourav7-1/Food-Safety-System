@@ -1,0 +1,38 @@
+<div class="mode-tab-group" role="tablist" aria-label="Find a stall">
+    <a class="mode-tab {{ 'active' if request.endpoint == 'customer_portal.nearby_stalls' }}" href="{{ url_for('customer_portal.nearby_stalls') }}">
+        <i class="fa-solid fa-map-location-dot"></i><span>Map</span>
+    </a>
+    <a class="mode-tab {{ 'active' if request.endpoint == 'customer_portal.search_stalls' }}" href="{{ url_for('customer_portal.search_stalls') }}">
+        <i class="fa-solid fa-magnifying-glass"></i><span>Search</span>
+    </a>
+    <a class="mode-tab {{ 'active' if request.endpoint == 'customer_portal.ar_scan' }}" href="{{ url_for('customer_portal.ar_scan') }}">
+        <i class="fa-solid fa-camera"></i><span>AR Scan</span>
+    </a>
+</div>
+<style>
+.mode-tab-group {
+    display: inline-flex;
+    gap: 4px;
+    background: #eef2f6;
+    padding: 4px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+}
+.mode-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #475569;
+    text-decoration: none;
+}
+.mode-tab:hover { color: #1f7a4d; }
+.mode-tab.active {
+    background: #fff;
+    color: #1f7a4d;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+</style>

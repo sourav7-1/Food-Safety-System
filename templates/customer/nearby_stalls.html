@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block dashboard_content %}
+{% include "customer/_mode_tabs.html" %}
 <div class="nearby-toolbar">
     <div class="nearby-radius-group" id="nearbyRadiusGroup" role="group" aria-label="Search radius">
         {% for km in (1, 3, 5, 10) %}
