@@ -1,34 +1,808 @@
 {% extends "customer/base.html" %}
-{% block title %}Notifications · Street Food Safety{% endblock %}
+
+{% block title %}Notifications · Student Portal{% endblock %}
 {% block portal_title %}Notifications{% endblock %}
-{% block portal_subtitle %}Updates on complaints you've submitted{% endblock %}
+{% block portal_subtitle %}Real-time status updates and official resolutions for your submitted feedback{% endblock %}
+
 {% block portal_content %}
-<div class="portal-card">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="h6 fw-bold mb-0"><i class="fa-regular fa-bell"></i> All notifications</h3>
-        {% if unread_notification_count > 0 %}
-        <form method="post" action="{{ url_for('customer_portal.mark_all_notifications_read') }}">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn-sm btn-outline-success" type="submit">Mark all as read</button>
-        </form>
-        {% endif %}
+<div class="notif-shell">
+    <!-- Header & Summary Metrics Card -->
+    <div class="notif-header-card">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-success-subtle text-success px-2.5 py-1 rounded-pill fw-semibold">
+                        <i class="fa-solid fa-bell me-1"></i> Notification Center
+                    </span>
+                </div>
+                <h2 class="h4 fw-bold text-dark mb-1">Your Complaint & Safety Updates</h2>
+                <p class="text-secondary small mb-0">Stay informed as safety inspectors and administrators review your reports.</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                {% if unread_count > 0 %}
+                <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1.5" id="btnMarkAllRead">
+                    <i class="fa-solid fa-check-double"></i>
+                    <span>Mark all as read</span>
+                </button>
+                {% endif %}
+                <a href="{{ url_for('customer_portal.my_complaints') }}" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary d-inline-flex align-items-center gap-1.5">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>My Complaints</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Summary Stats Grid -->
+        <div class="notif-stats-grid">
+            <div class="notif-stat-card">
+                <div class="notif-stat-icon total">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                    <div class="notif-stat-value" id="statTotalCount">{{ total_count|default(0) }}</div>
+                    <div class="notif-stat-label">Total Alerts</div>
+                </div>
+            </div>
+            <div class="notif-stat-card">
+                <div class="notif-stat-icon unread">
+                    <i class="fa-solid fa-envelope-open-text"></i>
+                </div>
+                <div>
+                    <div class="notif-stat-value text-success" id="statUnreadCount">{{ unread_count|default(0) }}</div>
+                    <div class="notif-stat-label">Unread</div>
+                </div>
+            </div>
+            <div class="notif-stat-card">
+                <div class="notif-stat-icon action">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <div class="notif-stat-value text-warning" id="statActionCount">{{ action_required_count|default(0) }}</div>
+                    <div class="notif-stat-label">Action Required</div>
+                </div>
+            </div>
+            <div class="notif-stat-card">
+                <div class="notif-stat-icon resolved">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <div class="notif-stat-value text-emerald-600" id="statResolvedCount">{{ resolved_count|default(0) }}</div>
+                    <div class="notif-stat-label">Resolved / Closed</div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    {% if notifications %}
-    <div class="notification-list">
-        {% for item in notifications %}
-        <form method="post" action="{{ url_for('customer_portal.read_notification', notification_id=item.notification_id) }}" class="notification-row {{ 'unread' if not item.is_read }}">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="notification-row-button">
-                {% if not item.is_read %}<span class="notification-dot" aria-hidden="true"></span>{% endif %}
-                <span class="notification-message">{{ item.message }}</span>
-                <span class="notification-time">{{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+    <!-- Filter Tabs & Real-Time Search Bar -->
+    <div class="notif-controls-bar">
+        <div class="notif-filter-tabs" role="tablist">
+            <button type="button" class="notif-tab-btn active" data-filter="all">
+                <span>All</span>
+                <span class="badge bg-secondary" id="tabBadgeAll">{{ total_count|default(0) }}</span>
             </button>
-        </form>
+            <button type="button" class="notif-tab-btn" data-filter="unread">
+                <span>Unread</span>
+                <span class="badge bg-success" id="tabBadgeUnread">{{ unread_count|default(0) }}</span>
+            </button>
+            <button type="button" class="notif-tab-btn" data-filter="action_required">
+                <span>Action Required</span>
+                <span class="badge bg-warning text-dark">{{ action_required_count|default(0) }}</span>
+            </button>
+            <button type="button" class="notif-tab-btn" data-filter="under_review">
+                <span>Under Review</span>
+                <span class="badge bg-primary">{{ under_review_count|default(0) }}</span>
+            </button>
+            <button type="button" class="notif-tab-btn" data-filter="resolved">
+                <span>Resolved</span>
+                <span class="badge bg-success">{{ resolved_count|default(0) }}</span>
+            </button>
+        </div>
+
+        <div class="notif-search-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" class="notif-search-input" id="notifSearchInput" placeholder="Filter by title, stall, or status..." autocomplete="off">
+        </div>
+    </div>
+
+    <!-- Notification List Section -->
+    {% if notifications %}
+    <div class="notif-list" id="notifContainer">
+        {% for item in notifications %}
+            {% set c_status = item.complaint.status if item.complaint else 'update' %}
+            {% if not item.complaint %}
+                {% if 'action required' in item.message|lower %}
+                    {% set c_status = 'action_required' %}
+                {% elif 'under review' in item.message|lower %}
+                    {% set c_status = 'under_review' %}
+                {% elif 'resolved' in item.message|lower %}
+                    {% set c_status = 'resolved' %}
+                {% elif 'rejected' in item.message|lower %}
+                    {% set c_status = 'rejected' %}
+                {% endif %}
+            {% endif %}
+
+            {% set status_icon = 'fa-solid fa-bell' %}
+            {% set icon_color_class = 'default' %}
+            {% if c_status in ['resolved', 'closed'] %}
+                {% set status_icon = 'fa-solid fa-circle-check' %}
+                {% set icon_color_class = 'resolved' %}
+            {% elif c_status in ['action_required'] %}
+                {% set status_icon = 'fa-solid fa-triangle-exclamation' %}
+                {% set icon_color_class = 'action_required' %}
+            {% elif c_status in ['under_review', 'investigation', 'submitted'] %}
+                {% set status_icon = 'fa-solid fa-magnifying-glass' %}
+                {% set icon_color_class = 'under_review' %}
+            {% elif c_status in ['rejected'] %}
+                {% set status_icon = 'fa-solid fa-circle-xmark' %}
+                {% set icon_color_class = 'rejected' %}
+            {% endif %}
+
+            <article class="notif-card {{ 'is-unread' if not item.is_read else 'is-read' }}"
+                     id="notifCard-{{ item.notification_id }}"
+                     data-notif-id="{{ item.notification_id }}"
+                     data-is-read="{{ '1' if item.is_read else '0' }}"
+                     data-status="{{ c_status }}"
+                     data-status-label="{{ c_status|replace('_', ' ')|title }}"
+                     data-created-at="{{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}"
+                     data-message="{{ item.message }}"
+                     data-complaint-id="{% if item.complaint %}{{ item.complaint.complaint_id }}{% endif %}"
+                     data-complaint-title="{% if item.complaint %}{{ item.complaint.title }}{% else %}Notification #{{ item.notification_id }}{% endif %}"
+                     data-complaint-desc="{% if item.complaint %}{{ item.complaint.description }}{% endif %}"
+                     data-stall-name="{% if item.complaint and item.complaint.stall %}{{ item.complaint.stall.stall_name }}{% endif %}"
+                     data-stall-area="{% if item.complaint and item.complaint.stall and item.complaint.stall.area %}{{ item.complaint.stall.area.area_name }}{% endif %}"
+                     data-complaint-type="{% if item.complaint and item.complaint.complaint_type %}{{ item.complaint.complaint_type.type_name }}{% endif %}"
+                     data-admin-response="{% if item.complaint and item.complaint.admin_response %}{{ item.complaint.admin_response }}{% endif %}"
+                     data-complaint-url="{% if item.complaint %}{{ url_for('customer_portal.complaint_detail', complaint_id=item.complaint.complaint_id) }}{% endif %}"
+                     data-read-url="{{ url_for('customer_portal.read_notification', notification_id=item.notification_id) }}">
+                
+                <div class="notif-card-main">
+                    <!-- Icon Box -->
+                    <div class="notif-icon-circle {{ icon_color_class }}" aria-hidden="true">
+                        <i class="{{ status_icon }}"></i>
+                    </div>
+
+                    <!-- Content Body -->
+                    <div class="notif-card-body">
+                        <div class="notif-card-top">
+                            <div class="notif-badges-group">
+                                <span class="notif-status-pill {{ icon_color_class }}">
+                                    <i class="{{ status_icon }}"></i>
+                                    <span>{{ c_status|replace('_', ' ')|title }}</span>
+                                </span>
+                                {% if not item.is_read %}
+                                <span class="notif-badge-new unread-pill-tag">NEW</span>
+                                {% endif %}
+                            </div>
+                            <span class="notif-time" title="{{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}">
+                                <i class="fa-regular fa-clock"></i>
+                                <span>{{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+                            </span>
+                        </div>
+
+                        <!-- Title / Headline -->
+                        <h3 class="notif-title">
+                            {% if item.complaint %}
+                            Update on Complaint: <span class="text-success">&ldquo;{{ item.complaint.title }}&rdquo;</span>
+                            {% else %}
+                            System Notification
+                            {% endif %}
+                        </h3>
+
+                        <!-- Metadata Badges -->
+                        {% if item.complaint %}
+                        <div class="notif-meta-tags">
+                            {% if item.complaint.stall %}
+                            <span class="notif-meta-item"><i class="fa-solid fa-store text-success"></i> <strong>{{ item.complaint.stall.stall_name }}</strong></span>
+                            {% endif %}
+                            {% if item.complaint.stall and item.complaint.stall.area %}
+                            <span class="notif-meta-item"><i class="fa-solid fa-location-dot text-secondary"></i> {{ item.complaint.stall.area.area_name }}</span>
+                            {% endif %}
+                            {% if item.complaint.complaint_type %}
+                            <span class="notif-meta-item"><i class="fa-solid fa-tag text-secondary"></i> {{ item.complaint.complaint_type.type_name }}</span>
+                            {% endif %}
+                            <span class="notif-meta-item"><i class="fa-solid fa-hashtag text-secondary"></i> CMP-{{ item.complaint.complaint_id }}</span>
+                        </div>
+                        {% endif %}
+
+                        <!-- Message Text Preview -->
+                        <p class="notif-message-text mb-2">{{ item.message }}</p>
+
+                        <!-- Admin Note Callout Box (if present) -->
+                        {% if item.complaint and item.complaint.admin_response %}
+                        <div class="notif-admin-callout">
+                            <div class="d-flex align-items-center gap-1.5 fw-semibold text-emerald-800 mb-1">
+                                <i class="fa-solid fa-user-shield text-success"></i>
+                                <span>Official Response from Safety Team:</span>
+                            </div>
+                            <div class="text-dark small" style="line-height: 1.45;">{{ item.complaint.admin_response }}</div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Card Action Buttons -->
+                        <div class="notif-card-actions">
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold btn-open-modal" data-notif-id="{{ item.notification_id }}">
+                                <i class="fa-solid fa-expand me-1"></i> Quick View
+                            </button>
+                            {% if item.complaint %}
+                            <a href="{{ url_for('customer_portal.complaint_detail', complaint_id=item.complaint.complaint_id) }}" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary fw-semibold">
+                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Track Complaint
+                            </a>
+                            {% endif %}
+                            {% if not item.is_read %}
+                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary fw-medium btn-inline-mark-read" data-notif-id="{{ item.notification_id }}" data-read-url="{{ url_for('customer_portal.read_notification', notification_id=item.notification_id) }}">
+                                <i class="fa-solid fa-check me-1 text-success"></i> Mark read
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </article>
         {% endfor %}
     </div>
     {% else %}
-    <p class="empty text-secondary mb-0">You don't have any notifications yet. You'll see one here whenever an admin updates a complaint you've submitted.</p>
+    <div class="portal-card text-center py-5">
+        <div class="empty-icon-wrap mx-auto mb-3">
+            <i class="fa-regular fa-bell-slash fs-2 text-secondary"></i>
+        </div>
+        <h3 class="h5 fw-bold text-dark mb-1">No Notifications Yet</h3>
+        <p class="text-secondary small mb-4">You'll see real-time alerts here whenever an inspector or admin reviews your reports.</p>
+        <div class="d-flex justify-content-center gap-2">
+            <a class="btn btn-success px-4 rounded-pill" href="{{ url_for('customer_portal.search_stalls') }}">
+                <i class="fa-solid fa-magnifying-glass me-1"></i> Browse Food Stalls
+            </a>
+            <a class="btn btn-outline-secondary px-4 rounded-pill" href="{{ url_for('customer_portal.my_complaints') }}">
+                <i class="fa-solid fa-list-check me-1"></i> View My Complaints
+            </a>
+        </div>
+    </div>
     {% endif %}
+
+    <!-- Dynamic Empty Search Result State -->
+    <div class="portal-card text-center py-5 d-none" id="notifEmptyFilterState">
+        <div class="empty-icon-wrap mx-auto mb-3">
+            <i class="fa-solid fa-filter-circle-xmark fs-2 text-secondary"></i>
+        </div>
+        <h3 class="h5 fw-bold text-dark mb-1">No Matching Notifications</h3>
+        <p class="text-secondary small mb-3">No notifications match your current filter or search criteria.</p>
+        <button type="button" class="btn btn-outline-success px-4 rounded-pill" id="btnResetFilters">
+            <i class="fa-solid fa-rotate-left me-1"></i> Clear Filters
+        </button>
+    </div>
 </div>
+
+<!-- =========================================================================
+     Interactive Notification Detail Modal
+     ========================================================================= -->
+<div class="modal fade notif-modal" id="notificationDetailModal" tabindex="-1" aria-labelledby="notificationModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="notif-modal-icon-badge bg-success-subtle text-success" id="modalIconBadge">
+                        <i class="fa-solid fa-bell" id="modalIcon"></i>
+                    </div>
+                    <div>
+                        <h4 class="modal-title h5 fw-bold mb-0 text-dark" id="notificationModalTitle">Notification Details</h4>
+                        <p class="text-secondary small mb-0" id="modalSubtitle">Official safety update & complaint status</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <!-- Status Bar -->
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-secondary small fw-medium">Status:</span>
+                        <span class="notif-status-pill resolved" id="modalStatusPill">
+                            <i class="fa-solid fa-circle-check" id="modalStatusIcon"></i>
+                            <span id="modalStatusText">Under Review</span>
+                        </span>
+                    </div>
+                    <div class="text-secondary small">
+                        <i class="fa-regular fa-clock me-1"></i>
+                        <span id="modalTimeText">01 Sep 2026, 10:49 PM</span>
+                    </div>
+                </div>
+
+                <!-- Complaint Details Box -->
+                <div class="notif-detail-box" id="modalComplaintBox">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="h6 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-file-lines text-success"></i>
+                            <span id="modalComplaintTitle">Complaint Title</span>
+                        </h5>
+                        <span class="badge bg-light text-secondary border" id="modalComplaintRef">#CMP-001</span>
+                    </div>
+                    <div class="notif-detail-row">
+                        <span class="notif-detail-label"><i class="fa-solid fa-store me-1"></i> Food Stall:</span>
+                        <span class="notif-detail-val" id="modalStallName">Karim Biryani & Grill</span>
+                    </div>
+                    <div class="notif-detail-row" id="modalAreaRow">
+                        <span class="notif-detail-label"><i class="fa-solid fa-location-dot me-1"></i> Location / Area:</span>
+                        <span class="notif-detail-val" id="modalStallArea">Daffodil Smart City</span>
+                    </div>
+                    <div class="notif-detail-row" id="modalTypeRow">
+                        <span class="notif-detail-label"><i class="fa-solid fa-tag me-1"></i> Complaint Category:</span>
+                        <span class="notif-detail-val" id="modalComplaintType">Hygiene & Cleanliness</span>
+                    </div>
+                    <div class="pt-2 mt-2 border-top" id="modalDescSection">
+                        <span class="text-secondary small fw-semibold d-block mb-1">Issue Description:</span>
+                        <p class="text-dark small mb-0" id="modalComplaintDesc" style="line-height: 1.5;"></p>
+                    </div>
+                </div>
+
+                <!-- Full Message Content -->
+                <div class="mb-3">
+                    <span class="text-secondary small fw-semibold d-block mb-1">Update Summary:</span>
+                    <div class="p-3 bg-light border rounded-3 text-dark small" id="modalMessageBody" style="line-height: 1.5;"></div>
+                </div>
+
+                <!-- Official Admin Response Box -->
+                <div class="notif-admin-callout d-none" id="modalAdminResponseCallout">
+                    <div class="d-flex align-items-center gap-2 fw-semibold text-emerald-800 mb-1.5">
+                        <i class="fa-solid fa-user-shield text-success fs-6"></i>
+                        <span>Official DIU Food Safety Decision & Remarks:</span>
+                    </div>
+                    <p class="text-dark small mb-0" id="modalAdminResponseText" style="line-height: 1.55;"></p>
+                </div>
+
+                <!-- Workflow Stage Tracker -->
+                <div class="mt-4 pt-3 border-top" id="modalTimelineSection">
+                    <span class="text-secondary small fw-semibold d-block text-center mb-2">Complaint Progression Roadmap</span>
+                    <div class="notif-timeline-tracker">
+                        <div class="notif-timeline-step completed" id="stepSubmitted">
+                            <div class="notif-timeline-node"><i class="fa-solid fa-check"></i></div>
+                            <span class="notif-timeline-label">Submitted</span>
+                        </div>
+                        <div class="notif-timeline-step" id="stepUnderReview">
+                            <div class="notif-timeline-node">2</div>
+                            <span class="notif-timeline-label">Review</span>
+                        </div>
+                        <div class="notif-timeline-step" id="stepAction">
+                            <div class="notif-timeline-node">3</div>
+                            <span class="notif-timeline-label">Action</span>
+                        </div>
+                        <div class="notif-timeline-step" id="stepResolved">
+                            <div class="notif-timeline-node">4</div>
+                            <span class="notif-timeline-label">Resolved</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-medium d-none" id="modalBtnMarkRead">
+                        <i class="fa-solid fa-check me-1 text-success"></i> Mark as read
+                    </button>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="#" class="btn btn-sm btn-success rounded-pill px-4 fw-semibold d-none" id="modalBtnTrackComplaint">
+                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View Full Complaint
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const csrfToken = "{{ csrf_token() }}";
+    const modalEl = document.getElementById("notificationDetailModal");
+    let notifModal = null;
+    if (modalEl && typeof bootstrap !== "undefined") {
+        notifModal = new bootstrap.Modal(modalEl);
+    }
+
+    const cards = document.querySelectorAll(".notif-card");
+    const searchInput = document.getElementById("notifSearchInput");
+    const filterTabs = document.querySelectorAll(".notif-tab-btn");
+    const emptyFilterState = document.getElementById("notifEmptyFilterState");
+    const btnResetFilters = document.getElementById("btnResetFilters");
+    const btnMarkAllRead = document.getElementById("btnMarkAllRead");
+
+    let activeFilter = "all";
+    let searchQuery = "";
+
+    // -------------------------------------------------------------
+    // Filtering & Realtime Search Logic
+    // -------------------------------------------------------------
+    function applyFilters() {
+        let visibleCount = 0;
+        const q = searchQuery.toLowerCase().trim();
+
+        cards.forEach(card => {
+            const status = (card.dataset.status || "").toLowerCase();
+            const isRead = card.dataset.isRead === "1";
+            const textContent = card.innerText.toLowerCase();
+
+            let matchesTab = true;
+            if (activeFilter === "unread") {
+                matchesTab = !isRead;
+            } else if (activeFilter === "action_required") {
+                matchesTab = status === "action_required";
+            } else if (activeFilter === "under_review") {
+                matchesTab = ["under_review", "investigation", "submitted"].includes(status);
+            } else if (activeFilter === "resolved") {
+                matchesTab = ["resolved", "closed"].includes(status);
+            }
+
+            let matchesSearch = true;
+            if (q) {
+                matchesSearch = textContent.includes(q);
+            }
+
+            if (matchesTab && matchesSearch) {
+                card.style.display = "";
+                visibleCount++;
+            } else {
+                card.style.display = "none";
+            }
+        });
+
+        if (emptyFilterState) {
+            if (visibleCount === 0 && cards.length > 0) {
+                emptyFilterState.classList.remove("d-none");
+            } else {
+                emptyFilterState.classList.add("d-none");
+            }
+        }
+    }
+
+    filterTabs.forEach(tab => {
+        tab.addEventListener("click", function () {
+            filterTabs.forEach(t => t.classList.remove("active"));
+            this.classList.add("active");
+            activeFilter = this.dataset.filter || "all";
+            applyFilters();
+        });
+    });
+
+    if (searchInput) {
+        searchInput.addEventListener("input", function () {
+            searchQuery = this.value;
+            applyFilters();
+        });
+    }
+
+    if (btnResetFilters) {
+        btnResetFilters.addEventListener("click", function () {
+            activeFilter = "all";
+            searchQuery = "";
+            if (searchInput) searchInput.value = "";
+            filterTabs.forEach(t => t.classList.toggle("active", t.dataset.filter === "all"));
+            applyFilters();
+        });
+    }
+
+    // -------------------------------------------------------------
+    // Open Modal & Populate Data
+    // -------------------------------------------------------------
+    let currentModalNotifCard = null;
+
+    function openNotificationModal(card) {
+        if (!card) return;
+        currentModalNotifCard = card;
+
+        const notifId = card.dataset.notifId;
+        const isRead = card.dataset.isRead === "1";
+        const status = card.dataset.status || "update";
+        const statusLabel = card.dataset.statusLabel || "Update";
+        const createdAt = card.dataset.createdAt || "";
+        const message = card.dataset.message || "";
+        const complaintId = card.dataset.complaintId || "";
+        const complaintTitle = card.dataset.complaintTitle || "";
+        const complaintDesc = card.dataset.complaintDesc || "";
+        const stallName = card.dataset.stallName || "";
+        const stallArea = card.dataset.stallArea || "";
+        const complaintType = card.dataset.complaintType || "";
+        const adminResponse = card.dataset.adminResponse || "";
+        const complaintUrl = card.dataset.complaintUrl || "";
+        const readUrl = card.dataset.readUrl || "";
+
+        // Status styling config
+        let iconClass = "fa-solid fa-bell";
+        let colorClass = "default";
+        if (["resolved", "closed"].includes(status)) {
+            iconClass = "fa-solid fa-circle-check";
+            colorClass = "resolved";
+        } else if (status === "action_required") {
+            iconClass = "fa-solid fa-triangle-exclamation";
+            colorClass = "action_required";
+        } else if (["under_review", "investigation", "submitted"].includes(status)) {
+            iconClass = "fa-solid fa-magnifying-glass";
+            colorClass = "under_review";
+        } else if (status === "rejected") {
+            iconClass = "fa-solid fa-circle-xmark";
+            colorClass = "rejected";
+        }
+
+        // Populate Header & Status
+        const modalIconBadge = document.getElementById("modalIconBadge");
+        const modalIcon = document.getElementById("modalIcon");
+        const modalStatusPill = document.getElementById("modalStatusPill");
+        const modalStatusIcon = document.getElementById("modalStatusIcon");
+        const modalStatusText = document.getElementById("modalStatusText");
+        const modalTimeText = document.getElementById("modalTimeText");
+
+        if (modalIcon) modalIcon.className = iconClass;
+        if (modalIconBadge) {
+            modalIconBadge.className = "notif-modal-icon-badge notif-icon-circle " + colorClass;
+        }
+        if (modalStatusPill) {
+            modalStatusPill.className = "notif-status-pill " + colorClass;
+        }
+        if (modalStatusIcon) modalStatusIcon.className = iconClass;
+        if (modalStatusText) modalStatusText.textContent = statusLabel;
+        if (modalTimeText) modalTimeText.textContent = createdAt;
+
+        // Populate Message
+        const modalMessageBody = document.getElementById("modalMessageBody");
+        if (modalMessageBody) modalMessageBody.textContent = message;
+
+        // Populate Complaint Details Box
+        const modalComplaintBox = document.getElementById("modalComplaintBox");
+        const modalComplaintTitle = document.getElementById("modalComplaintTitle");
+        const modalComplaintRef = document.getElementById("modalComplaintRef");
+        const modalStallName = document.getElementById("modalStallName");
+        const modalAreaRow = document.getElementById("modalAreaRow");
+        const modalStallArea = document.getElementById("modalStallArea");
+        const modalTypeRow = document.getElementById("modalTypeRow");
+        const modalComplaintType = document.getElementById("modalComplaintType");
+        const modalDescSection = document.getElementById("modalDescSection");
+        const modalComplaintDesc = document.getElementById("modalComplaintDesc");
+
+        if (complaintId) {
+            if (modalComplaintBox) modalComplaintBox.classList.remove("d-none");
+            if (modalComplaintTitle) modalComplaintTitle.textContent = complaintTitle;
+            if (modalComplaintRef) modalComplaintRef.textContent = "#CMP-" + complaintId;
+            if (modalStallName) modalStallName.textContent = stallName || "Campus Food Stall";
+            
+            if (stallArea && modalAreaRow && modalStallArea) {
+                modalAreaRow.classList.remove("d-none");
+                modalStallArea.textContent = stallArea;
+            } else if (modalAreaRow) {
+                modalAreaRow.classList.add("d-none");
+            }
+
+            if (complaintType && modalTypeRow && modalComplaintType) {
+                modalTypeRow.classList.remove("d-none");
+                modalComplaintType.textContent = complaintType;
+            } else if (modalTypeRow) {
+                modalTypeRow.classList.add("d-none");
+            }
+
+            if (complaintDesc && modalDescSection && modalComplaintDesc) {
+                modalDescSection.classList.remove("d-none");
+                modalComplaintDesc.textContent = complaintDesc;
+            } else if (modalDescSection) {
+                modalDescSection.classList.add("d-none");
+            }
+        } else {
+            if (modalComplaintBox) modalComplaintBox.classList.add("d-none");
+        }
+
+        // Admin Response Callout
+        const adminCallout = document.getElementById("modalAdminResponseCallout");
+        const adminText = document.getElementById("modalAdminResponseText");
+        if (adminResponse && adminCallout && adminText) {
+            adminCallout.classList.remove("d-none");
+            adminText.textContent = adminResponse;
+        } else if (adminCallout) {
+            adminCallout.classList.add("d-none");
+        }
+
+        // Timeline progression
+        const stepSubmitted = document.getElementById("stepSubmitted");
+        const stepUnderReview = document.getElementById("stepUnderReview");
+        const stepAction = document.getElementById("stepAction");
+        const stepResolved = document.getElementById("stepResolved");
+
+        [stepSubmitted, stepUnderReview, stepAction, stepResolved].forEach(s => {
+            if (s) {
+                s.className = "notif-timeline-step";
+                const node = s.querySelector(".notif-timeline-node");
+                if (node && s.id !== "stepSubmitted") node.innerHTML = s.id === "stepUnderReview" ? "2" : s.id === "stepAction" ? "3" : "4";
+            }
+        });
+
+        if (stepSubmitted) stepSubmitted.className = "notif-timeline-step completed";
+
+        if (["under_review", "investigation"].includes(status)) {
+            if (stepUnderReview) {
+                stepUnderReview.className = "notif-timeline-step active";
+                const node = stepUnderReview.querySelector(".notif-timeline-node");
+                if (node) node.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
+            }
+        } else if (status === "action_required") {
+            if (stepUnderReview) stepUnderReview.className = "notif-timeline-step completed";
+            if (stepAction) {
+                stepAction.className = "notif-timeline-step active";
+                const node = stepAction.querySelector(".notif-timeline-node");
+                if (node) node.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            }
+        } else if (["resolved", "closed"].includes(status)) {
+            if (stepUnderReview) stepUnderReview.className = "notif-timeline-step completed";
+            if (stepAction) stepAction.className = "notif-timeline-step completed";
+            if (stepResolved) {
+                stepResolved.className = "notif-timeline-step active";
+                const node = stepResolved.querySelector(".notif-timeline-node");
+                if (node) node.innerHTML = '<i class="fa-solid fa-check"></i>';
+            }
+        }
+
+        // Footer buttons
+        const btnTrack = document.getElementById("modalBtnTrackComplaint");
+        const btnMarkRead = document.getElementById("modalBtnMarkRead");
+
+        if (btnTrack) {
+            if (complaintUrl) {
+                btnTrack.href = complaintUrl;
+                btnTrack.classList.remove("d-none");
+            } else {
+                btnTrack.classList.add("d-none");
+            }
+        }
+
+        if (btnMarkRead) {
+            if (!isRead) {
+                btnMarkRead.classList.remove("d-none");
+                btnMarkRead.onclick = function () {
+                    markSingleRead(card, readUrl, () => {
+                        btnMarkRead.classList.add("d-none");
+                    });
+                };
+            } else {
+                btnMarkRead.classList.add("d-none");
+            }
+        }
+
+        // If card is unread, automatically mark as read upon opening
+        if (!isRead && readUrl) {
+            markSingleRead(card, readUrl);
+        }
+
+        if (notifModal) {
+            notifModal.show();
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Asynchronous Mark Single Read Helper
+    // -------------------------------------------------------------
+    function markSingleRead(card, readUrl, callback) {
+        if (!card || card.dataset.isRead === "1") return;
+
+        fetch(readUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRFToken": csrfToken
+            },
+            body: JSON.stringify({ _csrf_token: csrfToken })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                card.dataset.isRead = "1";
+                card.classList.remove("is-unread");
+                card.classList.add("is-read");
+
+                const newBadge = card.querySelector(".unread-pill-tag");
+                if (newBadge) newBadge.remove();
+
+                const inlineBtn = card.querySelector(".btn-inline-mark-read");
+                if (inlineBtn) inlineBtn.remove();
+
+                // Update unread counters
+                const statUnread = document.getElementById("statUnreadCount");
+                const tabBadgeUnread = document.getElementById("tabBadgeUnread");
+                if (statUnread) statUnread.textContent = data.unread_count;
+                if (tabBadgeUnread) tabBadgeUnread.textContent = data.unread_count;
+
+                // Update topbar indicator dot if unread reaches 0
+                const topbarDot = document.querySelector(".notification-indicator-dot");
+                if (topbarDot && data.unread_count === 0) {
+                    topbarDot.remove();
+                }
+
+                if (callback) callback();
+            }
+        })
+        .catch(err => console.error("Failed to mark notification as read:", err));
+    }
+
+    // -------------------------------------------------------------
+    // Attach Event Listeners to Cards & Buttons
+    // -------------------------------------------------------------
+    cards.forEach(card => {
+        // Quick view button triggers modal
+        const openBtn = card.querySelector(".btn-open-modal");
+        if (openBtn) {
+            openBtn.addEventListener("click", function (e) {
+                e.stopPropagation();
+                openNotificationModal(card);
+            });
+        }
+
+        // Inline mark read button
+        const inlineReadBtn = card.querySelector(".btn-inline-mark-read");
+        if (inlineReadBtn) {
+            inlineReadBtn.addEventListener("click", function (e) {
+                e.stopPropagation();
+                const readUrl = inlineReadBtn.dataset.readUrl;
+                markSingleRead(card, readUrl);
+            });
+        }
+
+        // Clicking anywhere on card opens modal
+        card.addEventListener("click", function (e) {
+            if (e.target.closest("a, button")) return;
+            openNotificationModal(card);
+        });
+    });
+
+    // -------------------------------------------------------------
+    // Mark All as Read Action
+    // -------------------------------------------------------------
+    if (btnMarkAllRead) {
+        btnMarkAllRead.addEventListener("click", function () {
+            btnMarkAllRead.disabled = true;
+            btnMarkAllRead.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Marking...';
+
+            fetch("{{ url_for('customer_portal.mark_all_notifications_read') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": csrfToken
+                },
+                body: JSON.stringify({ _csrf_token: csrfToken })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    cards.forEach(card => {
+                        card.dataset.isRead = "1";
+                        card.classList.remove("is-unread");
+                        card.classList.add("is-read");
+
+                        const newBadge = card.querySelector(".unread-pill-tag");
+                        if (newBadge) newBadge.remove();
+
+                        const inlineBtn = card.querySelector(".btn-inline-mark-read");
+                        if (inlineBtn) inlineBtn.remove();
+                    });
+
+                    const statUnread = document.getElementById("statUnreadCount");
+                    const tabBadgeUnread = document.getElementById("tabBadgeUnread");
+                    if (statUnread) statUnread.textContent = "0";
+                    if (tabBadgeUnread) tabBadgeUnread.textContent = "0";
+
+                    const topbarDot = document.querySelector(".notification-indicator-dot");
+                    if (topbarDot) topbarDot.remove();
+
+                    btnMarkAllRead.remove();
+                    applyFilters();
+                }
+            })
+            .catch(err => {
+                console.error("Failed to mark all as read:", err);
+                btnMarkAllRead.disabled = false;
+                btnMarkAllRead.innerHTML = '<i class="fa-solid fa-check-double"></i> Mark all as read';
+            });
+        });
+    }
+});
+</script>
 {% endblock %}

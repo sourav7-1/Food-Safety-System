@@ -5,60 +5,97 @@
 {% block portal_subtitle %}Track every hygiene or service concern you have submitted across campus food stalls.{% endblock %}
 
 {% block portal_content %}
-<div class="row g-4">
-    {% for complaint in complaints %}
-    <div class="col-12 col-lg-6">
-        <article class="portal-card h-100 d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-                <div>
-                    <span class="badge bg-light text-secondary border px-2 py-1 small fw-semibold">
-                        #{{ complaint.complaint_id }} &middot; {{ complaint.complaint_type.type_name }}
+<div class="notif-shell">
+    <!-- Header & Summary Card -->
+    <div class="notif-header-card">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-success-subtle text-success px-2.5 py-1 rounded-pill fw-semibold">
+                        <i class="fa-solid fa-clipboard-check me-1"></i> Issue Resolution Hub
                     </span>
-                    <h2 class="h5 fw-bold text-dark mt-2 mb-1">{{ complaint.title }}</h2>
-                    <p class="text-secondary small mb-0">
-                        <i class="fa-solid fa-store me-1 text-success"></i><strong>{{ complaint.stall.stall_name }}</strong>
-                        &middot; Filed {{ complaint.submitted_at.strftime('%d %b %Y') }}
-                    </p>
                 </div>
-                <span class="risk-badge status-{{ complaint.status }}">
-                    {{ complaint.status|replace('_',' ') }}
-                </span>
+                <h2 class="h4 fw-bold text-dark mb-1">Your Submitted Reports</h2>
+                <p class="text-secondary small mb-0">Track real-time inspection outcomes, vendor compliance, and resolution certificates.</p>
             </div>
-
-            <p class="text-secondary small mb-3 flex-grow-1" style="line-height: 1.5;">
-                {{ complaint.description }}
-            </p>
-
-            <div class="pt-3 border-top d-flex justify-content-between align-items-center mt-auto">
-                <div>
-                    {% if complaint.evidence %}
-                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 small">
-                        <i class="fa-solid fa-paperclip me-1"></i>{{ complaint.evidence|length }} evidence file{{ 's' if complaint.evidence|length != 1 }}
-                    </span>
-                    {% endif %}
-                    {% if complaint.resolved_at %}
-                    <span class="text-muted small d-block mt-1">
-                        <i class="fa-regular fa-clock me-1"></i>Closed {{ complaint.resolved_at.strftime('%d %b %Y') }}
-                    </span>
-                    {% endif %}
-                </div>
-                <a class="btn btn-outline-success btn-sm rounded-pill px-3 fw-semibold" href="{{ url_for('customer_portal.complaint_detail', complaint_id=complaint.complaint_id) }}">
-                    View Details <i class="fa-solid fa-arrow-right ms-1"></i>
+            <div>
+                <a href="{{ url_for('customer_portal.search_stalls') }}" class="btn btn-sm btn-success rounded-pill px-4 fw-semibold d-inline-flex align-items-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Report Food Issue</span>
                 </a>
             </div>
-        </article>
-    </div>
-    {% else %}
-    <div class="col-12">
-        <div class="portal-card text-center py-5">
-            <i class="fa-regular fa-face-smile fs-1 text-success mb-3 d-block"></i>
-            <h3 class="h5 fw-bold text-dark">No Complaints Submitted</h3>
-            <p class="text-secondary small mb-3">You haven't reported any hygiene or food safety issues yet.</p>
-            <a class="btn btn-success px-4 rounded-pill" href="{{ url_for('customer_portal.search_stalls') }}">
-                <i class="fa-solid fa-magnifying-glass me-1"></i> Browse Campus Stalls
-            </a>
         </div>
     </div>
-    {% endfor %}
+
+    <!-- Complaints Grid -->
+    {% if complaints %}
+    <div class="row g-4">
+        {% for complaint in complaints %}
+        <div class="col-12 col-lg-6">
+            <article class="portal-card h-100 d-flex flex-column" style="transition: transform 0.25s ease, box-shadow 0.25s ease; border-radius: var(--radius-card);">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <span class="badge bg-light text-secondary border px-2.5 py-1 small fw-semibold">
+                            <i class="fa-solid fa-hashtag text-success me-0.5"></i>CMP-{{ complaint.complaint_id }} &middot; {{ complaint.complaint_type.type_name }}
+                        </span>
+                        <h3 class="h5 fw-bold text-dark mt-2 mb-1">{{ complaint.title }}</h3>
+                        <p class="text-secondary small mb-0">
+                            <i class="fa-solid fa-store me-1 text-success"></i><strong>{{ complaint.stall.stall_name }}</strong>
+                            &middot; Filed {{ complaint.submitted_at.strftime('%d %b %Y') }}
+                        </p>
+                    </div>
+                    <span class="risk-badge status-{{ complaint.status }} shadow-sm">
+                        {{ complaint.status|replace('_',' ')|title }}
+                    </span>
+                </div>
+
+                <p class="text-secondary small mb-3 flex-grow-1" style="line-height: 1.55;">
+                    {{ complaint.description }}
+                </p>
+
+                {% if complaint.admin_response %}
+                <div class="notif-admin-callout mb-3 py-2 px-3">
+                    <div class="d-flex align-items-center gap-1.5 fw-semibold text-emerald-800 small mb-0.5">
+                        <i class="fa-solid fa-shield-halved text-success"></i>
+                        <span>Latest Safety Decision:</span>
+                    </div>
+                    <div class="text-dark small text-truncate">{{ complaint.admin_response }}</div>
+                </div>
+                {% endif %}
+
+                <div class="pt-3 border-top d-flex justify-content-between align-items-center mt-auto">
+                    <div>
+                        {% if complaint.evidence %}
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 small">
+                            <i class="fa-solid fa-paperclip me-1"></i>{{ complaint.evidence|length }} file{{ 's' if complaint.evidence|length != 1 }}
+                        </span>
+                        {% endif %}
+                        {% if complaint.resolved_at %}
+                        <span class="text-muted small d-block mt-1">
+                            <i class="fa-solid fa-circle-check text-emerald-600 me-1"></i>Closed {{ complaint.resolved_at.strftime('%d %b %Y') }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <a class="btn btn-outline-success btn-sm rounded-pill px-3.5 fw-semibold d-inline-flex align-items-center gap-1.5" href="{{ url_for('customer_portal.complaint_detail', complaint_id=complaint.complaint_id) }}">
+                        <span>3D Tracking &amp; Evidence</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="portal-card text-center py-5">
+        <div class="empty-icon-wrap mx-auto mb-3">
+            <i class="fa-regular fa-clipboard fs-2 text-secondary"></i>
+        </div>
+        <h3 class="h5 fw-bold text-dark mb-1">No Complaints Submitted</h3>
+        <p class="text-secondary small mb-4">You haven't reported any hygiene or food safety issues yet across campus stalls.</p>
+        <a class="btn btn-success px-4 rounded-pill" href="{{ url_for('customer_portal.search_stalls') }}">
+            <i class="fa-solid fa-magnifying-glass me-1"></i> Browse Campus Stalls
+        </a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

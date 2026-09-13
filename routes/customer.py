@@ -955,7 +955,23 @@ def notifications():
         .order_by(Notification.created_at.desc())
         .all()
     )
-    return render_template("customer/notifications.html", notifications=records)
+    total_count = len(records)
+    unread_count = sum(1 for n in records if not n.is_read)
+    read_count = total_count - unread_count
+    action_required_count = sum(1 for n in records if n.complaint and n.complaint.status == "action_required")
+    under_review_count = sum(1 for n in records if n.complaint and n.complaint.status in ("under_review", "investigation", "submitted"))
+    resolved_count = sum(1 for n in records if n.complaint and n.complaint.status in ("resolved", "closed"))
+
+    return render_template(
+        "customer/notifications.html",
+        notifications=records,
+        total_count=total_count,
+        unread_count=unread_count,
+        read_count=read_count,
+        action_required_count=action_required_count,
+        under_review_count=under_review_count,
+        resolved_count=resolved_count,
+    )
 
 
 @customer_bp.route("/notifications/read-all", methods=["POST"])
@@ -966,6 +982,8 @@ def mark_all_notifications_read():
         user_id=current_user.user_id, is_read=False
     ).update({"is_read": True})
     db.session.commit()
+    if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"success": True, "unread_count": 0})
     return redirect(url_for("customer_portal.notifications"))
 
 
@@ -978,6 +996,15 @@ def read_notification(notification_id):
     ).first_or_404()
     notification.is_read = True
     db.session.commit()
+    if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        unread_count = Notification.query.filter_by(
+            user_id=current_user.user_id, is_read=False
+        ).count()
+        return jsonify({
+            "success": True,
+            "notification_id": notification_id,
+            "unread_count": unread_count,
+        })
     if notification.complaint_id:
         return redirect(
             url_for(

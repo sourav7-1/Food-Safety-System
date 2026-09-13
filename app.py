@@ -103,7 +103,13 @@ def create_app(config_class=Config):
 
         if request.method == "POST":
             expected_token = session.get("_csrf_token", "")
-            submitted_token = request.form.get("_csrf_token", "")
+            json_data = request.get_json(silent=True) if request.is_json else None
+            submitted_token = (
+                request.form.get("_csrf_token", "")
+                or (json_data.get("_csrf_token", "") if isinstance(json_data, dict) else "")
+                or request.headers.get("X-CSRFToken", "")
+                or request.headers.get("X-CSRF-Token", "")
+            )
             if not expected_token or not hmac.compare_digest(
                 expected_token, submitted_token
             ):
@@ -127,7 +133,7 @@ def create_app(config_class=Config):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = (
-            "geolocation=(), microphone=(), camera=()"
+            "geolocation=(self), microphone=(), camera=(self)"
         )
         # Templates rely on inline <script>/onclick handlers and inline
         # style attributes throughout, and load Bootstrap/Font Awesome/

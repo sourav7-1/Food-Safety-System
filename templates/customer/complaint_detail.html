@@ -1,54 +1,554 @@
 {% extends "customer/base.html" %}
-{% block title %}Complaint #{{ complaint.complaint_id }} · Street Food Safety{% endblock %}
+
+{% block title %}Complaint #{{ complaint.complaint_id }} · Student Portal{% endblock %}
 {% block portal_title %}Complaint #{{ complaint.complaint_id }}{% endblock %}
 {% block portal_subtitle %}{{ complaint.stall.stall_name }} &middot; {{ complaint.complaint_type.type_name }}{% endblock %}
+
 {% block portal_content %}
-<div class="portal-card mb-4">
-    <div class="d-flex justify-content-between align-items-start gap-3">
-        <div>
-            <h2 class="h4 mb-1">{{ complaint.title }}</h2>
-            <p class="text-secondary mb-0">Submitted {{ complaint.submitted_at.strftime('%d %b %Y, %I:%M %p') }}</p>
-        </div>
-        <span class="risk-badge status-{{ complaint.status }}">{{ complaint.status|replace('_',' ')|title }}</span>
+<!-- Breadcrumb & Top Actions Strip -->
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('customer_portal.my_complaints') }}" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary fw-semibold d-inline-flex align-items-center gap-1.5">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to My Complaints</span>
+        </a>
+        <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill small fw-bold">
+            <i class="fa-solid fa-hashtag me-1"></i>CMP-{{ complaint.complaint_id }}
+        </span>
     </div>
-    <p class="complaint-description mt-3 mb-0">{{ complaint.description }}</p>
-    {% if complaint.resolved_at %}
-    <small class="text-secondary d-block mt-2">Closed {{ complaint.resolved_at.strftime('%d %b %Y, %I:%M %p') }}</small>
-    {% endif %}
-    {% if complaint.admin_response %}
-    <div class="admin-response-note">
-        <strong><i class="fa-solid fa-reply me-1"></i> Response from the safety team</strong>
-        <p>{{ complaint.admin_response }}</p>
+
+    <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#complaintSummaryModal">
+            <i class="fa-solid fa-cube"></i>
+            <span>3D Case Summary</span>
+        </button>
+        <a href="{{ url_for('customer_portal.stall_detail', stall_id=complaint.stall_id) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1.5">
+            <i class="fa-solid fa-store"></i>
+            <span>View Food Stall</span>
+        </a>
     </div>
-    {% endif %}
 </div>
 
-<div class="portal-card">
-    <h3 class="panel-heading mb-3"><i class="fa-solid fa-paperclip"></i> Evidence</h3>
-    <p class="text-secondary small mb-3">Evidence supports an investigation &mdash; it does not verify your complaint by itself. Each file is reviewed independently by an administrator.</p>
-    {% if complaint.evidence %}
-    <div class="evidence-grid">
-        {% for item in complaint.evidence %}
-        <div class="evidence-card">
-            {% if item.file_type == 'image' %}
-            <img src="{{ url_for('customer_portal.evidence_download', evidence_id=item.evidence_id) }}" alt="{{ item.file_name }}" loading="lazy">
-            {% elif item.file_type == 'video' %}
-            <video controls preload="metadata" src="{{ url_for('customer_portal.evidence_download', evidence_id=item.evidence_id) }}"></video>
-            {% elif item.file_type == 'audio' %}
-            <audio controls preload="metadata" src="{{ url_for('customer_portal.evidence_download', evidence_id=item.evidence_id) }}"></audio>
+<!-- =========================================================================
+     3D Interactive Complaint Progression Roadmap
+     ========================================================================= -->
+{% set st = complaint.status %}
+{% set track_pct = '25%' %}
+{% if st in ['under_review', 'investigation'] %}
+    {% set track_pct = '50%' %}
+{% elif st in ['action_required'] %}
+    {% set track_pct = '75%' %}
+{% elif st in ['resolved', 'closed'] %}
+    {% set track_pct = '100%' %}
+{% endif %}
+
+<div class="complaint-3d-pipeline">
+    <div class="pipeline-3d-card" id="pipeline3DCard">
+        <!-- Header -->
+        <div class="pipeline-header">
+            <div>
+                <span class="pipeline-badge-pill">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> 3D Progression Pipeline
+                </span>
+                <h3 class="h5 fw-bold text-white mt-2 mb-0">Complaint Resolution Roadmap</h3>
+            </div>
+            <div>
+                <span class="notif-status-pill {{ st }} px-3 py-1.5 text-white border-0" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);">
+                    <i class="fa-solid fa-circle-dot me-1 text-warning"></i>
+                    <span>Current Stage: <strong>{{ st|replace('_',' ')|title }}</strong></span>
+                </span>
+            </div>
+        </div>
+
+        <!-- 3D Progress Track -->
+        <div class="pipeline-progress-track">
+            <!-- Connecting Luminous Rail -->
+            <div class="pipeline-track-rail">
+                <div class="pipeline-track-glow" style="width: {{ track_pct }};"></div>
+            </div>
+
+            <!-- Step 1: Submitted -->
+            <div class="pipeline-step completed">
+                <div class="pipeline-node-3d">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                </div>
+                <div class="pipeline-step-title">1. Submitted</div>
+                <div class="pipeline-step-desc">Report filed securely</div>
+                <span class="pipeline-step-time">{{ complaint.submitted_at.strftime('%d %b, %I:%M %p') }}</span>
+            </div>
+
+            <!-- Step 2: Under Review -->
+            <div class="pipeline-step {{ 'active' if st in ['under_review', 'submitted'] else ('completed' if st in ['investigation', 'action_required', 'resolved', 'closed'] else '') }}">
+                <div class="pipeline-node-3d">
+                    {% if st in ['investigation', 'action_required', 'resolved', 'closed'] %}
+                    <i class="fa-solid fa-check"></i>
+                    {% else %}
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                    {% endif %}
+                </div>
+                <div class="pipeline-step-title">2. Under Review</div>
+                <div class="pipeline-step-desc">Triage & verification</div>
+                {% if st in ['under_review', 'investigation', 'action_required', 'resolved', 'closed'] %}
+                <span class="pipeline-step-time">Inspector Assigned</span>
+                {% endif %}
+            </div>
+
+            <!-- Step 3: Investigation & Action -->
+            <div class="pipeline-step {{ 'active action_required' if st in ['action_required', 'investigation'] else ('completed' if st in ['resolved', 'closed'] else '') }}">
+                <div class="pipeline-node-3d">
+                    {% if st in ['resolved', 'closed'] %}
+                    <i class="fa-solid fa-check"></i>
+                    {% elif st == 'action_required' %}
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    {% else %}
+                    <i class="fa-solid fa-shield-halved"></i>
+                    {% endif %}
+                </div>
+                <div class="pipeline-step-title">3. Action Required</div>
+                <div class="pipeline-step-desc">Vendor compliance audit</div>
+                {% if st in ['action_required', 'resolved', 'closed'] %}
+                <span class="pipeline-step-time">{{ 'Action in progress' if st == 'action_required' else 'Action verified' }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Step 4: Resolved & Closed -->
+            <div class="pipeline-step {{ 'active completed' if st in ['resolved', 'closed'] else '' }}">
+                <div class="pipeline-node-3d">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div class="pipeline-step-title">4. Resolved</div>
+                <div class="pipeline-step-desc">Official case closure</div>
+                {% if complaint.resolved_at %}
+                <span class="pipeline-step-time">{{ complaint.resolved_at.strftime('%d %b %Y') }}</span>
+                {% else %}
+                <span class="pipeline-step-time" style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); border-color: transparent;">Pending Finalization</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     Main Grid: Hero Card + Sidebar Information
+     ========================================================================= -->
+<div class="complaint-detail-grid">
+    <!-- Left Column: Details & Evidence -->
+    <div>
+        <!-- Hero Details Card -->
+        <div class="complaint-hero-card mb-4">
+            <div class="complaint-title-row">
+                <div>
+                    <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill small fw-semibold mb-2">
+                        <i class="fa-solid fa-tag me-1 text-success"></i>{{ complaint.complaint_type.type_name }}
+                    </span>
+                    <h2 class="complaint-heading">{{ complaint.title }}</h2>
+                    <div class="complaint-meta-strip">
+                        <span><i class="fa-regular fa-clock me-1 text-success"></i> Submitted {{ complaint.submitted_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+                        {% if complaint.resolved_at %}
+                        <span><i class="fa-solid fa-check-circle me-1 text-emerald-600"></i> Closed {{ complaint.resolved_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <span class="risk-badge status-{{ complaint.status }} fs-6 px-3 py-1.5 shadow-sm">
+                        <i class="fa-solid fa-circle-dot me-1"></i>{{ complaint.status|replace('_',' ')|title }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Description Box -->
+            <div class="mb-4">
+                <span class="text-secondary small fw-bold text-uppercase tracking-wider d-block mb-1.5">Submitted Description</span>
+                <div class="complaint-desc-card">
+                    <i class="fa-solid fa-quote-right quote-watermark"></i>
+                    <p class="mb-0 text-dark" style="font-size: 0.95rem; line-height: 1.6; white-space: pre-line;">{{ complaint.description }}</p>
+                </div>
+            </div>
+
+            <!-- Official Administration & Safety Team Response -->
+            {% if complaint.admin_response %}
+            <div class="official-decision-card">
+                <div class="decision-badge-header">
+                    <span class="safety-verified-pill">
+                        <i class="fa-solid fa-shield-halved"></i> Official Safety Team Decision
+                    </span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 small fw-semibold">
+                        <i class="fa-solid fa-circle-check me-1"></i> Verified Record
+                    </span>
+                </div>
+                <div class="text-dark" style="font-size: 0.92rem; line-height: 1.6;">
+                    {{ complaint.admin_response }}
+                </div>
+            </div>
             {% else %}
-            <a class="btn btn-sm btn-outline-secondary w-100 mb-2" href="{{ url_for('customer_portal.evidence_download', evidence_id=item.evidence_id) }}" data-no-loading><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>
-            {% endif %}
-            <span class="evidence-name">{{ item.file_name }}</span>
-            <span class="risk-badge status-{{ item.verification_status }}">{{ item.verification_status|replace('_',' ')|title }}</span>
-            {% if item.verification_status == 'rejected' and item.rejection_reason %}
-            <span class="evidence-rejection"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ item.rejection_reason }}</span>
+            <div class="p-3 bg-light border rounded-3 text-secondary small d-flex align-items-center gap-2 mb-4">
+                <i class="fa-solid fa-circle-info text-primary fs-6"></i>
+                <span>Our campus health &amp; safety officers are reviewing your complaint. Once an action or decision is made, you will receive an instant notification and response here.</span>
+            </div>
             {% endif %}
         </div>
-        {% endfor %}
+
+        <!-- Evidence Gallery Section -->
+        <div class="evidence-section-card">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="notif-stat-icon total" style="width: 32px; height: 32px; font-size: 0.9rem;">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </div>
+                    <h3 class="h5 fw-bold text-dark mb-0">Attached Evidence ({{ complaint.evidence|length }})</h3>
+                </div>
+                {% if complaint.evidence %}
+                <span class="badge bg-light text-secondary border px-2.5 py-1 small">
+                    Click any file for 3D Preview
+                </span>
+                {% endif %}
+            </div>
+            <p class="text-secondary small mb-3">
+                Evidence files are securely encrypted and reviewed independently by safety inspectors during health audits.
+            </p>
+
+            {% if complaint.evidence %}
+            <div class="evidence-grid-3d">
+                {% for item in complaint.evidence %}
+                {% set download_url = url_for('customer_portal.evidence_download', evidence_id=item.evidence_id) %}
+                <div class="evidence-item-card btn-preview-evidence"
+                     data-evidence-id="{{ item.evidence_id }}"
+                     data-file-name="{{ item.file_name }}"
+                     data-file-type="{{ item.file_type }}"
+                     data-download-url="{{ download_url }}"
+                     data-verification-status="{{ item.verification_status }}"
+                     data-rejection-reason="{{ item.rejection_reason or '' }}">
+                    
+                    <div class="evidence-media-thumb">
+                        <span class="media-badge-type">{{ item.file_type|upper }}</span>
+                        {% if item.file_type == 'image' %}
+                        <img src="{{ download_url }}" alt="{{ item.file_name }}" loading="lazy">
+                        {% elif item.file_type == 'video' %}
+                        <i class="fa-solid fa-file-video text-primary fs-1"></i>
+                        {% elif item.file_type == 'audio' %}
+                        <i class="fa-solid fa-file-audio text-warning fs-1"></i>
+                        {% else %}
+                        <i class="fa-solid fa-file-pdf text-danger fs-1"></i>
+                        {% endif %}
+                    </div>
+
+                    <div class="evidence-info-body">
+                        <span class="evidence-filename" title="{{ item.file_name }}">{{ item.file_name }}</span>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span class="risk-badge status-{{ item.verification_status }} small py-0.5 px-2">
+                                {{ item.verification_status|replace('_',' ')|title }}
+                            </span>
+                            <span class="text-success small fw-semibold">
+                                <i class="fa-solid fa-expand me-1"></i> View
+                            </span>
+                        </div>
+                        {% if item.verification_status == 'rejected' and item.rejection_reason %}
+                        <span class="text-danger small mt-1 d-block"><i class="fa-solid fa-circle-exclamation me-1"></i>{{ item.rejection_reason }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="p-4 bg-light border border-dashed rounded-3 text-center text-secondary">
+                <i class="fa-regular fa-folder-open fs-2 mb-2 d-block text-muted"></i>
+                <span class="small fw-medium">No media evidence or attachments were filed with this report.</span>
+            </div>
+            {% endif %}
+        </div>
     </div>
-    {% else %}
-    <p class="text-secondary mb-0">No evidence was attached to this complaint.</p>
-    {% endif %}
+
+    <!-- Right Column: Food Stall Card & Summary Widgets -->
+    <div>
+        <!-- Food Stall Card -->
+        <div class="stall-preview-card mb-4">
+            <div class="stall-preview-header">
+                <div class="stall-avatar-icon">
+                    <i class="fa-solid fa-store"></i>
+                </div>
+                <div>
+                    <h4 class="h6 fw-bold text-dark mb-0">{{ complaint.stall.stall_name }}</h4>
+                    <span class="text-secondary small d-block">
+                        <i class="fa-solid fa-location-dot text-success me-1"></i>{{ complaint.stall.area.area_name }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="pt-2 border-top">
+                <div class="notif-detail-row">
+                    <span class="notif-detail-label">Stall Code:</span>
+                    <span class="notif-detail-val text-uppercase">{{ complaint.stall.stall_code }}</span>
+                </div>
+                <div class="notif-detail-row">
+                    <span class="notif-detail-label">Location:</span>
+                    <span class="notif-detail-val">{{ complaint.stall.address }}</span>
+                </div>
+                <div class="notif-detail-row">
+                    <span class="notif-detail-label">Campus Area:</span>
+                    <span class="notif-detail-val">{{ complaint.stall.area.area_name }}, {{ complaint.stall.area.city }}</span>
+                </div>
+            </div>
+
+            <a href="{{ url_for('customer_portal.stall_detail', stall_id=complaint.stall.stall_id) }}" class="btn btn-outline-success btn-sm w-100 rounded-pill fw-semibold py-2">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View Stall Profile &amp; Rating
+            </a>
+        </div>
+
+        <!-- Case Metadata Widget -->
+        <div class="stall-preview-card mb-4">
+            <h4 class="h6 fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-info text-success"></i>
+                <span>Report Overview</span>
+            </h4>
+            <div class="notif-detail-row">
+                <span class="notif-detail-label">Case ID:</span>
+                <span class="notif-detail-val">#CMP-{{ complaint.complaint_id }}</span>
+            </div>
+            <div class="notif-detail-row">
+                <span class="notif-detail-label">Category:</span>
+                <span class="notif-detail-val">{{ complaint.complaint_type.type_name }}</span>
+            </div>
+            <div class="notif-detail-row">
+                <span class="notif-detail-label">Severity Level:</span>
+                <span class="notif-detail-val text-warning fw-bold">{{ complaint.complaint_type.severity_level|title if complaint.complaint_type else 'Medium' }}</span>
+            </div>
+            <div class="notif-detail-row">
+                <span class="notif-detail-label">Submitted By:</span>
+                <span class="notif-detail-val">{{ current_user.full_name }}</span>
+            </div>
+            <div class="notif-detail-row">
+                <span class="notif-detail-label">Last Status Update:</span>
+                <span class="notif-detail-val">{{ complaint.resolved_at.strftime('%d %b %Y') if complaint.resolved_at else complaint.submitted_at.strftime('%d %b %Y') }}</span>
+            </div>
+        </div>
+
+        <!-- Safety Assurance Card -->
+        <div class="p-3 bg-success-subtle border border-success-subtle rounded-3 text-dark">
+            <div class="d-flex align-items-center gap-2 fw-bold text-emerald-800 mb-1">
+                <i class="fa-solid fa-shield-heart text-success fs-5"></i>
+                <span>DIU Campus Food Safety</span>
+            </div>
+            <p class="small text-secondary mb-0" style="line-height: 1.45;">
+                All student reports contribute directly to our automated campus hygiene risk engine and trigger immediate physical inspections for critical safety violations.
+            </p>
+        </div>
+    </div>
 </div>
+
+<!-- =========================================================================
+     3D Interactive Evidence Lightbox Modal
+     ========================================================================= -->
+<div class="modal fade media-modal-3d" id="evidencePreviewModal" tabindex="-1" aria-labelledby="evidenceModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1" id="mediaModalBadge">IMAGE</span>
+                    <h5 class="modal-title h6 fw-bold mb-0 text-white" id="evidenceModalTitle">Evidence Viewer</h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body" id="mediaModalContent">
+                <!-- Dynamically populated media -->
+            </div>
+
+            <div class="modal-footer d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-white-50 small">Verification Status:</span>
+                    <span class="risk-badge" id="modalEvidenceStatus">Verified</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="#" class="btn btn-sm btn-outline-light rounded-pill px-3" id="modalDownloadBtn" download data-no-loading>
+                        <i class="fa-solid fa-download me-1"></i> Download File
+                    </a>
+                    <button type="button" class="btn btn-sm btn-light rounded-pill px-3 text-dark fw-semibold" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     3D Case Summary & Certificate Modal
+     ========================================================================= -->
+<div class="modal fade notif-modal" id="complaintSummaryModal" tabindex="-1" aria-labelledby="summaryModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="notif-modal-icon-badge notif-icon-circle resolved">
+                        <i class="fa-solid fa-cube"></i>
+                    </div>
+                    <div>
+                        <h4 class="modal-title h5 fw-bold mb-0 text-dark" id="summaryModalTitle">3D Case Summary Certificate</h4>
+                        <p class="text-secondary small mb-0">Official complaint report transcript &amp; inspection verification</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="text-center py-2 mb-3">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 rounded-pill fw-bold">
+                        <i class="fa-solid fa-shield-halved me-1"></i> DIU CAMPUS FOOD SAFETY AUTHORITY
+                    </span>
+                    <h3 class="h5 fw-bold text-dark mt-2 mb-0">{{ complaint.title }}</h3>
+                    <p class="text-secondary small mb-0">Record #CMP-{{ complaint.complaint_id }} &middot; {{ complaint.stall.stall_name }}</p>
+                </div>
+
+                <div class="notif-detail-box">
+                    <div class="notif-detail-row">
+                        <span class="notif-detail-label">Stall Under Review:</span>
+                        <span class="notif-detail-val">{{ complaint.stall.stall_name }} ({{ complaint.stall.area.area_name }})</span>
+                    </div>
+                    <div class="notif-detail-row">
+                        <span class="notif-detail-label">Incident Category:</span>
+                        <span class="notif-detail-val">{{ complaint.complaint_type.type_name }}</span>
+                    </div>
+                    <div class="notif-detail-row">
+                        <span class="notif-detail-label">Current Status:</span>
+                        <span class="notif-detail-val text-success">{{ complaint.status|replace('_',' ')|title }}</span>
+                    </div>
+                    <div class="notif-detail-row">
+                        <span class="notif-detail-label">Filing Timestamp:</span>
+                        <span class="notif-detail-val">{{ complaint.submitted_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+                    </div>
+                </div>
+
+                {% if complaint.admin_response %}
+                <div class="notif-admin-callout mb-3">
+                    <div class="fw-bold text-emerald-800 mb-1">
+                        <i class="fa-solid fa-check-double text-success me-1"></i> Official Inspection Finding:
+                    </div>
+                    <div class="text-dark small">{{ complaint.admin_response }}</div>
+                </div>
+                {% endif %}
+
+                <div class="p-3 bg-light rounded-3 text-center text-secondary small">
+                    <i class="fa-solid fa-stamp text-success me-1"></i> Certified cryptographic record authenticated by Daffodil International University Food Safety System.
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="window.print()">
+                    <i class="fa-solid fa-print me-1"></i> Print Summary
+                </button>
+                <button type="button" class="btn btn-sm btn-success rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // -------------------------------------------------------------
+    // 3D Card Interactive Perspective Tilt
+    // -------------------------------------------------------------
+    const card3D = document.getElementById("pipeline3DCard");
+    if (card3D && window.matchMedia("(hover: hover)").matches) {
+        card3D.addEventListener("mousemove", function (e) {
+            const rect = card3D.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateX = ((y - centerY) / centerY) * -6; // max 6 deg
+            const rotateY = ((x - centerX) / centerX) * 6;  // max 6 deg
+
+            card3D.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
+        });
+
+        card3D.addEventListener("mouseleave", function () {
+            card3D.style.transform = "rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
+        });
+    }
+
+    // -------------------------------------------------------------
+    // 3D Evidence Modal Lightbox
+    // -------------------------------------------------------------
+    const evidenceModalEl = document.getElementById("evidencePreviewModal");
+    let evidenceModal = null;
+    if (evidenceModalEl && typeof bootstrap !== "undefined") {
+        evidenceModal = new bootstrap.Modal(evidenceModalEl);
+    }
+
+    const previewButtons = document.querySelectorAll(".btn-preview-evidence");
+    const mediaContent = document.getElementById("mediaModalContent");
+    const modalTitle = document.getElementById("evidenceModalTitle");
+    const modalBadge = document.getElementById("mediaModalBadge");
+    const modalStatus = document.getElementById("modalEvidenceStatus");
+    const modalDownloadBtn = document.getElementById("modalDownloadBtn");
+
+    previewButtons.forEach(btn => {
+        btn.addEventListener("click", function () {
+            const fileName = btn.dataset.fileName;
+            const fileType = (btn.dataset.fileType || "").toLowerCase();
+            const downloadUrl = btn.dataset.downloadUrl;
+            const status = btn.dataset.verificationStatus || "pending";
+
+            if (modalTitle) modalTitle.textContent = fileName;
+            if (modalBadge) modalBadge.textContent = fileType.toUpperCase();
+            if (modalDownloadBtn) modalDownloadBtn.href = downloadUrl;
+
+            if (modalStatus) {
+                modalStatus.className = "risk-badge status-" + status;
+                modalStatus.textContent = status.replace("_", " ").toUpperCase();
+            }
+
+            if (mediaContent) {
+                mediaContent.innerHTML = "";
+                if (fileType === "image") {
+                    const img = document.createElement("img");
+                    img.src = downloadUrl;
+                    img.alt = fileName;
+                    img.style.maxWidth = "100%";
+                    img.style.maxHeight = "65vh";
+                    img.style.borderRadius = "12px";
+                    img.style.boxShadow = "0 20px 50px rgba(0,0,0,0.5)";
+                    mediaContent.appendChild(img);
+                } else if (fileType === "video") {
+                    const video = document.createElement("video");
+                    video.src = downloadUrl;
+                    video.controls = true;
+                    video.autoplay = true;
+                    video.style.maxWidth = "100%";
+                    video.style.maxHeight = "65vh";
+                    video.style.borderRadius = "12px";
+                    mediaContent.appendChild(video);
+                } else if (fileType === "audio") {
+                    const audio = document.createElement("audio");
+                    audio.src = downloadUrl;
+                    audio.controls = true;
+                    audio.autoplay = true;
+                    audio.style.width = "100%";
+                    audio.style.maxWidth = "500px";
+                    mediaContent.appendChild(audio);
+                } else {
+                    const wrapper = document.createElement("div");
+                    wrapper.className = "text-center p-4";
+                    wrapper.innerHTML = `
+                        <i class="fa-solid fa-file-pdf text-danger mb-3" style="font-size: 4rem;"></i>
+                        <h4 class="h5 text-white mb-2">${fileName}</h4>
+                        <p class="text-white-50 small mb-3">This document can be viewed or downloaded securely.</p>
+                        <a href="${downloadUrl}" class="btn btn-success rounded-pill px-4 fw-semibold" target="_blank">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Open in New Tab
+                        </a>
+                    `;
+                    mediaContent.appendChild(wrapper);
+                }
+            }
+
+            if (evidenceModal) {
+                evidenceModal.show();
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
