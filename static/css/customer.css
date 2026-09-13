@@ -1080,6 +1080,10 @@
 }
 
 /* Modern Notification Modal */
+.notif-modal .modal-dialog {
+    max-width: min(92vw, 760px);
+}
+
 .notif-modal .modal-content {
     border-radius: var(--radius-card-lg);
     border: 1px solid rgba(15, 23, 42, 0.08);
@@ -1252,6 +1256,10 @@
 }
 
 /* Category Detail Modal Styles */
+.notif-category-modal .modal-dialog {
+    max-width: min(94vw, 860px);
+}
+
 .notif-category-modal .modal-content {
     border-radius: var(--radius-card-lg);
     border: 1px solid rgba(15, 23, 42, 0.08);
@@ -1766,6 +1774,10 @@
 }
 
 /* 3D Lightbox & Interactive Media Viewer Modal */
+.media-modal-3d .modal-dialog {
+    max-width: min(94vw, 980px);
+}
+
 .media-modal-3d .modal-content {
     background: rgba(15, 23, 42, 0.94);
     backdrop-filter: blur(20px);
@@ -1787,6 +1799,15 @@
     min-height: 380px;
     max-height: 75vh;
     overflow: auto;
+}
+
+.media-modal-3d .modal-body img,
+.media-modal-3d .modal-body video,
+.media-modal-3d .modal-body iframe {
+    max-width: 100%;
+    max-height: 65vh;
+    object-fit: contain;
+    border-radius: 8px;
 }
 
 .media-modal-3d .modal-footer {

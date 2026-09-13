@@ -131,7 +131,7 @@
     <div class="col-md-6 col-xl-4">
         <article class="portal-card customer-stall modern-stall-card risk-border-{{ result.risk or 'unrated' }}">
             <!-- Photo & Overlay -->
-            <div class="stall-photo">
+            <div class="stall-photo img-shimmer-box">
                 {% if result.stall.photo_url %}
                 <img src="{{ result.stall.photo_url }}" alt="{{ result.stall.stall_name }}" loading="lazy" onerror="this.closest('.stall-photo').classList.add('photo-error')">
                 <div class="stall-photo-fallback">

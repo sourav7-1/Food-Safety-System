@@ -50,7 +50,7 @@
             {% if complaint.evidence %}
             <div class="complaint-evidence-grid">
             {% for item in complaint.evidence %}
-                <div class="complaint-evidence-card">
+                <div class="complaint-evidence-card img-shimmer-box">
                     {% if item.file_type == 'image' %}
                     <img src="{{ url_for('inspector_complaints.evidence_download', evidence_id=item.evidence_id) }}" alt="{{ item.file_name }}" loading="lazy">
                     {% elif item.file_type == 'video' %}

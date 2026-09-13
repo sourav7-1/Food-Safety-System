@@ -4,7 +4,7 @@
 <div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>ID</th><th>Stall</th><th>Complaint</th><th>Severity</th><th>Submitted</th><th>Evidence</th><th>Status</th><th></th></tr></thead><tbody>{% for complaint in complaints %}<tr><td>#{{ complaint.complaint_id }}</td><td><a class="entity-link" href="{{ url_for('admin.stalls', q=complaint.stall.stall_code) }}"><strong>{{ complaint.stall.stall_name }}</strong></a><small><a class="entity-link" href="{{ url_for('admin.vendors', q=complaint.stall.vendor.license_number) }}">{{ complaint.stall.vendor.business_name }}</a></small></td><td><strong>{{ complaint.title }}</strong><small>{{ complaint.complaint_type.type_name }}</small></td><td><span class="status-pill risk-{{ complaint.complaint_type.severity_level }}">{{ complaint.complaint_type.severity_level }}</span></td><td>{{ complaint.submitted_at.strftime('%d %b %Y') }}</td><td>{{ complaint.evidence|length or '—' }}</td><td><span class="status-pill status-{{ complaint.status }}">{{ complaint.status|replace('_',' ') }}</span></td><td><button type="button" class="btn btn-sm btn-soft" data-complaint-modal-open data-complaint-id="{{ complaint.complaint_id }}" data-url="{{ url_for('admin.complaint_manage', complaint_id=complaint.complaint_id) }}">Manage</button></td></tr>{% else %}<tr><td colspan="8" class="empty-state">No complaints found.</td></tr>{% endfor %}</tbody></table></div></div>
 
 <div class="modal fade" id="complaintModal" tabindex="-1" aria-labelledby="complaintModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title h5" id="complaintModalLabel">Complaint</h2>
@@ -33,9 +33,21 @@
     var titleEl = document.getElementById("complaintModalLabel");
     var needsListRefresh = false;
 
+    var PANEL_SKELETON =
+        '<div class="row g-4" aria-busy="true">' +
+        '<div class="col-lg-7"><div class="panel-card">' +
+        '<div class="skeleton-text title mb-3"></div>' +
+        '<div class="skeleton-text"></div><div class="skeleton-text"></div><div class="skeleton-text w-75"></div>' +
+        '</div></div>' +
+        '<div class="col-lg-5"><div class="panel-card">' +
+        '<div class="skeleton-field mb-3"><div class="skeleton-text label"></div><div class="skeleton-input skeleton"></div></div>' +
+        '<div class="skeleton-field mb-3"><div class="skeleton-text label"></div><div class="skeleton-input skeleton" style="height:80px;"></div></div>' +
+        '<div class="skeleton-btn" style="width:100%;"></div>' +
+        "</div></div></div>";
+
     function loadPanel(url, options) {
         window.AdminAjax.showProgress();
-        body.innerHTML = '<div class="admin-panel-spinner"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+        body.innerHTML = PANEL_SKELETON;
         // X-Panel-Request is the dedicated marker routes/admin.py checks
         // for (_wants_partial()) -- deliberately distinct from the
         // generic X-Requested-With the admin-wide AJAX layer also sends,

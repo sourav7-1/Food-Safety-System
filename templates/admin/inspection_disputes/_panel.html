@@ -19,7 +19,7 @@
 {% if dispute.evidence %}
 <div class="evidence-grid">
 {% for item in dispute.evidence %}
-<div class="evidence-card">
+<div class="evidence-card img-shimmer-box">
     {% if item.file_type == 'image' %}
     <img src="{{ url_for('admin.inspection_dispute_evidence_download', evidence_id=item.evidence_id) }}" alt="{{ item.file_name }}" loading="lazy">
     {% elif item.file_type == 'video' %}

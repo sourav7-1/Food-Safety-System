@@ -4,7 +4,7 @@
 <div class="panel-card p-0 overflow-hidden"><div class="table-responsive"><table class="table admin-table align-middle mb-0"><thead><tr><th>ID</th><th>Vendor</th><th>Inspection</th><th>Reason</th><th>Evidence</th><th>Submitted</th><th>Status</th><th></th></tr></thead><tbody>{% for dispute in disputes %}<tr><td>#{{ dispute.dispute_id }}</td><td><a class="entity-link" href="{{ url_for('admin.vendors', q=dispute.vendor.license_number) }}"><strong>{{ dispute.vendor.business_name }}</strong></a></td><td><a class="entity-link" href="{{ url_for('admin.stalls', q=dispute.inspection.stall.stall_code) }}">{{ dispute.inspection.stall.stall_name }}</a><small>{{ dispute.inspection.inspection_date.strftime('%d %b %Y') }} &middot; {{ (dispute.inspection.overall_score ~ '%') if dispute.inspection.overall_score is not none else '—' }}</small></td><td style="max-width: 280px;"><span class="text-truncate d-block" style="max-width: 280px;">{{ dispute.reason }}</span></td><td>{{ dispute.evidence|length or '—' }}</td><td>{{ dispute.submitted_at.strftime('%d %b %Y') }}</td><td><span class="status-pill status-{{ dispute.status }}">{{ dispute.status|replace('_',' ') }}</span></td><td><button type="button" class="btn btn-sm btn-soft" data-dispute-modal-open data-dispute-id="{{ dispute.dispute_id }}" data-url="{{ url_for('admin.inspection_dispute_manage', dispute_id=dispute.dispute_id) }}">Manage</button></td></tr>{% else %}<tr><td colspan="8" class="empty-state">No inspection disputes found.</td></tr>{% endfor %}</tbody></table></div></div>
 
 <div class="modal fade" id="disputeModal" tabindex="-1" aria-labelledby="disputeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title h5" id="disputeModalLabel">Inspection Dispute</h2>
@@ -34,9 +34,21 @@
     var titleEl = document.getElementById("disputeModalLabel");
     var needsListRefresh = false;
 
+    var PANEL_SKELETON =
+        '<div class="row g-4" aria-busy="true">' +
+        '<div class="col-lg-7"><div class="panel-card">' +
+        '<div class="skeleton-text title mb-3"></div>' +
+        '<div class="skeleton-text"></div><div class="skeleton-text"></div><div class="skeleton-text w-75"></div>' +
+        '</div></div>' +
+        '<div class="col-lg-5"><div class="panel-card">' +
+        '<div class="skeleton-field mb-3"><div class="skeleton-text label"></div><div class="skeleton-input skeleton"></div></div>' +
+        '<div class="skeleton-field mb-3"><div class="skeleton-text label"></div><div class="skeleton-input skeleton" style="height:80px;"></div></div>' +
+        '<div class="skeleton-btn" style="width:100%;"></div>' +
+        "</div></div></div>";
+
     function loadPanel(url, options) {
         window.AdminAjax.showProgress();
-        body.innerHTML = '<div class="admin-panel-spinner"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+        body.innerHTML = PANEL_SKELETON;
         return fetch(url, Object.assign({ headers: { "X-Requested-With": "XMLHttpRequest", "X-Panel-Request": "1" } }, options || {}))
             .then(function (response) {
                 needsListRefresh = true;

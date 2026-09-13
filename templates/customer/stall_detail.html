@@ -5,7 +5,7 @@
 
 {% block portal_content %}
 {% if stall.photo_url %}
-<div class="stall-banner mb-4">
+<div class="stall-banner mb-4 img-shimmer-box">
     <img src="{{ stall.photo_url }}" alt="{{ stall.stall_name }}" onerror="this.closest('.stall-banner').style.display='none'">
 </div>
 {% endif %}

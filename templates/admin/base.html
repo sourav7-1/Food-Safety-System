@@ -90,7 +90,7 @@
 
     <!-- Global Entity Profile Detail Modal -->
     <div class="modal fade" id="adminItemDetailModal" tabindex="-1" aria-labelledby="adminItemDetailModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                 <div class="modal-header border-bottom-0 pb-0 pt-4 px-4 d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2">
@@ -132,6 +132,127 @@
         var CONTENT_SELECTOR = ".admin-content";
         var progressBar = document.getElementById("adminProgressBar");
         var progressRequests = 0;
+
+        // Skeleton shown in .admin-content while the next admin page is being
+        // fetched, keyed by a coarse guess at the destination's shape from its
+        // URL. Never exact, but far closer to "YouTube-style content
+        // placeholder" than the old flat opacity dim, and costs nothing when
+        // guessed wrong since real content replaces it a few hundred ms later.
+        function buildDashboardSkeleton() {
+            var cards = "";
+            for (var i = 0; i < 4; i++) {
+                cards +=
+                    '<div class="col-6 col-lg-3">' +
+                    '<div class="skeleton-stat-card">' +
+                    '<div class="skeleton-text w-50"></div>' +
+                    '<div class="skeleton-text title"></div>' +
+                    '<div class="skeleton-text w-25"></div>' +
+                    "</div></div>";
+            }
+            var bars = "";
+            for (var b = 0; b < 7; b++) {
+                bars += '<div class="skeleton-bar skeleton" style="height:' + (35 + (b * 37) % 60) + '%;"></div>';
+            }
+            return (
+                '<div class="skeleton-text title mb-3" style="width:220px;"></div>' +
+                '<div class="row g-3 mb-4">' + cards + "</div>" +
+                '<div class="skeleton-chart mb-4">' + bars + "</div>" +
+                buildTableSkeleton(5, 4)
+            );
+        }
+
+        function buildTableSkeleton(rows, cols) {
+            rows = rows || 6;
+            cols = cols || 4;
+            var head = "";
+            for (var c = 0; c < cols; c++) {
+                head += '<th><div class="skeleton-text w-75"></div></th>';
+            }
+            var body = "";
+            for (var r = 0; r < rows; r++) {
+                var cells = "";
+                for (var cc = 0; cc < cols; cc++) {
+                    cells += '<td><div class="skeleton-text"></div></td>';
+                }
+                body += '<tr class="skeleton-table-row">' + cells + "</tr>";
+            }
+            return (
+                '<div class="skeleton-text title mb-3" style="width:180px;"></div>' +
+                '<div class="table-responsive"><table class="table admin-table">' +
+                "<thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody>" +
+                "</table></div>"
+            );
+        }
+
+        function buildCardGridSkeleton(count) {
+            var cards = "";
+            for (var i = 0; i < (count || 6); i++) {
+                cards +=
+                    '<div class="col-md-6 col-xl-4">' +
+                    '<div class="skeleton-card">' +
+                    '<div class="skeleton-thumb"></div>' +
+                    '<div class="skeleton-text title"></div>' +
+                    '<div class="skeleton-text w-75"></div>' +
+                    '<div class="skeleton-text w-50"></div>' +
+                    "</div></div>";
+            }
+            return (
+                '<div class="skeleton-text title mb-3" style="width:180px;"></div>' +
+                '<div class="row g-3">' + cards + "</div>"
+            );
+        }
+
+        function buildReportsSkeleton() {
+            function bars(n) {
+                var out = "";
+                for (var b = 0; b < n; b++) {
+                    out += '<div class="skeleton-bar skeleton" style="height:' + (30 + (b * 41) % 65) + '%;"></div>';
+                }
+                return out;
+            }
+            var wide = '<div class="col-12"><div class="skeleton-chart mb-3">' + bars(9) + "</div></div>";
+            var half = '<div class="col-md-6"><div class="skeleton-chart mb-3">' + bars(6) + "</div></div>";
+            return (
+                '<div class="skeleton-text title mb-3" style="width:220px;"></div>' +
+                '<div class="row g-3 mb-3">' + wide + half + half + wide + "</div>" +
+                buildTableSkeleton(4, 4)
+            );
+        }
+
+        function buildFormSkeleton() {
+            var fields = "";
+            for (var i = 0; i < 5; i++) {
+                fields +=
+                    '<div class="skeleton-field mb-3">' +
+                    '<div class="skeleton-text label"></div>' +
+                    '<div class="skeleton-input skeleton"></div>' +
+                    "</div>";
+            }
+            return (
+                '<div class="skeleton-text title mb-3" style="width:220px;"></div>' +
+                '<div style="max-width:520px;">' + fields + '<div class="skeleton-btn"></div></div>'
+            );
+        }
+
+        // URL -> skeleton shape. Order matters (first match wins).
+        var SKELETON_ROUTES = [
+            { test: /\/dashboard\/admin\/?$|\/admin\/?(dashboard)?$/, build: buildDashboardSkeleton },
+            { test: /\/admin\/reports(\/|$)/, build: buildReportsSkeleton },
+            { test: /\/admin\/stalls(\/|$)/, build: function () { return buildCardGridSkeleton(6); } },
+            { test: /\/(create|new|edit)(\/|$)/, build: buildFormSkeleton },
+            { test: /^\/profile(\/|$)/, build: buildFormSkeleton },
+            { test: /\/admin\//, build: function () { return buildTableSkeleton(6, 5); } },
+        ];
+
+        function buildSkeletonMarkup(url) {
+            var path = url.replace(window.location.origin, "");
+            for (var i = 0; i < SKELETON_ROUTES.length; i++) {
+                if (SKELETON_ROUTES[i].test.test(path)) {
+                    return '<div class="admin-skeleton" aria-hidden="true" aria-busy="true">' + SKELETON_ROUTES[i].build() + "</div>";
+                }
+            }
+            return "";
+        }
 
         function showProgress() {
             progressRequests += 1;
@@ -227,7 +348,12 @@
             showProgress();
             var contentEl = document.querySelector(CONTENT_SELECTOR);
             if (contentEl) {
-                contentEl.classList.add("is-loading");
+                var skeletonHtml = buildSkeletonMarkup(url);
+                if (skeletonHtml) {
+                    contentEl.innerHTML = skeletonHtml;
+                } else {
+                    contentEl.classList.add("is-loading");
+                }
             }
 
             return fetch(url, {
@@ -868,6 +994,36 @@
 
             enhanceClickables();
             document.addEventListener("admin:content-updated", function () { enhanceClickables(); });
+        })();
+    </script>
+    <script>
+        (function () {
+            "use strict";
+            // Fades in <img> content (stall/vendor photos, evidence uploads)
+            // instead of a hard pop-in once loaded. Mirrors the same script
+            // in base.html -- this admin shell is a standalone document.
+            var SKIP_SELECTOR = ".admin-sidebar img, .admin-topbar img, .navbar-avatar";
+
+            function enhanceImageFades(root) {
+                var scope = root || document;
+                var imgs = scope.querySelectorAll("img:not([data-fade-bound])");
+                imgs.forEach(function (img) {
+                    img.dataset.fadeBound = "1";
+                    if (img.closest(SKIP_SELECTOR)) {
+                        return;
+                    }
+                    if (img.complete && img.naturalWidth > 0) {
+                        return;
+                    }
+                    img.classList.add("img-fading-in");
+                    var markLoaded = function () { img.classList.add("img-loaded"); };
+                    img.addEventListener("load", markLoaded, { once: true });
+                    img.addEventListener("error", markLoaded, { once: true });
+                });
+            }
+
+            enhanceImageFades();
+            document.addEventListener("admin:content-updated", function () { enhanceImageFades(); });
         })();
     </script>
     {% block scripts %}{% endblock %}

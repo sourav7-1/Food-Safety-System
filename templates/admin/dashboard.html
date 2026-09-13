@@ -78,7 +78,7 @@
 
 <!-- Operational Details Modal -->
 <div class="modal fade" id="adminDashboardModal" tabindex="-1" aria-labelledby="adminDashboardModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-header border-bottom-0 pb-0 pt-4 px-4 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
@@ -88,11 +88,20 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
-                <div id="adminModalSpinner" class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
-                        <span class="visually-hidden">Loading...</span>
+                <div id="adminModalSpinner" class="d-flex flex-column gap-2" aria-busy="true" aria-live="polite">
+                    <span class="visually-hidden">Fetching live safety system data...</span>
+                    {% for _ in range(4) %}
+                    <div class="p-3 border rounded-3 d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3" style="flex:1;">
+                            <div class="skeleton-avatar" style="width:36px;height:36px;"></div>
+                            <div style="flex:1;">
+                                <div class="skeleton-text w-50"></div>
+                                <div class="skeleton-text w-75"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton-chip"></div>
                     </div>
-                    <p class="text-muted small mt-2 mb-0">Fetching live safety system data...</p>
+                    {% endfor %}
                 </div>
                 <div id="adminModalError" class="text-center py-5 d-none">
                     <i class="fa-solid fa-circle-exclamation text-danger fs-1 mb-2 d-block"></i>

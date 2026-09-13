@@ -61,7 +61,7 @@
         onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button, form, input, select')) { event.preventDefault(); openEntityDetailModal('stall', {{ stall.stall_id }}); }"
     >
         <!-- Photo Banner / Modern Gradient Fallback -->
-        <div class="admin-stall-card-photo">
+        <div class="admin-stall-card-photo img-shimmer-box">
             {% if stall.photo_url %}
             <img src="{{ stall.photo_url }}" alt="{{ stall.stall_name }}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className: 'admin-stall-card-mesh-fallback', innerHTML: '<div class=\'mesh-ambient\'></div><i class=\'fa-solid fa-shop mesh-icon\'></i><span class=\'mesh-code\'>{{ stall.stall_code }}</span>'}))">
             {% else %}
@@ -197,7 +197,7 @@
 
 <!-- Add / Edit Stall Modal -->
 <div class="modal fade" id="stallModal" tabindex="-1" aria-labelledby="stallModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <form method="post" id="stallModalForm" action="{{ url_for('admin.stall_create') }}" class="entity-form">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

@@ -180,7 +180,7 @@
 </style>
 
 <div class="modal fade" id="vendorModal" tabindex="-1" aria-labelledby="vendorModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <form method="post" id="vendorModalForm" action="{{ url_for('admin.vendor_create') }}" class="entity-form">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -247,7 +247,7 @@
     </div>
 </div>
 <div class="modal fade" id="vendorRejectModal" tabindex="-1" aria-labelledby="vendorRejectModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <form method="post" id="vendorRejectForm">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

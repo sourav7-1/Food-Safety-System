@@ -211,16 +211,9 @@
             link.classList.add("btn-loading");
         }
 
-        document.addEventListener("click", function (event) {
-            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-                return;
-            }
-            var link = event.target.closest("a.btn");
-            if (!link) {
-                return;
-            }
+        function isRealInternalNavLink(link) {
             var href = link.getAttribute("href") || "";
-            if (
+            return !(
                 link.classList.contains("btn-loading") ||
                 link.hasAttribute("data-no-loading") ||
                 link.hasAttribute("data-bs-toggle") ||
@@ -231,10 +224,27 @@
                 href.indexOf("mailto:") === 0 ||
                 href.indexOf("tel:") === 0 ||
                 href.indexOf("javascript:") === 0
-            ) {
+            );
+        }
+
+        document.addEventListener("click", function (event) {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
                 return;
             }
-            setLinkLoading(link);
+            var link = event.target.closest("a");
+            if (!link || !isRealInternalNavLink(link)) {
+                return;
+            }
+            if (link.classList.contains("btn")) {
+                setLinkLoading(link);
+                return;
+            }
+            // Plain nav links (sidebar items, table row links, etc.) get the
+            // top progress bar only -- rewriting their label into a spinner
+            // would visibly break sidebar/menu text mid-navigation.
+            if (link.closest(".dashboard-sidebar, .dashboard-offcanvas, .dashboard-topbar, .dashboard-content, main")) {
+                showProgress();
+            }
         });
 
         // A back/forward navigation can restore this page with a button
@@ -553,6 +563,39 @@
             document.addEventListener("DOMContentLoaded", function () { enhanceClickables(); });
             document.addEventListener("site:content-updated", function () { enhanceClickables(); });
             document.addEventListener("admin:content-updated", function () { enhanceClickables(); });
+        })();
+    </script>
+    <script>
+        (function () {
+            "use strict";
+            // Fades in <img> content (stall photos, evidence uploads, avatars)
+            // instead of letting it pop in abruptly once loaded. Skips chrome
+            // (logos, nav avatars, in-button icons) and images already in the
+            // browser cache, since those paint instantly with nothing to fade.
+            var SKIP_SELECTOR = ".navbar-logo, .footer-brand img, .navbar-avatar, .btn img, .admin-sidebar img";
+
+            function enhanceImageFades(root) {
+                var scope = root || document;
+                var imgs = scope.querySelectorAll("img:not([data-fade-bound])");
+                imgs.forEach(function (img) {
+                    img.dataset.fadeBound = "1";
+                    if (img.closest(SKIP_SELECTOR)) {
+                        return;
+                    }
+                    if (img.complete && img.naturalWidth > 0) {
+                        return;
+                    }
+                    img.classList.add("img-fading-in");
+                    var markLoaded = function () { img.classList.add("img-loaded"); };
+                    img.addEventListener("load", markLoaded, { once: true });
+                    img.addEventListener("error", markLoaded, { once: true });
+                });
+            }
+
+            enhanceImageFades();
+            document.addEventListener("DOMContentLoaded", function () { enhanceImageFades(); });
+            document.addEventListener("site:content-updated", function () { enhanceImageFades(); });
+            document.addEventListener("admin:content-updated", function () { enhanceImageFades(); });
         })();
     </script>
 </body>
