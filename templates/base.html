@@ -397,10 +397,7 @@
                 return;
             }
             var form = event.target;
-            if (!(form instanceof HTMLFormElement)) {
-                return;
-            }
-            if (!form.closest(CONTENT_SELECTOR) || form.hasAttribute("data-no-ajax")) {
+            if (!(form instanceof HTMLFormElement) || !form.closest(CONTENT_SELECTOR)) {
                 return;
             }
 
@@ -412,7 +409,13 @@
 
             setButtonLoading(event.submitter);
 
-            if (form.method.toUpperCase() === "GET") {
+            // data-no-ajax forms (login, register, logout, and any form whose
+            // success changes page chrome outside #main-content) still get
+            // the button-loading + progress-bar feedback above -- they just
+            // navigate for real instead of being intercepted below. Without
+            // this, a full-page-reload submit showed no feedback at all
+            // between the click and the next page painting.
+            if (form.hasAttribute("data-no-ajax") || form.method.toUpperCase() === "GET") {
                 showProgress();
                 return;
             }

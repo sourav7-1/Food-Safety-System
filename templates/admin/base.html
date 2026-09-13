@@ -100,9 +100,23 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div id="adminItemSpinner" class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
-                            <span class="visually-hidden">Loading...</span>
+                    <div id="adminItemSpinner" aria-hidden="true" aria-busy="true">
+                        <div class="text-center mb-4">
+                            <div class="skeleton-avatar mx-auto mb-2" style="width: 56px; height: 56px;"></div>
+                            <div class="skeleton-text title mx-auto" style="width: 140px;"></div>
+                            <div class="skeleton-chip mx-auto mt-2"></div>
+                        </div>
+                        <div class="card border-0 bg-light p-3 rounded-3 mb-3">
+                            <div class="row g-3">
+                                <div class="col-6"><div class="skeleton-text w-50"></div><div class="skeleton-text w-75"></div></div>
+                                <div class="col-6"><div class="skeleton-text w-50"></div><div class="skeleton-text w-75"></div></div>
+                                <div class="col-6"><div class="skeleton-text w-50"></div><div class="skeleton-text w-75"></div></div>
+                                <div class="col-6"><div class="skeleton-text w-50"></div><div class="skeleton-text w-75"></div></div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-2 border rounded-3">
+                            <div class="skeleton-text w-25"></div>
+                            <div class="skeleton-text w-25"></div>
                         </div>
                     </div>
                     <div id="adminItemBody"></div>
@@ -144,9 +158,9 @@
                 cards +=
                     '<div class="col-6 col-lg-3">' +
                     '<div class="skeleton-stat-card">' +
+                    '<div class="skeleton-avatar" style="border-radius:12px;width:42px;height:42px;"></div>' +
+                    '<div class="skeleton-text title" style="margin-top:0.4rem;"></div>' +
                     '<div class="skeleton-text w-50"></div>' +
-                    '<div class="skeleton-text title"></div>' +
-                    '<div class="skeleton-text w-25"></div>' +
                     "</div></div>";
             }
             var bars = "";
@@ -343,18 +357,32 @@
             } catch (e) {}
         }
 
+        // A skeleton that appears and vanishes within a few dozen
+        // milliseconds reads as a flicker, not feedback -- most admin nav on
+        // a healthy connection resolves faster than a human notices, so:
+        // delay showing the skeleton at all (a fast response then shows NO
+        // loading UI whatsoever, just an instant swap), and once it IS shown,
+        // hold it for a minimum stretch so it never blinks on and off in the
+        // same frame.
+        var SKELETON_SHOW_DELAY_MS = 150;
+        var SKELETON_MIN_VISIBLE_MS = 220;
+
         function loadAdminPage(url, pushState) {
             if (pushState === undefined) pushState = true;
             showProgress();
             var contentEl = document.querySelector(CONTENT_SELECTOR);
-            if (contentEl) {
-                var skeletonHtml = buildSkeletonMarkup(url);
-                if (skeletonHtml) {
-                    contentEl.innerHTML = skeletonHtml;
-                } else {
-                    contentEl.classList.add("is-loading");
-                }
-            }
+            var skeletonShownAt = null;
+            var skeletonDelayTimer = contentEl
+                ? window.setTimeout(function () {
+                    var skeletonHtml = buildSkeletonMarkup(url);
+                    if (skeletonHtml) {
+                        contentEl.innerHTML = skeletonHtml;
+                    } else {
+                        contentEl.classList.add("is-loading");
+                    }
+                    skeletonShownAt = Date.now();
+                }, SKELETON_SHOW_DELAY_MS)
+                : null;
 
             return fetch(url, {
                 headers: { "X-Requested-With": "XMLHttpRequest" }
@@ -367,6 +395,7 @@
                     return response.text();
                 })
                 .then(function (html) {
+                    clearTimeout(skeletonDelayTimer);
                     if (!html) return;
                     var doc = new DOMParser().parseFromString(html, "text/html");
                     var nextContent = doc.querySelector(CONTENT_SELECTOR);
@@ -375,50 +404,75 @@
                         window.location.href = url;
                         return;
                     }
-                    cleanupModalArtifacts();
 
-                    // Update topbar title
-                    var nextTitle = doc.querySelector(".admin-topbar h1") || doc.querySelector("h1, h2");
-                    var currentTitle = document.querySelector(".admin-topbar h1");
-                    if (currentTitle) {
-                        if (nextTitle && nextTitle.textContent.trim()) {
-                            currentTitle.textContent = nextTitle.textContent.trim();
-                        } else if (doc.title) {
-                            currentTitle.textContent = doc.title.split("·")[0].trim();
+                    function applySwap() {
+                        cleanupModalArtifacts();
+
+                        // Update topbar title
+                        var nextTitle = doc.querySelector(".admin-topbar h1") || doc.querySelector("h1, h2");
+                        var currentTitle = document.querySelector(".admin-topbar h1");
+                        if (currentTitle) {
+                            if (nextTitle && nextTitle.textContent.trim()) {
+                                currentTitle.textContent = nextTitle.textContent.trim();
+                            } else if (doc.title) {
+                                currentTitle.textContent = doc.title.split("·")[0].trim();
+                            }
+                        }
+
+                        // Update document title
+                        var titleTag = doc.querySelector("title");
+                        if (titleTag) {
+                            document.title = titleTag.textContent;
+                        }
+
+                        // Swap content -- a quick opacity dip softens the cut
+                        // from skeleton to real content instead of a hard
+                        // pop-in, reusing .admin-content's existing
+                        // transition (admin.css) rather than a new one.
+                        currentContent.classList.add("content-swap-in");
+                        currentContent.innerHTML = nextContent.innerHTML;
+                        currentContent.classList.remove("is-loading");
+                        requestAnimationFrame(function () {
+                            currentContent.classList.remove("content-swap-in");
+                        });
+
+                        // Execute scripts from new page
+                        executeScriptsFromDoc(doc, currentContent);
+
+                        // Update active sidebar menu item
+                        updateActiveSidebar(url);
+
+                        // Close offcanvas if mobile sidebar open
+                        var offcanvasEl = document.getElementById("adminSidebar");
+                        if (offcanvasEl && window.bootstrap) {
+                            var bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                            if (bsOffcanvas) bsOffcanvas.hide();
+                        }
+
+                        if (pushState) {
+                            history.pushState({ url: url }, "", url);
+                        }
+
+                        document.dispatchEvent(new CustomEvent("admin:content-updated"));
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }
+
+                    if (skeletonShownAt !== null) {
+                        var elapsed = Date.now() - skeletonShownAt;
+                        var remaining = Math.max(0, SKELETON_MIN_VISIBLE_MS - elapsed);
+                        if (remaining > 0) {
+                            return new Promise(function (resolve) {
+                                window.setTimeout(function () {
+                                    applySwap();
+                                    resolve();
+                                }, remaining);
+                            });
                         }
                     }
-
-                    // Update document title
-                    var titleTag = doc.querySelector("title");
-                    if (titleTag) {
-                        document.title = titleTag.textContent;
-                    }
-
-                    // Swap content
-                    currentContent.innerHTML = nextContent.innerHTML;
-                    currentContent.classList.remove("is-loading");
-
-                    // Execute scripts from new page
-                    executeScriptsFromDoc(doc, currentContent);
-
-                    // Update active sidebar menu item
-                    updateActiveSidebar(url);
-
-                    // Close offcanvas if mobile sidebar open
-                    var offcanvasEl = document.getElementById("adminSidebar");
-                    if (offcanvasEl && window.bootstrap) {
-                        var bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
-                        if (bsOffcanvas) bsOffcanvas.hide();
-                    }
-
-                    if (pushState) {
-                        history.pushState({ url: url }, "", url);
-                    }
-
-                    document.dispatchEvent(new CustomEvent("admin:content-updated"));
-                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    applySwap();
                 })
                 .catch(function () {
+                    clearTimeout(skeletonDelayTimer);
                     window.location.href = url;
                 })
                 .finally(function () {
@@ -603,8 +657,15 @@
                 return;
             }
             cleanupModalArtifacts();
+            // Quick opacity dip on the incoming content instead of a hard
+            // pop-in -- reuses .admin-content's existing transition, so this
+            // costs one class toggle, not a new animation system.
+            current.classList.add("content-swap-in");
             current.innerHTML = next.innerHTML;
             current.classList.remove("is-loading");
+            requestAnimationFrame(function () {
+                current.classList.remove("content-swap-in");
+            });
             var title = doc.querySelector("title");
             if (title) {
                 document.title = title.textContent;
@@ -834,10 +895,7 @@
                 return;
             }
             var form = event.target;
-            if (!(form instanceof HTMLFormElement)) {
-                return;
-            }
-            if (!form.closest(CONTENT_SELECTOR) || form.hasAttribute("data-no-ajax")) {
+            if (!(form instanceof HTMLFormElement) || !form.closest(CONTENT_SELECTOR)) {
                 return;
             }
 
@@ -857,11 +915,12 @@
             // the attribute.
             setButtonLoading(event.submitter);
 
-            if (form.method.toUpperCase() === "GET") {
-                // Search/filter forms: let the browser navigate normally
-                // (keeps the URL bookmarkable/shareable) -- the button
-                // loading state above is enough feedback while the page
-                // loads; nothing to fetch/swap ourselves here.
+            if (form.hasAttribute("data-no-ajax") || form.method.toUpperCase() === "GET") {
+                // Search/filter forms, and forms whose success navigates
+                // somewhere outside .admin-content (data-no-ajax): let the
+                // browser handle it for real -- the button loading state
+                // above is enough feedback while the page loads; nothing to
+                // fetch/swap ourselves here.
                 showProgress();
                 return;
             }

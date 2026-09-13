@@ -1617,34 +1617,47 @@ p {
     border-radius: var(--radius-pill);
 }
 
-/* Stat / KPI card skeleton */
+/* Stat / KPI card skeleton -- radius/padding/shadow deliberately match
+   .kpi-card (admin.css) exactly, not the generic --radius-lg token, so the
+   placeholder doesn't visibly "pop" into a differently-shaped real card. */
 .skeleton-stat-card {
     background: var(--surface-card);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    padding: 1.25rem;
+    border-radius: 20px;
+    padding: 24px;
+    min-height: 156px;
+    box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
     gap: 0.65rem;
 }
 
-/* Generic content card skeleton (matches .skeleton-stat-card sizing but
-   used for stall/vendor/product cards with a thumbnail) */
+/* Generic content card skeleton -- matches .panel-card / .admin-stall-card
+   (admin.css) radius, padding and shadow for the same reason. */
 .skeleton-card {
     background: var(--surface-card);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    padding: 1rem;
+    border-radius: 20px;
+    padding: 1rem 1rem 1.25rem;
+    box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
+    overflow: hidden;
+}
+.skeleton-card .skeleton-thumb {
+    margin: -1rem -1rem 0.25rem;
+    width: calc(100% + 2rem);
+    border-radius: 0;
+    aspect-ratio: 16 / 9.5;
 }
 
 /* Chart placeholder -- a plausible baseline silhouette instead of a flat box */
 .skeleton-chart {
     background: var(--surface-card);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
     padding: 1.25rem;
     height: 260px;
     display: flex;

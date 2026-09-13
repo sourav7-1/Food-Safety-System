@@ -1495,6 +1495,11 @@ html.sidebar-collapsed .admin-sidebar .sidebar-logout button {
 
 .admin-content { transition: opacity 0.22s ease, filter 0.22s ease; }
 .admin-content.is-loading { opacity: 0.55; filter: saturate(65%); pointer-events: none; }
+.admin-content.content-swap-in { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-content { transition: none; }
+}
 
 .btn-loading {
     display: inline-flex !important;
