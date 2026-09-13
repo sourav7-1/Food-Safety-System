@@ -20,9 +20,11 @@
 <script>
 (function () {
     "use strict";
-    // Re-runs after admin:content-updated too, since AdminAjax.refresh()
-    // below replaces .admin-content (this modal included) once the
-    // modal is closed -- see admin/base.html for the shared swap layer.
+    // AdminAjax.refresh() below replaces .admin-content (this modal
+    // included) once the modal is closed -- that swap re-executes this
+    // whole script (see executeScriptsFromDoc in admin/base.html), which
+    // re-runs initComplaintModal() directly, so it needs no separate
+    // "admin:content-updated" subscription of its own.
     function initComplaintModal() {
     var modalEl = document.getElementById("complaintModal");
     if (!modalEl) { return; }
@@ -89,7 +91,6 @@
     }
 
     initComplaintModal();
-    document.addEventListener("admin:content-updated", initComplaintModal);
 })();
 </script>
 {% endblock %}

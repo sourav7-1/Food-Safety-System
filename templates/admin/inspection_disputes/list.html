@@ -20,6 +20,12 @@
 <script>
 (function () {
     "use strict";
+    // AdminAjax.refresh() (triggered on modal close after a submit) swaps
+    // .admin-content, which re-executes this whole script (see
+    // executeScriptsFromDoc in admin/base.html) and thus re-runs
+    // initDisputeModal() directly -- no separate "admin:content-updated"
+    // subscription is needed, and adding one would double-bind the
+    // submit/click/hidden listeners below on every visit to this page.
     function initDisputeModal() {
     var modalEl = document.getElementById("disputeModal");
     if (!modalEl) { return; }
@@ -77,7 +83,6 @@
     }
 
     initDisputeModal();
-    document.addEventListener("admin:content-updated", initDisputeModal);
 })();
 </script>
 {% endblock %}

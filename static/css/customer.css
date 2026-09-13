@@ -710,10 +710,53 @@
     transition: all 0.2s ease;
 }
 
-.notif-stat-card:hover {
+.notif-stat-card.is-clickable {
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+}
+
+.notif-stat-card.is-clickable:hover {
+    transform: translateY(-3px);
     background: #ffffff;
-    border-color: var(--cf-border);
-    box-shadow: var(--cf-shadow-sm);
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+}
+
+.notif-stat-card.is-clickable:active {
+    transform: translateY(-1px);
+}
+
+.notif-stat-card.is-clickable:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.3);
+}
+
+.notif-stat-card.is-clickable[data-stat-category="all"]:hover {
+    border-color: #3b82f6;
+}
+
+.notif-stat-card.is-clickable[data-stat-category="unread"]:hover {
+    border-color: #10b981;
+}
+
+.notif-stat-card.is-clickable[data-stat-category="action_required"]:hover {
+    border-color: #f59e0b;
+}
+
+.notif-stat-card.is-clickable[data-stat-category="resolved"]:hover {
+    border-color: #059669;
+}
+
+.notif-stat-action-indicator {
+    margin-left: auto;
+    opacity: 0.85;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.notif-stat-card.is-clickable:hover .notif-stat-action-indicator {
+    opacity: 1;
+    transform: scale(1.05);
 }
 
 .notif-stat-icon {
@@ -802,11 +845,43 @@
     color: #ffffff !important;
 }
 
+.notif-sort-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--cf-canvas);
+    border: 1.5px solid var(--cf-border);
+    border-radius: var(--radius-pill);
+    padding: 0.2rem 0.65rem 0.2rem 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.notif-sort-wrap:focus-within {
+    background: #ffffff;
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+}
+
+.notif-sort-select {
+    border: none;
+    background-color: transparent;
+    padding: 0.25rem 1.75rem 0.25rem 0.25rem;
+    font-size: 0.825rem;
+    font-weight: 600;
+    color: var(--cf-ink-secondary);
+    cursor: pointer;
+}
+
+.notif-sort-select:focus {
+    box-shadow: none;
+    outline: none;
+}
+
 .notif-search-wrap {
     position: relative;
-    min-width: 240px;
-    flex: 1 1 240px;
-    max-width: 360px;
+    min-width: 220px;
+    flex: 1 1 220px;
+    max-width: 320px;
 }
 
 .notif-search-wrap i {
@@ -1174,6 +1249,74 @@
     .notif-modal .modal-footer .btn {
         width: 100%;
     }
+}
+
+/* Category Detail Modal Styles */
+.notif-category-modal .modal-content {
+    border-radius: var(--radius-card-lg);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 25px 60px -12px rgba(15, 23, 42, 0.25);
+    overflow: hidden;
+}
+
+.notif-category-modal-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.notif-category-modal-icon.all { background: #eff6ff; color: #2563eb; }
+.notif-category-modal-icon.unread { background: #ecfdf5; color: #059669; }
+.notif-category-modal-icon.action_required { background: #fffbeb; color: #d97706; }
+.notif-category-modal-icon.resolved { background: #ecfdf5; color: #059669; }
+
+/* Category Items in Modal */
+.category-item-card {
+    background: #ffffff;
+    border: 1px solid var(--cf-border);
+    border-radius: var(--radius-card-sm);
+    padding: 1.15rem 1.25rem;
+    margin-bottom: 0.85rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.category-item-card:hover {
+    transform: translateY(-2px);
+    border-color: #cbd5e1;
+    box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.07);
+}
+
+.category-item-card.is-unread {
+    background: linear-gradient(135deg, rgba(236, 253, 245, 0.5) 0%, #ffffff 100%);
+    border-color: #a7f3d0;
+    border-left: 4px solid #059669;
+}
+
+.category-item-card:last-child {
+    margin-bottom: 0;
+}
+
+/* Extra small button utility */
+.btn-xs {
+    padding: 0.25rem 0.65rem;
+    font-size: 0.775rem;
+    line-height: 1.35;
+    border-radius: var(--radius-pill);
+}
+
+/* Flash highlight animation for focusing a card */
+@keyframes highlightPulse {
+    0% { background-color: rgba(5, 150, 105, 0.25); box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.4); }
+    100% { background-color: transparent; box-shadow: none; }
+}
+
+.card-flash-highlight {
+    animation: highlightPulse 2s ease-out;
 }
 
 /* ==========================================================================

@@ -549,6 +549,15 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
+
+    // Without this, closing the lightbox on a playing video/audio file
+    // leaves it playing in the (now hidden) modal -- clearing the content
+    // removes the element from the DOM, which stops playback.
+    if (evidenceModalEl && mediaContent) {
+        evidenceModalEl.addEventListener("hidden.bs.modal", function () {
+            mediaContent.innerHTML = "";
+        });
+    }
 });
 </script>
 {% endblock %}

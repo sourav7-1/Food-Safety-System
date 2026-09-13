@@ -298,8 +298,14 @@
     }
     }
 
+    // initUserModal() re-runs on its own every time this script
+    // re-executes, which happens on every AJAX content swap (see
+    // executeScriptsFromDoc in admin/base.html) -- also subscribing it to
+    // "admin:content-updated" would double-run it on the very swap that
+    // just re-executed it, and the subscription would keep piling up
+    // (document itself is never replaced) across repeated visits to this
+    // page, eventually stacking duplicate click/submit bindings.
     initUserModal();
-    document.addEventListener("admin:content-updated", initUserModal);
 })();
 </script>
 {% endblock %}

@@ -32,48 +32,60 @@
             </div>
         </div>
 
-        <!-- Quick Summary Stats Grid -->
+        <!-- Quick Summary Stats Grid (Clickable Category Modals) -->
         <div class="notif-stats-grid">
-            <div class="notif-stat-card">
+            <div class="notif-stat-card is-clickable" role="button" tabindex="0" data-stat-category="all" aria-label="View All Alerts Overview" title="Click to view all alerts modal">
                 <div class="notif-stat-icon total">
                     <i class="fa-solid fa-layer-group"></i>
                 </div>
-                <div>
+                <div class="flex-grow-1">
                     <div class="notif-stat-value" id="statTotalCount">{{ total_count|default(0) }}</div>
                     <div class="notif-stat-label">Total Alerts</div>
                 </div>
+                <div class="notif-stat-action-indicator">
+                    <span class="badge bg-light text-secondary border rounded-pill small">Overview &middot; <i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+                </div>
             </div>
-            <div class="notif-stat-card">
+            <div class="notif-stat-card is-clickable" role="button" tabindex="0" data-stat-category="unread" aria-label="View Unread Alerts" title="Click to view unread alerts modal">
                 <div class="notif-stat-icon unread">
                     <i class="fa-solid fa-envelope-open-text"></i>
                 </div>
-                <div>
+                <div class="flex-grow-1">
                     <div class="notif-stat-value text-success" id="statUnreadCount">{{ unread_count|default(0) }}</div>
                     <div class="notif-stat-label">Unread</div>
                 </div>
+                <div class="notif-stat-action-indicator">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small">View &middot; <i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+                </div>
             </div>
-            <div class="notif-stat-card">
+            <div class="notif-stat-card is-clickable" role="button" tabindex="0" data-stat-category="action_required" aria-label="View Action Required Alerts" title="Click to view action required modal">
                 <div class="notif-stat-icon action">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
-                <div>
+                <div class="flex-grow-1">
                     <div class="notif-stat-value text-warning" id="statActionCount">{{ action_required_count|default(0) }}</div>
                     <div class="notif-stat-label">Action Required</div>
                 </div>
+                <div class="notif-stat-action-indicator">
+                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill small">Action &middot; <i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+                </div>
             </div>
-            <div class="notif-stat-card">
+            <div class="notif-stat-card is-clickable" role="button" tabindex="0" data-stat-category="resolved" aria-label="View Resolved Cases" title="Click to view resolved cases modal">
                 <div class="notif-stat-icon resolved">
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
-                <div>
+                <div class="flex-grow-1">
                     <div class="notif-stat-value text-emerald-600" id="statResolvedCount">{{ resolved_count|default(0) }}</div>
                     <div class="notif-stat-label">Resolved / Closed</div>
+                </div>
+                <div class="notif-stat-action-indicator">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small">Resolved &middot; <i class="fa-solid fa-arrow-up-right-from-square"></i></span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Filter Tabs & Real-Time Search Bar -->
+    <!-- Filter Tabs, Sort & Real-Time Search Bar -->
     <div class="notif-controls-bar">
         <div class="notif-filter-tabs" role="tablist">
             <button type="button" class="notif-tab-btn active" data-filter="all">
@@ -98,9 +110,24 @@
             </button>
         </div>
 
-        <div class="notif-search-wrap">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="search" class="notif-search-input" id="notifSearchInput" placeholder="Filter by title, stall, or status..." autocomplete="off">
+        <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1 justify-content-md-end">
+            <!-- Sort Selector -->
+            <div class="notif-sort-wrap">
+                <i class="fa-solid fa-arrow-down-short-wide text-secondary"></i>
+                <label for="notifSortSelect" class="visually-hidden">Sort notifications</label>
+                <select class="form-select form-select-sm notif-sort-select shadow-none" id="notifSortSelect">
+                    <option value="newest" selected>Sort: Newest First</option>
+                    <option value="oldest">Sort: Oldest First</option>
+                    <option value="priority">Sort: Urgency / Priority</option>
+                    <option value="stall">Sort: Stall Name (A-Z)</option>
+                </select>
+            </div>
+
+            <!-- Search Input -->
+            <div class="notif-search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" class="notif-search-input" id="notifSearchInput" placeholder="Filter by title, stall, or status..." autocomplete="off">
+            </div>
         </div>
     </div>
 
@@ -144,12 +171,15 @@
                      data-status="{{ c_status }}"
                      data-status-label="{{ c_status|replace('_', ' ')|title }}"
                      data-created-at="{{ item.created_at.strftime('%d %b %Y, %I:%M %p') }}"
+                     data-timestamp="{{ item.created_at.timestamp()|int }}"
+                     data-priority="{% if c_status == 'action_required' %}1{% elif c_status in ['under_review', 'investigation', 'submitted'] %}2{% elif c_status in ['resolved', 'closed'] %}3{% else %}4{% endif %}"
                      data-message="{{ item.message }}"
                      data-complaint-id="{% if item.complaint %}{{ item.complaint.complaint_id }}{% endif %}"
                      data-complaint-title="{% if item.complaint %}{{ item.complaint.title }}{% else %}Notification #{{ item.notification_id }}{% endif %}"
                      data-complaint-desc="{% if item.complaint %}{{ item.complaint.description }}{% endif %}"
                      data-stall-name="{% if item.complaint and item.complaint.stall %}{{ item.complaint.stall.stall_name }}{% endif %}"
                      data-stall-area="{% if item.complaint and item.complaint.stall and item.complaint.stall.area %}{{ item.complaint.stall.area.area_name }}{% endif %}"
+                     data-stall-url="{% if item.complaint and item.complaint.stall %}{{ url_for('customer_portal.search_stalls', q=item.complaint.stall.stall_name) }}{% endif %}"
                      data-complaint-type="{% if item.complaint and item.complaint.complaint_type %}{{ item.complaint.complaint_type.type_name }}{% endif %}"
                      data-admin-response="{% if item.complaint and item.complaint.admin_response %}{{ item.complaint.admin_response }}{% endif %}"
                      data-complaint-url="{% if item.complaint %}{{ url_for('customer_portal.complaint_detail', complaint_id=item.complaint.complaint_id) }}{% endif %}"
@@ -192,7 +222,9 @@
                         {% if item.complaint %}
                         <div class="notif-meta-tags">
                             {% if item.complaint.stall %}
-                            <span class="notif-meta-item"><i class="fa-solid fa-store text-success"></i> <strong>{{ item.complaint.stall.stall_name }}</strong></span>
+                            <a href="{{ url_for('customer_portal.search_stalls', q=item.complaint.stall.stall_name) }}" class="notif-meta-item text-decoration-none text-secondary hover-success" title="Find food stall">
+                                <i class="fa-solid fa-store text-success"></i> <strong>{{ item.complaint.stall.stall_name }}</strong>
+                            </a>
                             {% endif %}
                             {% if item.complaint.stall and item.complaint.stall.area %}
                             <span class="notif-meta-item"><i class="fa-solid fa-location-dot text-secondary"></i> {{ item.complaint.stall.area.area_name }}</span>
@@ -218,14 +250,14 @@
                         </div>
                         {% endif %}
 
-                        <!-- Card Action Buttons -->
+                        <!-- Card Action Buttons with Direct Hyperlinks -->
                         <div class="notif-card-actions">
                             <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold btn-open-modal" data-notif-id="{{ item.notification_id }}">
                                 <i class="fa-solid fa-expand me-1"></i> Quick View
                             </button>
                             {% if item.complaint %}
                             <a href="{{ url_for('customer_portal.complaint_detail', complaint_id=item.complaint.complaint_id) }}" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary fw-semibold">
-                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Track Complaint
+                                <i class="fa-solid fa-route me-1 text-primary"></i> 3D Progress Roadmap
                             </a>
                             {% endif %}
                             {% if not item.is_read %}
@@ -267,6 +299,90 @@
         <button type="button" class="btn btn-outline-success px-4 rounded-pill" id="btnResetFilters">
             <i class="fa-solid fa-rotate-left me-1"></i> Clear Filters
         </button>
+    </div>
+</div>
+
+<!-- =========================================================================
+     Interactive Stat Category Breakdown Modal
+     ========================================================================= -->
+<div class="modal fade notif-category-modal" id="statCategoryModal" tabindex="-1" aria-labelledby="statCategoryModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <!-- Modal Header -->
+            <div class="modal-header border-bottom d-flex align-items-center justify-content-between p-3.5" id="statCategoryModalHeader">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="notif-category-modal-icon all" id="statModalIconWrap">
+                        <i class="fa-solid fa-layer-group" id="statModalIcon"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h4 class="modal-title h5 fw-bold mb-0 text-dark" id="statCategoryModalTitle">Category Alerts</h4>
+                            <span class="badge bg-secondary rounded-pill fw-bold" id="statModalCountBadge">0 alerts</span>
+                        </div>
+                        <p class="text-secondary small mb-0 mt-0.5" id="statModalDescription">Sorted breakdown of updates and direct actions for this category.</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold d-none" id="modalCategoryBtnMarkAllRead">
+                        <i class="fa-solid fa-check-double me-1"></i> Mark category read
+                    </button>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+
+            <!-- Modal Toolbar (Sort, Filter, Quick Actions) -->
+            <div class="modal-body p-0">
+                <div class="p-3 bg-light border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 440px;">
+                        <div class="position-relative flex-grow-1">
+                            <i class="fa-solid fa-magnifying-glass position-absolute text-secondary" style="top: 50%; left: 12px; transform: translateY(-50%); font-size: 0.85rem;"></i>
+                            <input type="search" class="form-control form-control-sm ps-4 rounded-pill shadow-none" id="modalCategorySearch" placeholder="Search title, stall, or ID..." autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="d-flex align-items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-down-short-wide text-secondary small"></i>
+                            <select class="form-select form-select-sm rounded-pill shadow-none" id="modalCategorySortSelect" style="font-size: 0.825rem; min-width: 175px;">
+                                <option value="newest" selected>Sort: Newest First</option>
+                                <option value="oldest">Sort: Oldest First</option>
+                                <option value="priority">Sort: Urgency / Priority</option>
+                                <option value="stall">Sort: Stall Name (A-Z)</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="modalBtnFilterMainPage">
+                            <i class="fa-solid fa-filter me-1"></i> Filter on page
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dynamic Items Container -->
+                <div class="p-3 p-md-4" id="modalCategoryItemsContainer" style="max-height: 60vh; overflow-y: auto;">
+                    <!-- Populated by JavaScript -->
+                </div>
+
+                <!-- Empty Category State -->
+                <div class="text-center py-5 d-none" id="modalCategoryEmptyState">
+                    <div class="empty-icon-wrap mx-auto mb-2">
+                        <i class="fa-solid fa-inbox fs-3 text-secondary"></i>
+                    </div>
+                    <h5 class="h6 fw-bold text-dark mb-1">No alerts found in this category</h5>
+                    <p class="text-secondary small mb-0">Try changing your search query or view all notifications.</p>
+                </div>
+            </div>
+
+            <!-- Modal Footer with Hyperlinks -->
+            <div class="modal-footer border-top d-flex justify-content-between align-items-center px-4 py-2.5 bg-light-subtle">
+                <div class="d-flex align-items-center gap-2">
+                    <a href="{{ url_for('customer_portal.my_complaints') }}" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary fw-semibold">
+                        <i class="fa-solid fa-list-check me-1"></i> My Complaints
+                    </a>
+                    <a href="{{ url_for('customer_portal.search_stalls') }}" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary fw-semibold">
+                        <i class="fa-solid fa-store me-1 text-success"></i> Browse Food Stalls
+                    </a>
+                </div>
+                <button type="button" class="btn btn-sm btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -373,7 +489,7 @@
                 </div>
             </div>
 
-            <!-- Modal Footer -->
+            <!-- Modal Footer with Direct Actions -->
             <div class="modal-footer">
                 <div>
                     <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-medium d-none" id="modalBtnMarkRead">
@@ -383,7 +499,7 @@
                 <div class="d-flex align-items-center gap-2">
                     <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 text-secondary" data-bs-dismiss="modal">Close</button>
                     <a href="#" class="btn btn-sm btn-success rounded-pill px-4 fw-semibold d-none" id="modalBtnTrackComplaint">
-                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View Full Complaint
+                        <i class="fa-solid fa-route me-1"></i> Track in 3D Roadmap
                     </a>
                 </div>
             </div>
@@ -397,29 +513,87 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const csrfToken = "{{ csrf_token() }}";
-    const modalEl = document.getElementById("notificationDetailModal");
-    let notifModal = null;
-    if (modalEl && typeof bootstrap !== "undefined") {
-        notifModal = new bootstrap.Modal(modalEl);
+    
+    // Bootstrap Modals
+    const detailModalEl = document.getElementById("notificationDetailModal");
+    let notifDetailModal = null;
+    if (detailModalEl && typeof bootstrap !== "undefined") {
+        notifDetailModal = new bootstrap.Modal(detailModalEl);
     }
 
-    const cards = document.querySelectorAll(".notif-card");
+    const categoryModalEl = document.getElementById("statCategoryModal");
+    let statCategoryModal = null;
+    if (categoryModalEl && typeof bootstrap !== "undefined") {
+        statCategoryModal = new bootstrap.Modal(categoryModalEl);
+    }
+
+    // Elements
+    const notifContainer = document.getElementById("notifContainer");
+    let cards = Array.from(document.querySelectorAll(".notif-card"));
     const searchInput = document.getElementById("notifSearchInput");
+    const sortSelect = document.getElementById("notifSortSelect");
     const filterTabs = document.querySelectorAll(".notif-tab-btn");
     const emptyFilterState = document.getElementById("notifEmptyFilterState");
     const btnResetFilters = document.getElementById("btnResetFilters");
     const btnMarkAllRead = document.getElementById("btnMarkAllRead");
+    const statCards = document.querySelectorAll(".notif-stat-card.is-clickable");
+
+    // Category Modal Elements
+    const statModalIconWrap = document.getElementById("statModalIconWrap");
+    const statModalIcon = document.getElementById("statModalIcon");
+    const statCategoryModalTitle = document.getElementById("statCategoryModalTitle");
+    const statModalCountBadge = document.getElementById("statModalCountBadge");
+    const statModalDescription = document.getElementById("statModalDescription");
+    const modalCategoryItemsContainer = document.getElementById("modalCategoryItemsContainer");
+    const modalCategoryEmptyState = document.getElementById("modalCategoryEmptyState");
+    const modalCategorySearch = document.getElementById("modalCategorySearch");
+    const modalCategorySortSelect = document.getElementById("modalCategorySortSelect");
+    const modalBtnFilterMainPage = document.getElementById("modalBtnFilterMainPage");
+    const modalCategoryBtnMarkAllRead = document.getElementById("modalCategoryBtnMarkAllRead");
 
     let activeFilter = "all";
     let searchQuery = "";
+    let activeSort = "newest";
+    let currentCategoryModalKey = "all";
 
     // -------------------------------------------------------------
-    // Filtering & Realtime Search Logic
+    // Sort Helper Function
+    // -------------------------------------------------------------
+    function sortItems(items, sortKey) {
+        return items.sort((a, b) => {
+            const timeA = parseInt(a.dataset.timestamp || "0", 10);
+            const timeB = parseInt(b.dataset.timestamp || "0", 10);
+            const prioA = parseInt(a.dataset.priority || "99", 10);
+            const prioB = parseInt(b.dataset.priority || "99", 10);
+            const stallA = (a.dataset.stallName || "").toLowerCase();
+            const stallB = (b.dataset.stallName || "").toLowerCase();
+
+            if (sortKey === "oldest") {
+                return timeA - timeB;
+            } else if (sortKey === "priority") {
+                if (prioA !== prioB) return prioA - prioB;
+                return timeB - timeA;
+            } else if (sortKey === "stall") {
+                if (stallA && stallB) return stallA.localeCompare(stallB);
+                if (stallA) return -1;
+                if (stallB) return 1;
+                return timeB - timeA;
+            } else {
+                // newest default
+                return timeB - timeA;
+            }
+        });
+    }
+
+    // -------------------------------------------------------------
+    // Main Page Filtering & Real-time Sorting Logic
     // -------------------------------------------------------------
     function applyFilters() {
+        cards = Array.from(document.querySelectorAll(".notif-card"));
         let visibleCount = 0;
         const q = searchQuery.toLowerCase().trim();
 
+        // 1. Filter visibility
         cards.forEach(card => {
             const status = (card.dataset.status || "").toLowerCase();
             const isRead = card.dataset.isRead === "1";
@@ -449,6 +623,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
+        // 2. Sort visible cards in DOM
+        if (notifContainer && cards.length > 0) {
+            const sorted = sortItems([...cards], activeSort);
+            sorted.forEach(card => notifContainer.appendChild(card));
+        }
+
         if (emptyFilterState) {
             if (visibleCount === 0 && cards.length > 0) {
                 emptyFilterState.classList.remove("d-none");
@@ -458,6 +638,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // Filter tab clicks
     filterTabs.forEach(tab => {
         tab.addEventListener("click", function () {
             filterTabs.forEach(t => t.classList.remove("active"));
@@ -467,6 +648,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    // Search input
     if (searchInput) {
         searchInput.addEventListener("input", function () {
             searchQuery = this.value;
@@ -474,24 +656,32 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Sort select
+    if (sortSelect) {
+        sortSelect.addEventListener("change", function () {
+            activeSort = this.value;
+            applyFilters();
+        });
+    }
+
+    // Reset filters
     if (btnResetFilters) {
         btnResetFilters.addEventListener("click", function () {
             activeFilter = "all";
             searchQuery = "";
+            activeSort = "newest";
             if (searchInput) searchInput.value = "";
+            if (sortSelect) sortSelect.value = "newest";
             filterTabs.forEach(t => t.classList.toggle("active", t.dataset.filter === "all"));
             applyFilters();
         });
     }
 
     // -------------------------------------------------------------
-    // Open Modal & Populate Data
+    // Open Notification Detail Modal & Populate Data
     // -------------------------------------------------------------
-    let currentModalNotifCard = null;
-
     function openNotificationModal(card) {
         if (!card) return;
-        currentModalNotifCard = card;
 
         const notifId = card.dataset.notifId;
         const isRead = card.dataset.isRead === "1";
@@ -509,7 +699,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const complaintUrl = card.dataset.complaintUrl || "";
         const readUrl = card.dataset.readUrl || "";
 
-        // Status styling config
         let iconClass = "fa-solid fa-bell";
         let colorClass = "default";
         if (["resolved", "closed"].includes(status)) {
@@ -526,7 +715,6 @@ document.addEventListener("DOMContentLoaded", function () {
             colorClass = "rejected";
         }
 
-        // Populate Header & Status
         const modalIconBadge = document.getElementById("modalIconBadge");
         const modalIcon = document.getElementById("modalIcon");
         const modalStatusPill = document.getElementById("modalStatusPill");
@@ -535,21 +723,15 @@ document.addEventListener("DOMContentLoaded", function () {
         const modalTimeText = document.getElementById("modalTimeText");
 
         if (modalIcon) modalIcon.className = iconClass;
-        if (modalIconBadge) {
-            modalIconBadge.className = "notif-modal-icon-badge notif-icon-circle " + colorClass;
-        }
-        if (modalStatusPill) {
-            modalStatusPill.className = "notif-status-pill " + colorClass;
-        }
+        if (modalIconBadge) modalIconBadge.className = "notif-modal-icon-badge notif-icon-circle " + colorClass;
+        if (modalStatusPill) modalStatusPill.className = "notif-status-pill " + colorClass;
         if (modalStatusIcon) modalStatusIcon.className = iconClass;
         if (modalStatusText) modalStatusText.textContent = statusLabel;
         if (modalTimeText) modalTimeText.textContent = createdAt;
 
-        // Populate Message
         const modalMessageBody = document.getElementById("modalMessageBody");
         if (modalMessageBody) modalMessageBody.textContent = message;
 
-        // Populate Complaint Details Box
         const modalComplaintBox = document.getElementById("modalComplaintBox");
         const modalComplaintTitle = document.getElementById("modalComplaintTitle");
         const modalComplaintRef = document.getElementById("modalComplaintRef");
@@ -591,7 +773,6 @@ document.addEventListener("DOMContentLoaded", function () {
             if (modalComplaintBox) modalComplaintBox.classList.add("d-none");
         }
 
-        // Admin Response Callout
         const adminCallout = document.getElementById("modalAdminResponseCallout");
         const adminText = document.getElementById("modalAdminResponseText");
         if (adminResponse && adminCallout && adminText) {
@@ -601,7 +782,6 @@ document.addEventListener("DOMContentLoaded", function () {
             adminCallout.classList.add("d-none");
         }
 
-        // Timeline progression
         const stepSubmitted = document.getElementById("stepSubmitted");
         const stepUnderReview = document.getElementById("stepUnderReview");
         const stepAction = document.getElementById("stepAction");
@@ -640,7 +820,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
 
-        // Footer buttons
         const btnTrack = document.getElementById("modalBtnTrackComplaint");
         const btnMarkRead = document.getElementById("modalBtnMarkRead");
 
@@ -666,14 +845,300 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
 
-        // If card is unread, automatically mark as read upon opening
         if (!isRead && readUrl) {
             markSingleRead(card, readUrl);
         }
 
-        if (notifModal) {
-            notifModal.show();
+        if (notifDetailModal) {
+            notifDetailModal.show();
         }
+    }
+
+    // -------------------------------------------------------------
+    // Category Breakdown Modal Population & Controller
+    // -------------------------------------------------------------
+    function renderCategoryModalItems() {
+        if (!modalCategoryItemsContainer) return;
+        modalCategoryItemsContainer.innerHTML = "";
+
+        const q = (modalCategorySearch ? modalCategorySearch.value : "").toLowerCase().trim();
+        const sortKey = modalCategorySortSelect ? modalCategorySortSelect.value : "newest";
+
+        // Filter cards matching category
+        let matchingCards = cards.filter(card => {
+            const status = (card.dataset.status || "").toLowerCase();
+            const isRead = card.dataset.isRead === "1";
+
+            if (currentCategoryModalKey === "unread") {
+                return !isRead;
+            } else if (currentCategoryModalKey === "action_required") {
+                return status === "action_required";
+            } else if (currentCategoryModalKey === "resolved") {
+                return ["resolved", "closed"].includes(status);
+            }
+            return true; // "all"
+        });
+
+        // Filter by modal search query
+        if (q) {
+            matchingCards = matchingCards.filter(card => {
+                return card.innerText.toLowerCase().includes(q);
+            });
+        }
+
+        // Sort items
+        matchingCards = sortItems(matchingCards, sortKey);
+
+        if (statModalCountBadge) {
+            statModalCountBadge.textContent = matchingCards.length + (matchingCards.length === 1 ? " alert" : " alerts");
+        }
+
+        if (matchingCards.length === 0) {
+            if (modalCategoryEmptyState) modalCategoryEmptyState.classList.remove("d-none");
+            return;
+        } else {
+            if (modalCategoryEmptyState) modalCategoryEmptyState.classList.add("d-none");
+        }
+
+        // Render each card inside modal
+        matchingCards.forEach(card => {
+            const notifId = card.dataset.notifId;
+            const isRead = card.dataset.isRead === "1";
+            const status = card.dataset.status || "update";
+            const statusLabel = card.dataset.statusLabel || "Update";
+            const createdAt = card.dataset.createdAt || "";
+            const message = card.dataset.message || "";
+            const complaintId = card.dataset.complaintId || "";
+            const complaintTitle = card.dataset.complaintTitle || "";
+            const stallName = card.dataset.stallName || "";
+            const stallArea = card.dataset.stallArea || "";
+            const stallUrl = card.dataset.stallUrl || "";
+            const complaintType = card.dataset.complaintType || "";
+            const adminResponse = card.dataset.adminResponse || "";
+            const complaintUrl = card.dataset.complaintUrl || "";
+            const readUrl = card.dataset.readUrl || "";
+
+            let iconClass = "fa-solid fa-bell";
+            let colorClass = "default";
+            if (["resolved", "closed"].includes(status)) {
+                iconClass = "fa-solid fa-circle-check";
+                colorClass = "resolved";
+            } else if (status === "action_required") {
+                iconClass = "fa-solid fa-triangle-exclamation";
+                colorClass = "action_required";
+            } else if (["under_review", "investigation", "submitted"].includes(status)) {
+                iconClass = "fa-solid fa-magnifying-glass";
+                colorClass = "under_review";
+            } else if (status === "rejected") {
+                iconClass = "fa-solid fa-circle-xmark";
+                colorClass = "rejected";
+            }
+
+            const itemDiv = document.createElement("div");
+            itemDiv.className = `category-item-card ${isRead ? 'is-read' : 'is-unread'}`;
+            itemDiv.id = `modalItemCard-${notifId}`;
+
+            itemDiv.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-2 flex-wrap">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="notif-status-pill ${colorClass}">
+                            <i class="${iconClass}"></i>
+                            <span>${statusLabel}</span>
+                        </span>
+                        ${!isRead ? '<span class="notif-badge-new">NEW</span>' : ''}
+                        ${complaintId ? `<span class="badge bg-light text-secondary border fw-semibold"><i class="fa-solid fa-hashtag text-secondary me-0.5"></i>CMP-${complaintId}</span>` : ''}
+                        ${complaintType ? `<span class="badge bg-light text-secondary border">${complaintType}</span>` : ''}
+                    </div>
+                    <span class="text-secondary small">
+                        <i class="fa-regular fa-clock me-1"></i>${createdAt}
+                    </span>
+                </div>
+
+                <h5 class="h6 fw-bold text-dark mb-1.5">
+                    ${complaintTitle ? `Update on Complaint: <span class="text-success">&ldquo;${complaintTitle}&rdquo;</span>` : 'System Notification'}
+                </h5>
+
+                ${stallName ? `
+                <div class="d-flex align-items-center gap-2.5 text-secondary small mb-2 flex-wrap">
+                    <span><i class="fa-solid fa-store text-success me-1"></i><strong>${stallName}</strong></span>
+                    ${stallArea ? `<span>&bull; <i class="fa-solid fa-location-dot text-secondary me-1"></i>${stallArea}</span>` : ''}
+                </div>
+                ` : ''}
+
+                <p class="text-secondary small mb-2" style="line-height: 1.45;">${message}</p>
+
+                ${adminResponse ? `
+                <div class="notif-admin-callout py-1.5 px-2.5 mb-2.5">
+                    <div class="d-flex align-items-center gap-1.5 text-emerald-800 fw-semibold small">
+                        <i class="fa-solid fa-user-shield text-success"></i>
+                        <span>Safety Decision:</span>
+                    </div>
+                    <div class="text-dark small">${adminResponse}</div>
+                </div>
+                ` : ''}
+
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top mt-2">
+                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                        ${complaintUrl ? `
+                        <a href="${complaintUrl}" class="btn btn-xs btn-outline-success rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1">
+                            <i class="fa-solid fa-route"></i>
+                            <span>Track 3D Progress</span>
+                        </a>
+                        ` : ''}
+                        <button type="button" class="btn btn-xs btn-light border rounded-pill px-3 text-secondary fw-semibold btn-item-full-details" data-notif-id="${notifId}">
+                            <i class="fa-solid fa-expand me-1"></i> Quick View
+                        </button>
+                        ${stallUrl ? `
+                        <a href="${stallUrl}" class="btn btn-xs btn-light border rounded-pill px-2.5 text-secondary">
+                            <i class="fa-solid fa-store text-success me-1"></i> Stall
+                        </a>
+                        ` : ''}
+                    </div>
+                    <div class="d-flex align-items-center gap-1.5">
+                        <button type="button" class="btn btn-xs btn-light border rounded-pill px-2.5 text-secondary btn-item-jump-page" data-notif-id="${notifId}">
+                            <i class="fa-solid fa-arrow-down me-1 text-primary"></i> Focus on page
+                        </button>
+                        ${!isRead ? `
+                        <button type="button" class="btn btn-xs btn-light border rounded-pill px-2.5 text-secondary btn-item-mark-read" data-notif-id="${notifId}">
+                            <i class="fa-solid fa-check text-success me-1"></i> Mark read
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            // Attach event listeners for buttons inside category card
+            const btnFullDetails = itemDiv.querySelector(".btn-item-full-details");
+            if (btnFullDetails) {
+                btnFullDetails.addEventListener("click", () => {
+                    if (statCategoryModal) statCategoryModal.hide();
+                    setTimeout(() => openNotificationModal(card), 300);
+                });
+            }
+
+            const btnJumpPage = itemDiv.querySelector(".btn-item-jump-page");
+            if (btnJumpPage) {
+                btnJumpPage.addEventListener("click", () => {
+                    if (statCategoryModal) statCategoryModal.hide();
+                    // Activate filter tab if needed
+                    activeFilter = currentCategoryModalKey === "all" ? "all" : currentCategoryModalKey;
+                    filterTabs.forEach(t => t.classList.toggle("active", t.dataset.filter === activeFilter));
+                    applyFilters();
+
+                    setTimeout(() => {
+                        card.scrollIntoView({ behavior: "smooth", block: "center" });
+                        card.classList.add("card-flash-highlight");
+                        setTimeout(() => card.classList.remove("card-flash-highlight"), 2200);
+                    }, 350);
+                });
+            }
+
+            const btnItemRead = itemDiv.querySelector(".btn-item-mark-read");
+            if (btnItemRead) {
+                btnItemRead.addEventListener("click", () => {
+                    markSingleRead(card, readUrl, () => {
+                        itemDiv.classList.remove("is-unread");
+                        itemDiv.classList.add("is-read");
+                        const newBadge = itemDiv.querySelector(".notif-badge-new");
+                        if (newBadge) newBadge.remove();
+                        btnItemRead.remove();
+                    });
+                });
+            }
+
+            modalCategoryItemsContainer.appendChild(itemDiv);
+        });
+    }
+
+    function openCategoryModal(categoryKey) {
+        currentCategoryModalKey = categoryKey;
+        if (modalCategorySearch) modalCategorySearch.value = "";
+        if (modalCategorySortSelect) modalCategorySortSelect.value = activeSort;
+
+        // Customize Header by Category
+        if (categoryKey === "unread") {
+            statModalIconWrap.className = "notif-category-modal-icon unread";
+            statModalIcon.className = "fa-solid fa-envelope-open-text";
+            statCategoryModalTitle.textContent = "Unread Alerts & Updates";
+            statModalDescription.textContent = "Fresh notifications and pending reviews requiring your attention.";
+            statModalCountBadge.className = "badge bg-success rounded-pill fw-bold";
+            if (modalCategoryBtnMarkAllRead) modalCategoryBtnMarkAllRead.classList.remove("d-none");
+        } else if (categoryKey === "action_required") {
+            statModalIconWrap.className = "notif-category-modal-icon action_required";
+            statModalIcon.className = "fa-solid fa-triangle-exclamation";
+            statCategoryModalTitle.textContent = "Action Required Alerts";
+            statModalDescription.textContent = "Safety reports requiring additional information or student confirmation.";
+            statModalCountBadge.className = "badge bg-warning text-dark rounded-pill fw-bold";
+            if (modalCategoryBtnMarkAllRead) modalCategoryBtnMarkAllRead.classList.add("d-none");
+        } else if (categoryKey === "resolved") {
+            statModalIconWrap.className = "notif-category-modal-icon resolved";
+            statModalIcon.className = "fa-solid fa-circle-check";
+            statCategoryModalTitle.textContent = "Resolved & Closed Cases";
+            statModalDescription.textContent = "Hygiene reports that have completed inspection and verified resolution.";
+            statModalCountBadge.className = "badge bg-success rounded-pill fw-bold";
+            if (modalCategoryBtnMarkAllRead) modalCategoryBtnMarkAllRead.classList.add("d-none");
+        } else {
+            // All
+            statModalIconWrap.className = "notif-category-modal-icon all";
+            statModalIcon.className = "fa-solid fa-layer-group";
+            statCategoryModalTitle.textContent = "All Safety Notifications";
+            statModalDescription.textContent = "Comprehensive archive of all complaint updates and campus food notices.";
+            statModalCountBadge.className = "badge bg-secondary rounded-pill fw-bold";
+            if (modalCategoryBtnMarkAllRead) modalCategoryBtnMarkAllRead.classList.add("d-none");
+        }
+
+        renderCategoryModalItems();
+
+        if (statCategoryModal) {
+            statCategoryModal.show();
+        }
+    }
+
+    // Stat Cards Click to Open Category Modal
+    statCards.forEach(card => {
+        card.addEventListener("click", function () {
+            const category = this.dataset.statCategory || "all";
+            openCategoryModal(category);
+        });
+
+        card.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                const category = this.dataset.statCategory || "all";
+                openCategoryModal(category);
+            }
+        });
+    });
+
+    // Inside-Modal Search & Sort
+    if (modalCategorySearch) {
+        modalCategorySearch.addEventListener("input", renderCategoryModalItems);
+    }
+    if (modalCategorySortSelect) {
+        modalCategorySortSelect.addEventListener("change", renderCategoryModalItems);
+    }
+
+    // Modal button: "Filter on page"
+    if (modalBtnFilterMainPage) {
+        modalBtnFilterMainPage.addEventListener("click", function () {
+            if (statCategoryModal) statCategoryModal.hide();
+            activeFilter = currentCategoryModalKey;
+            filterTabs.forEach(t => t.classList.toggle("active", t.dataset.filter === activeFilter));
+            applyFilters();
+            if (notifContainer) {
+                notifContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        });
+    }
+
+    // Modal button: "Mark category read"
+    if (modalCategoryBtnMarkAllRead) {
+        modalCategoryBtnMarkAllRead.addEventListener("click", function () {
+            if (btnMarkAllRead) {
+                btnMarkAllRead.click();
+            }
+            if (statCategoryModal) statCategoryModal.hide();
+        });
     }
 
     // -------------------------------------------------------------
@@ -723,7 +1188,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // -------------------------------------------------------------
-    // Attach Event Listeners to Cards & Buttons
+    // Attach Event Listeners to Notification Cards
     // -------------------------------------------------------------
     cards.forEach(card => {
         // Quick view button triggers modal
@@ -745,7 +1210,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
-        // Clicking anywhere on card opens modal
+        // Clicking anywhere on card opens detail modal
         card.addEventListener("click", function (e) {
             if (e.target.closest("a, button")) return;
             openNotificationModal(card);

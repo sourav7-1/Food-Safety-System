@@ -379,10 +379,15 @@
     });
     }
 
+    // Both init functions re-run on their own every time this script
+    // re-executes (every AJAX content swap re-runs inline page scripts --
+    // see executeScriptsFromDoc in admin/base.html), so also subscribing
+    // them to "admin:content-updated" would double-run them on the very
+    // swap that just re-executed them, and since document itself is never
+    // replaced, the subscriptions would keep piling up across repeated
+    // visits to this page, stacking duplicate click/submit bindings.
     initVendorModal();
     initVendorRejectModal();
-    document.addEventListener("admin:content-updated", initVendorModal);
-    document.addEventListener("admin:content-updated", initVendorRejectModal);
 })();
 </script>
 {% endblock %}

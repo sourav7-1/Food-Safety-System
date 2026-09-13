@@ -559,12 +559,16 @@
         }
     }
 
+    // Both init functions re-run on their own every time this script
+    // re-executes (every AJAX content swap re-runs inline page scripts --
+    // see executeScriptsFromDoc in admin/base.html), so also subscribing
+    // them to "admin:content-updated" double-ran them on the very swap
+    // that just re-executed them -- and since document itself is never
+    // replaced, the subscription piled up on every visit to this page,
+    // each one binding its own "shown.bs.modal" handler and creating a
+    // fresh Leaflet map on top of the previous ones in #stallLocationMap.
     initStallModal();
     initStallLocationPicker();
-    document.addEventListener("admin:content-updated", function () {
-        initStallModal();
-        initStallLocationPicker();
-    });
 })();
 </script>
 {% endblock %}

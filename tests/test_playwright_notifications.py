@@ -102,33 +102,74 @@ if __name__ == '__main__':
             print('Rendered notification cards count:', cards_count)
             assert cards_count == 2, f'Expected 2 cards, got {cards_count}'
 
-            # 3. Test modal trigger
+            # 3. Test Detail Modal trigger
             page.locator('.btn-open-modal').first.click()
             page.wait_for_selector('#notificationDetailModal.show', timeout=4000)
             modal_title = page.locator('#modalComplaintTitle').inner_text()
-            print('Modal opened successfully! Title in modal:', modal_title)
+            print('Detail Modal opened successfully! Title in modal:', modal_title)
             assert 'Water contamination issue' in modal_title
 
-            # 4. Close modal
+            # 4. Close Detail Modal
             page.locator('#notificationDetailModal .btn-close').click()
             time.sleep(0.5)
 
-            # 5. Test filter tabs
+            # 5. Test Clickable Stat Card -> Category Modal
+            print('Testing clickable stat card: Action Required...')
+            page.locator('.notif-stat-card[data-stat-category="action_required"]').click()
+            page.wait_for_selector('#statCategoryModal.show', timeout=4000)
+            cat_title = page.locator('#statCategoryModalTitle').inner_text()
+            print('Category Modal Title:', cat_title)
+            assert 'Action Required' in cat_title
+
+            # Verify category items inside modal
+            cat_item_count = page.locator('#modalCategoryItemsContainer .category-item-card').count()
+            print('Category modal item count:', cat_item_count)
+            assert cat_item_count >= 1
+
+            # Check direct hyperlinks in category card
+            track_link = page.locator('#modalCategoryItemsContainer .category-item-card a[href*="/customer/complaints/"]').first
+            assert track_link.count() > 0, "Expected Track 3D Progress hyperlink"
+            print('Track hyperlink found:', track_link.get_attribute('href'))
+
+            # Close Category Modal
+            page.locator('#statCategoryModal .btn-close').click()
+            time.sleep(0.5)
+
+            # 6. Test Unread Stat Card -> Category Modal
+            print('Testing clickable stat card: Unread...')
+            page.locator('.notif-stat-card[data-stat-category="unread"]').click()
+            page.wait_for_selector('#statCategoryModal.show', timeout=4000)
+            cat_unread_title = page.locator('#statCategoryModalTitle').inner_text()
+            assert 'Unread' in cat_unread_title
+            
+            # Test inside-modal sorting
+            page.select_option('#modalCategorySortSelect', 'oldest')
+            time.sleep(0.3)
+            page.locator('#statCategoryModal .btn-close').click()
+            time.sleep(0.5)
+
+            # 7. Test Main Page Filter Tabs
             page.locator('.notif-tab-btn[data-filter="action_required"]').click()
             visible_cards = page.locator('.notif-card:visible').count()
             print('Filter "Action Required" visible count:', visible_cards)
             assert visible_cards == 1
 
-            # 6. Test search input
+            # 8. Test Main Page Sort Selector
+            page.locator('.notif-tab-btn[data-filter="all"]').click()
+            page.select_option('#notifSortSelect', 'stall')
+            time.sleep(0.3)
+            visible_all = page.locator('.notif-card:visible').count()
+            assert visible_all == 2
+
+            # 9. Test search input
             search_input = page.locator('#notifSearchInput')
             search_input.fill('Cold')
-            page.locator('.notif-tab-btn[data-filter="all"]').click()
             visible_search = page.locator('.notif-card:visible').count()
             print('Search "Cold" visible count:', visible_search)
             assert visible_search == 1
 
             browser.close()
-            print('\nALL PLAYWRIGHT NOTIFICATIONS TESTS PASSED WITH 100% SUCCESS!')
+            print('\nALL PLAYWRIGHT NOTIFICATIONS & CATEGORY MODAL TESTS PASSED WITH 100% SUCCESS!')
     finally:
         server.shutdown()
 

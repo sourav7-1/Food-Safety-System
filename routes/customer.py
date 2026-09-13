@@ -958,9 +958,24 @@ def notifications():
     total_count = len(records)
     unread_count = sum(1 for n in records if not n.is_read)
     read_count = total_count - unread_count
-    action_required_count = sum(1 for n in records if n.complaint and n.complaint.status == "action_required")
-    under_review_count = sum(1 for n in records if n.complaint and n.complaint.status in ("under_review", "investigation", "submitted"))
-    resolved_count = sum(1 for n in records if n.complaint and n.complaint.status in ("resolved", "closed"))
+
+    def _get_status(n):
+        if n.complaint:
+            return n.complaint.status
+        msg = (n.message or "").lower()
+        if "action required" in msg:
+            return "action_required"
+        if "under review" in msg or "investigation" in msg:
+            return "under_review"
+        if "resolved" in msg or "closed" in msg:
+            return "resolved"
+        if "rejected" in msg:
+            return "rejected"
+        return "update"
+
+    action_required_count = sum(1 for n in records if _get_status(n) == "action_required")
+    under_review_count = sum(1 for n in records if _get_status(n) in ("under_review", "investigation", "submitted"))
+    resolved_count = sum(1 for n in records if _get_status(n) in ("resolved", "closed"))
 
     return render_template(
         "customer/notifications.html",
