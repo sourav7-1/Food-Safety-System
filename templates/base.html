@@ -435,7 +435,16 @@
                 .then(function (response) { return response.text(); })
                 .then(swapContent)
                 .catch(function () {
-                    window.location.reload();
+                    document.dispatchEvent(new CustomEvent("fsr:fetch-failed"));
+                    // A real connectivity loss must never blow away whatever
+                    // the user was filling in -- only reload (the previous,
+                    // safe fallback) when the browser still thinks it's
+                    // online, so this was some other failure.
+                    if (navigator.onLine) {
+                        window.location.reload();
+                    } else if (contentEl) {
+                        contentEl.classList.remove("is-loading");
+                    }
                 })
                 .finally(hideProgress);
         });
@@ -445,6 +454,7 @@
         document.addEventListener("site:content-updated", autoDismissAlerts);
     })();
     </script>
+    {% include "partials/_offline_game.html" %}
     {% block scripts %}{% endblock %}
     <script>
         (function () {

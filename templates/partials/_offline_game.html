@@ -1,0 +1,8 @@
+{#
+  Food Safety Run -- offline Easter Egg.
+  Included once from templates/base.html and once from templates/admin/base.html
+  (the two independent page shells in this app). Loads only a small always-on
+  network-status script; the actual game engine + its stylesheet are fetched
+  lazily, only if the player opens the game, so normal pages pay no cost for it.
+#}
+<script src="{{ url_for('static', filename='js/offline-network.js') }}" defer></script>

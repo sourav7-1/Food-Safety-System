@@ -1794,6 +1794,29 @@ p {
     }
 }
 
+/* 404 page Easter-egg hint -- kept here (not in offline-game.css) so it
+   renders correctly even before the game's lazy-loaded assets exist. */
+.fsr-404-hint {
+    margin-top: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.fsr-404-hint button {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--brand-primary);
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+}
+.fsr-404-hint button:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
 /* Alerts and Toast Messages */
 #siteFlashMessages:empty {
     display: none !important;

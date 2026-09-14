@@ -473,6 +473,25 @@
                 })
                 .catch(function () {
                     clearTimeout(skeletonDelayTimer);
+                    document.dispatchEvent(new CustomEvent("fsr:fetch-failed"));
+                    // A genuine connectivity loss must not force a full
+                    // browser navigation while offline (that would hand the
+                    // whole app over to the browser's own offline error
+                    // page) -- show an inline retry notice in place instead
+                    // and leave the rest of the admin shell untouched.
+                    if (!navigator.onLine && contentEl) {
+                        contentEl.classList.remove("is-loading");
+                        contentEl.innerHTML =
+                            '<div class="alert alert-warning d-flex align-items-center justify-content-between flex-wrap gap-2" role="alert">' +
+                            '<span><i class="fa-solid fa-plug-circle-xmark me-2"></i>Can\'t load this page while you\'re offline.</span>' +
+                            '<button type="button" class="btn btn-sm btn-warning fw-semibold" data-fsr-nav-retry>Retry</button>' +
+                            "</div>";
+                        var retryBtn = contentEl.querySelector("[data-fsr-nav-retry]");
+                        if (retryBtn) {
+                            retryBtn.addEventListener("click", function () { loadAdminPage(url, pushState); });
+                        }
+                        return;
+                    }
                     window.location.href = url;
                 })
                 .finally(function () {
@@ -945,7 +964,15 @@
                     });
                 })
                 .catch(function () {
-                    window.location.reload();
+                    document.dispatchEvent(new CustomEvent("fsr:fetch-failed"));
+                    // Don't reload (and lose whatever the admin just typed
+                    // into this form) when the real cause is connectivity,
+                    // not a server error.
+                    if (navigator.onLine) {
+                        window.location.reload();
+                    } else if (contentEl) {
+                        contentEl.classList.remove("is-loading");
+                    }
                 })
                 .finally(hideProgress);
         });
@@ -1085,6 +1112,7 @@
             document.addEventListener("admin:content-updated", function () { enhanceImageFades(); });
         })();
     </script>
+    {% include "partials/_offline_game.html" %}
     {% block scripts %}{% endblock %}
 </body>
 </html>

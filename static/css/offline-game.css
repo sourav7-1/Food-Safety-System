@@ -1,0 +1,370 @@
+/* ==========================================================================
+   Food Safety Run -- offline Easter Egg mini-game
+   Built entirely from the app's existing design tokens (see styles.css
+   :root) so it never looks like a bolted-on third-party widget. No new
+   colors, radii, or fonts are introduced here.
+   ========================================================================== */
+
+/* ---- Subtle, non-blocking connectivity banner -------------------------- */
+/* Never a takeover -- appears/disappears without moving page content
+   (fixed position) and never opens the game on its own. */
+.fsr-net-banner {
+    position: fixed;
+    left: 50%;
+    bottom: 1.25rem;
+    transform: translateX(-50%) translateY(8px);
+    z-index: 99998;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-lg);
+    padding: 0.6rem 0.75rem 0.6rem 1.1rem;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s var(--ease-standard), transform 0.25s var(--ease-standard);
+    max-width: calc(100vw - 2rem);
+}
+.fsr-net-banner.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+.fsr-net-banner-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-pill);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    background: var(--risk-medium-bg);
+    color: var(--risk-medium);
+    font-size: 0.95rem;
+}
+.fsr-net-banner.is-back-online .fsr-net-banner-icon {
+    background: var(--risk-low-bg);
+    color: var(--risk-low);
+}
+.fsr-net-banner-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+.fsr-net-banner-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+.fsr-net-banner-sub {
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+}
+.fsr-net-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 0.25rem;
+}
+.fsr-btn {
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.8rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    padding: 0.4rem 0.85rem;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+    white-space: nowrap;
+}
+.fsr-btn:active { transform: scale(0.96); }
+.fsr-btn-primary {
+    background: var(--brand-primary);
+    color: #fff;
+}
+.fsr-btn-primary:hover { background: var(--brand-primary-hover); }
+.fsr-btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border-subtle);
+}
+.fsr-btn-ghost:hover { background: var(--border-light); }
+.fsr-net-banner-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+/* ---- Full-screen game overlay ------------------------------------------ */
+.fsr-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99997;
+    background: linear-gradient(180deg, var(--brand-primary-dark) 0%, var(--brand-primary) 55%, var(--brand-primary-hover) 100%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    touch-action: none;
+    overscroll-behavior: contain;
+}
+.fsr-overlay.is-open {
+    display: flex;
+}
+body.fsr-lock-scroll {
+    overflow: hidden;
+}
+
+.fsr-stage {
+    position: relative;
+    width: 100%;
+    max-width: 920px;
+    background: var(--surface-card);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.fsr-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--surface-card);
+    z-index: 2;
+}
+.fsr-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-weight: 800;
+    color: var(--text-primary);
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+}
+.fsr-brand-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-md);
+    background: var(--brand-primary-light);
+    color: var(--brand-primary);
+    display: grid;
+    place-items: center;
+    font-size: 0.95rem;
+}
+.fsr-hud {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+.fsr-hud strong {
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+.fsr-hud-safety.is-low strong { color: var(--risk-critical); }
+.fsr-hud-safety.is-mid strong { color: var(--risk-medium); }
+.fsr-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.fsr-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-card-subtle);
+    color: var(--text-secondary);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+.fsr-icon-btn:hover { background: var(--border-light); color: var(--text-primary); }
+.fsr-icon-btn:focus-visible,
+.fsr-btn:focus-visible {
+    outline: 3px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.fsr-canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #cfe9ea;
+    overflow: hidden;
+}
+.fsr-canvas-wrap canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+}
+.fsr-canvas-wrap canvas:focus-visible {
+    outline: 3px solid var(--brand-primary);
+    outline-offset: -3px;
+}
+
+.fsr-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 0.85rem;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.55);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 0.4rem 0.9rem;
+    border-radius: var(--radius-pill);
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+/* ---- Screens layered on top of the canvas (idle / paused / game over) -- */
+.fsr-screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.65rem;
+    padding: 1.5rem;
+    background: rgba(248, 250, 252, 0.94);
+    backdrop-filter: blur(2px);
+}
+.fsr-screen.is-active { display: flex; }
+
+.fsr-screen-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-pill);
+    display: grid;
+    place-items: center;
+    font-size: 1.8rem;
+    margin-bottom: 0.25rem;
+    background: var(--brand-primary-light);
+    color: var(--brand-primary);
+}
+.fsr-screen.is-gameover .fsr-screen-icon {
+    background: var(--risk-critical-bg);
+    color: var(--risk-critical);
+}
+.fsr-screen.is-milestone .fsr-screen-icon {
+    background: var(--risk-low-bg);
+    color: var(--risk-low);
+}
+.fsr-screen-title {
+    font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+.fsr-screen-tagline {
+    color: var(--text-tertiary);
+    font-size: 0.95rem;
+    margin: 0 0 0.5rem;
+}
+.fsr-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    gap: 0.5rem 1.5rem;
+    margin: 0.25rem 0 0.75rem;
+}
+.fsr-stat {
+    text-align: left;
+}
+.fsr-stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+.fsr-stat-value {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+.fsr-grade-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-pill);
+    font-weight: 800;
+    font-size: 1.3rem;
+    margin: 0.25rem 0 0.5rem;
+}
+.fsr-grade-badge.grade-Aplus,
+.fsr-grade-badge.grade-A { background: var(--risk-low-bg); color: var(--risk-low); }
+.fsr-grade-badge.grade-B { background: var(--brand-accent-light); color: var(--brand-accent); }
+.fsr-grade-badge.grade-C { background: var(--risk-medium-bg); color: var(--risk-medium); }
+.fsr-grade-badge.grade-D { background: var(--risk-critical-bg); color: var(--risk-critical); }
+
+.fsr-screen-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 0.25rem;
+}
+.fsr-screen-actions .fsr-btn {
+    padding: 0.65rem 1.4rem;
+    font-size: 0.85rem;
+}
+.fsr-screen-foot {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.fsr-screen-foot button {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+    padding: 0;
+}
+
+.fsr-footer-note {
+    padding: 0.6rem 1.25rem;
+    text-align: center;
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.85);
+}
+
+@media (max-width: 575.98px) {
+    .fsr-hud { gap: 0.7rem; font-size: 0.72rem; }
+    .fsr-stat-grid { grid-template-columns: 1fr 1fr; gap: 0.4rem 1rem; }
+    .fsr-screen-title { font-size: 1.3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fsr-net-banner { transition: none; }
+    .fsr-screen { backdrop-filter: none; }
+}
