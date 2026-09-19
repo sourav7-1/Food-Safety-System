@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
 from flask import (
@@ -78,6 +78,35 @@ def _parse_inspection_date(value):
     return datetime.strptime(value, "%Y-%m-%dT%H:%M")
 
 
+def _inspection_stats(records):
+    """Summary numbers for the list page's stat cards. `records` is already
+    newest-first, so the first row seen per stall is that stall's latest
+    inspection -- risk and reinspection-due are judged on that, not on every
+    historical row."""
+    scores = [r.overall_score for r in records if r.overall_score is not None]
+    latest_per_stall = {}
+    for record in records:
+        latest_per_stall.setdefault(record.stall_id, record)
+    today = date.today()
+    return {
+        "total": len(records),
+        "avg_score": (
+            round(float(sum(scores)) / len(scores), 1) if scores else None
+        ),
+        "stalls": len(latest_per_stall),
+        "high_risk": sum(
+            1
+            for r in latest_per_stall.values()
+            if r.risk_level in ("high", "critical")
+        ),
+        "due": sum(
+            1
+            for r in latest_per_stall.values()
+            if r.reinspection_date and r.reinspection_date <= today
+        ),
+    }
+
+
 @inspector_bp.route("/")
 @login_required
 @role_required("inspector")
@@ -93,6 +122,7 @@ def inspections():
         "inspector/list.html",
         inspections=records,
         inspector=inspector,
+        stats=_inspection_stats(records),
     )
 
 
@@ -265,6 +295,9 @@ def create():
         criteria=criteria,
         stalls=stalls,
         default_inspection_date=datetime.now().strftime("%Y-%m-%dT%H:%M"),
+        # "Inspect again" / "Inspect this stall" links elsewhere in the
+        # inspector portal pass ?stall_id= so the stall is pre-selected.
+        preselect_stall_id=request.args.get("stall_id", type=int),
     )
 
 

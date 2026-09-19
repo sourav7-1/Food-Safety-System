@@ -9,9 +9,22 @@
 {% block inspector_title %}Complaint #{{ complaint.complaint_id }}{% endblock %}
 {% block inspector_subtitle %}{{ complaint.stall.stall_name }} &middot; {{ complaint.complaint_type.type_name }}{% endblock %}
 {% block inspector_action %}
-<a class="btn btn-outline-secondary inspector-primary" href="{{ url_for('inspector_complaints.complaints') }}">
+<a class="btn btn-outline-secondary" href="{{ url_for('inspector_complaints.complaints') }}">
     <i class="fa-solid fa-arrow-left me-2"></i>Back to Complaints
 </a>
+<a class="btn btn-success inspector-primary" href="{{ url_for('inspection_workflow.create', stall_id=complaint.stall_id) }}">
+    <i class="fa-solid fa-clipboard-check me-2"></i>Inspect this stall
+</a>
+{% endblock %}
+
+{% block inspector_breadcrumb %}
+<nav class="ins-crumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('inspector_complaints.complaints') }}">Complaints</a>
+    <i class="fa-solid fa-chevron-right"></i>
+    <a href="{{ url_for('inspector_complaints.complaints', status=complaint.status) }}">{{ complaint.status|replace('_',' ')|title }}</a>
+    <i class="fa-solid fa-chevron-right"></i>
+    <span>#{{ complaint.complaint_id }}</span>
+</nav>
 {% endblock %}
 
 {% block inspector_content %}
@@ -52,7 +65,7 @@
             {% for item in complaint.evidence %}
                 <div class="complaint-evidence-card img-shimmer-box">
                     {% if item.file_type == 'image' %}
-                    <img src="{{ url_for('inspector_complaints.evidence_download', evidence_id=item.evidence_id) }}" alt="{{ item.file_name }}" loading="lazy">
+                    <img class="ins-zoomable" data-ins-lightbox title="Click to enlarge" src="{{ url_for('inspector_complaints.evidence_download', evidence_id=item.evidence_id) }}" alt="{{ item.file_name }}" loading="lazy">
                     {% elif item.file_type == 'video' %}
                     <video controls preload="metadata" src="{{ url_for('inspector_complaints.evidence_download', evidence_id=item.evidence_id) }}"></video>
                     {% elif item.file_type == 'audio' %}
@@ -109,6 +122,21 @@
     <div class="col-lg-5">
         <div class="inspector-panel">
             <div class="section-heading">
+                <span><i class="fa-solid fa-store"></i></span>
+                <div>
+                    <h2>{{ complaint.stall.stall_name }}</h2>
+                    <p>{{ complaint.stall.stall_code }} · {{ complaint.stall.area.area_name }}</p>
+                </div>
+            </div>
+            <p class="text-secondary small mb-3"><i class="fa-solid fa-location-dot me-1"></i>{{ complaint.stall.address }}</p>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-sm btn-success" href="{{ url_for('inspection_workflow.create', stall_id=complaint.stall_id) }}"><i class="fa-solid fa-clipboard-check me-1"></i>Start inspection</a>
+                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('inspection_workflow.inspections') }}"><i class="fa-solid fa-list me-1"></i>My inspections</a>
+            </div>
+        </div>
+
+        <div class="inspector-panel">
+            <div class="section-heading">
                 <span><i class="fa-solid fa-clipboard-check"></i></span>
                 <div>
                     <h2>Resolution</h2>
@@ -128,6 +156,20 @@
                 <textarea class="form-control mb-3" name="admin_response" rows="4" placeholder="Visible to the student on their complaint tracking page">{{ complaint.admin_response or '' }}</textarea>
                 <button class="btn btn-primary w-100" type="submit">Save complaint</button>
             </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade ins-modal" id="insLightbox" tabindex="-1" aria-label="Evidence preview" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <small class="text-secondary" data-lightbox-caption></small>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="" alt="" class="ins-lightbox-img">
+            </div>
         </div>
     </div>
 </div>

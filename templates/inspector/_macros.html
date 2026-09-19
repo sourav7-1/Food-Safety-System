@@ -1,0 +1,37 @@
+{# Small display helpers shared by the inspector portal pages. #}
+
+{# Mirrors get_hygiene_grade() in database/functions.sql (A>=85, B>=70,
+   C>=50, else D) so list pages don't need one SQL call per row. #}
+{% macro grade_of(score) -%}
+{%- if score is none -%}
+{%- elif score >= 85 -%}A
+{%- elif score >= 70 -%}B
+{%- elif score >= 50 -%}C
+{%- else -%}D
+{%- endif -%}
+{%- endmacro %}
+
+{% macro grade_chip(score) -%}
+{%- set g = grade_of(score)|trim -%}
+<span class="ins-grade ins-grade-{{ g|lower if g else 'none' }}" title="{{ 'Hygiene grade ' ~ g if g else 'Not graded' }}">{{ g or '—' }}</span>
+{%- endmacro %}
+
+{% macro risk_tone(level) -%}
+{{ {'low': 'success', 'medium': 'warn', 'high': 'orange', 'critical': 'danger'}.get(level, 'neutral') }}
+{%- endmacro %}
+
+{% macro inspection_status_tone(status) -%}
+{{ {'draft': 'neutral', 'submitted': 'info', 'approved': 'success', 'rejected': 'danger'}.get(status, 'neutral') }}
+{%- endmacro %}
+
+{% macro complaint_status_tone(status) -%}
+{{ {'submitted': 'info', 'under_review': 'warn', 'investigation': 'warn', 'action_required': 'danger', 'resolved': 'success', 'rejected': 'neutral', 'closed': 'neutral'}.get(status, 'neutral') }}
+{%- endmacro %}
+
+{% macro pill(text, tone) -%}
+<span class="ins-pill ins-pill-{{ tone|trim }}">{{ text }}</span>
+{%- endmacro %}
+
+{% macro risk_pill(level) -%}
+{{ pill(level or 'unrated', risk_tone(level)) }}
+{%- endmacro %}

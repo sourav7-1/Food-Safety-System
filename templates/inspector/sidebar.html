@@ -1,0 +1,49 @@
+{% set profile = current_user.inspector_profile %}
+<div class="dashboard-sidebar-inner">
+    <a class="dashboard-brand" href="{{ url_for('home') }}">
+        <img class="brand-logo" src="{{ url_for('static', filename='images/food-safety-logo.png') }}" alt="DIU Food Safety System logo">
+        <span><strong>DIU FoodSafe</strong><small>INSPECTOR PORTAL</small></span>
+    </a>
+
+    <a class="dashboard-user" href="{{ url_for('profile.view') }}">
+        {% if current_user.profile_photo_url %}
+        <div class="dashboard-avatar dashboard-avatar-photo"><img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}"></div>
+        {% else %}
+        <div class="dashboard-avatar">{{ current_user.full_name[:1]|upper }}</div>
+        {% endif %}
+        <div class="dashboard-user-info">
+            <strong>{{ current_user.full_name }}</strong>
+            <small>{{ current_user.email }}</small>
+        </div>
+    </a>
+
+    {% if profile %}
+    <div class="ins-side-card">
+        <span><i class="fa-solid fa-location-dot"></i>{{ profile.assigned_area.area_name if profile.assigned_area else 'All areas' }}</span>
+        <span><i class="fa-solid fa-id-badge"></i>{{ profile.employee_code }}{% if profile.designation %} · {{ profile.designation }}{% endif %}</span>
+    </div>
+    {% endif %}
+
+    <nav class="dashboard-nav">
+        <a class="dashboard-link {{ 'active' if request.endpoint in ('inspection_workflow.inspections', 'inspection_workflow.detail') }}" href="{{ url_for('inspection_workflow.inspections') }}">
+            <i class="fa-solid fa-clipboard-check"></i><span>Inspections</span>
+        </a>
+        <a class="dashboard-link {{ 'active' if request.endpoint == 'inspection_workflow.create' }}" href="{{ url_for('inspection_workflow.create') }}">
+            <i class="fa-solid fa-plus"></i><span>New Inspection</span>
+        </a>
+        <a class="dashboard-link {{ 'active' if request.endpoint and request.endpoint.startswith('inspector_complaints.') }}" href="{{ url_for('inspector_complaints.complaints') }}">
+            <i class="fa-regular fa-message"></i><span>Complaints</span>
+        </a>
+        <a class="dashboard-link {{ 'active' if request.endpoint and request.endpoint.startswith('profile.') }}" href="{{ url_for('profile.view') }}">
+            <i class="fa-solid fa-id-card"></i><span>Profile</span>
+        </a>
+        <a class="dashboard-link" href="{{ url_for('home') }}">
+            <i class="fa-solid fa-house"></i><span>Home</span>
+        </a>
+    </nav>
+
+    <form action="{{ url_for('auth.logout') }}" method="post" class="dashboard-logout" data-no-ajax>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span></button>
+    </form>
+</div>

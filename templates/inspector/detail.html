@@ -4,7 +4,16 @@
 {% block inspector_title %}Inspection Result{% endblock %}
 {% block inspector_subtitle %}MySQL-calculated hygiene and risk outcome for {{ inspection.stall.stall_name }}.{% endblock %}
 {% block inspector_action %}
-<a class="btn btn-light border" href="{{ url_for('inspection_workflow.inspections') }}"><i class="fa-solid fa-list me-2"></i>All Inspections</a>
+<a class="btn btn-outline-secondary" href="{{ url_for('inspection_workflow.inspections') }}"><i class="fa-solid fa-list me-2"></i>All Inspections</a>
+<a class="btn btn-success inspector-primary" href="{{ url_for('inspection_workflow.create', stall_id=inspection.stall_id) }}"><i class="fa-solid fa-rotate-right me-2"></i>Inspect again</a>
+{% endblock %}
+
+{% block inspector_breadcrumb %}
+<nav class="ins-crumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('inspection_workflow.inspections') }}">Inspections</a>
+    <i class="fa-solid fa-chevron-right"></i>
+    <span>{{ inspection.stall.stall_name }}</span>
+</nav>
 {% endblock %}
 
 {% block inspector_content %}
@@ -38,5 +47,23 @@
         </table>
     </div>
     {% if inspection.remarks %}<div class="result-remarks"><strong>Overall remarks</strong><p>{{ inspection.remarks }}</p></div>{% endif %}
+</section>
+
+<section class="ins-next-steps" aria-label="What to do next">
+    <a class="ins-next-card" href="{{ url_for('inspection_workflow.create', stall_id=inspection.stall_id) }}">
+        <i class="fa-solid fa-rotate-right"></i>
+        <div><strong>Inspect this stall again</strong><small>Start a fresh inspection for {{ inspection.stall.stall_name }}.</small></div>
+        <i class="fa-solid fa-arrow-right ms-auto"></i>
+    </a>
+    <a class="ins-next-card" href="{{ url_for('inspector_complaints.complaints') }}">
+        <i class="fa-regular fa-message"></i>
+        <div><strong>Check student complaints</strong><small>See whether anything was reported in {{ inspection.stall.area.area_name }}.</small></div>
+        <i class="fa-solid fa-arrow-right ms-auto"></i>
+    </a>
+    <a class="ins-next-card" href="{{ url_for('inspection_workflow.inspections') }}">
+        <i class="fa-solid fa-clipboard-check"></i>
+        <div><strong>Back to all inspections</strong><small>Return to your inspection history.</small></div>
+        <i class="fa-solid fa-arrow-right ms-auto"></i>
+    </a>
 </section>
 {% endblock %}

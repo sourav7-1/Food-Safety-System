@@ -1,28 +1,52 @@
 {% extends "base.html" %}
 
+{# Same dashboard shell (sidebar + sticky topbar) as templates/portal_base.html,
+   but with the inspector's own sidebar -- portal_base hard-codes the student
+   one. Child templates keep using the same blocks as before. #}
+
 {% block head %}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/inspector.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inspector-portal.css') }}">
+<script src="{{ url_for('static', filename='js/inspector.js') }}" defer></script>
 {% endblock %}
+{% block main_class %}dashboard-viewport{% endblock %}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block navbar_actions %}{% endblock %}
+{% block flash_top_pad %} pt-3 px-3{% endblock %}
 
 {% block content %}
-<div class="inspector-shell">
-    <header class="inspector-header">
-        <div>
-            <span class="inspector-eyebrow"><i class="fa-solid fa-user-shield me-2"></i>INSPECTOR WORKSPACE</span>
-            <h1>{% block inspector_title %}{% endblock %}</h1>
-            <p>{% block inspector_subtitle %}{% endblock %}</p>
+<div class="dashboard-shell">
+    <aside class="dashboard-sidebar d-none d-lg-flex">
+        {% include "inspector/sidebar.html" %}
+    </aside>
+
+    <div class="offcanvas offcanvas-start dashboard-offcanvas" tabindex="-1" id="inspectorSidebar">
+        <div class="offcanvas-body p-0">
+            {% include "inspector/sidebar.html" %}
         </div>
-        {% block inspector_action %}{% endblock %}
-    </header>
-    <nav class="inspector-tabs">
-        <a class="{{ 'active' if request.endpoint and request.endpoint.startswith('inspection_workflow.') }}" href="{{ url_for('inspection_workflow.inspections') }}">
-            <i class="fa-solid fa-clipboard-check me-2"></i>Inspections
-        </a>
-        <a class="{{ 'active' if request.endpoint and request.endpoint.startswith('inspector_complaints.') }}" href="{{ url_for('inspector_complaints.complaints') }}">
-            <i class="fa-regular fa-message me-2"></i>Complaints
-        </a>
-    </nav>
-    {% block inspector_content %}{% endblock %}
+    </div>
+
+    <div class="dashboard-main">
+        <header class="dashboard-topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#inspectorSidebar" aria-label="Open navigation">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div>
+                    <h1 class="h5 fw-bold mb-0">{% block inspector_title %}{% endblock %}</h1>
+                    <p class="dashboard-subtitle">{% block inspector_subtitle %}{% endblock %}</p>
+                </div>
+            </div>
+            <div class="dashboard-topbar-extra">{% block inspector_action %}{% endblock %}</div>
+        </header>
+
+        <div class="dashboard-content">
+            {% block inspector_breadcrumb %}{% endblock %}
+            {% block inspector_content %}{% endblock %}
+        </div>
+    </div>
 </div>
 {% endblock %}

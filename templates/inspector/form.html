@@ -4,7 +4,15 @@
 {% block inspector_title %}Create Inspection{% endblock %}
 {% block inspector_subtitle %}Score every active hygiene criterion before submitting for MySQL risk analysis.{% endblock %}
 {% block inspector_action %}
-<a class="btn btn-light border" href="{{ url_for('inspection_workflow.inspections') }}"><i class="fa-solid fa-arrow-left me-2"></i>Back</a>
+<a class="btn btn-outline-secondary" href="{{ url_for('inspection_workflow.inspections') }}"><i class="fa-solid fa-arrow-left me-2"></i>Back to inspections</a>
+{% endblock %}
+
+{% block inspector_breadcrumb %}
+<nav class="ins-crumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('inspection_workflow.inspections') }}">Inspections</a>
+    <i class="fa-solid fa-chevron-right"></i>
+    <span>New inspection</span>
+</nav>
 {% endblock %}
 
 {% block inspector_content %}
@@ -21,7 +29,7 @@
                 <select class="form-select" id="stall_id" name="stall_id" required>
                     <option value="">Select a stall</option>
                     {% for stall in stalls %}
-                    <option value="{{ stall.stall_id }}" {{ 'selected' if request.form.get('stall_id')|string == stall.stall_id|string }}>
+                    <option value="{{ stall.stall_id }}" {{ 'selected' if (request.form.get('stall_id') or preselect_stall_id)|string == stall.stall_id|string }}>
                         {{ stall.stall_name }} — {{ stall.stall_code }} ({{ stall.area.area_name }})
                     </option>
                     {% endfor %}
@@ -79,12 +87,38 @@
         </div>
         <div class="submission-bar">
             <div><i class="fa-solid fa-database me-2"></i>Final score and risk are calculated inside MySQL.</div>
-            <button class="btn btn-success inspector-primary" type="submit" {{ 'disabled' if not stalls or not criteria }}>
-                <i class="fa-solid fa-paper-plane me-2"></i>Submit Inspection
-            </button>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" href="{{ url_for('inspection_workflow.inspections') }}">Cancel</a>
+                <button class="btn btn-success inspector-primary" type="submit" {{ 'disabled' if not stalls or not criteria }}>
+                    <i class="fa-solid fa-paper-plane me-2"></i>Submit Inspection
+                </button>
+            </div>
         </div>
     </section>
 </form>
+
+<div class="modal fade ins-modal" id="insConfirmSubmit" tabindex="-1" aria-labelledby="insConfirmSubmitTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="insConfirmSubmitTitle">Submit this inspection?</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="ins-detail-list">
+                    <div><dt>Stall</dt><dd id="confirmStall">—</dd></div>
+                    <div><dt>Inspection date</dt><dd id="confirmDate">—</dd></div>
+                    <div><dt>Entered score</dt><dd id="confirmScore">—</dd></div>
+                </dl>
+                <p class="text-secondary small mb-0">Once submitted, the final score, grade and risk level are calculated by MySQL and the inspection can't be edited.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep editing</button>
+                <button type="button" class="btn btn-success" id="confirmSubmitBtn"><i class="fa-solid fa-paper-plane me-2"></i>Confirm &amp; submit</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -110,14 +144,35 @@
         entered.textContent = total.toFixed(2).replace(/\.00$/, "");
     }
     scoreInputs.forEach(input => input.addEventListener("input", updatePreview));
+    const confirmModalEl = document.getElementById("insConfirmSubmit");
+    let confirmed = false;
     form.addEventListener("submit", event => {
         updatePreview();
         if (!form.checkValidity() || form.querySelector(".is-invalid")) {
             event.preventDefault();
             event.stopPropagation();
+        } else if (!confirmed && confirmModalEl && window.bootstrap) {
+            // Valid form: ask for one last confirmation before it's final.
+            event.preventDefault();
+            const stallSelect = document.getElementById("stall_id");
+            document.getElementById("confirmStall").textContent =
+                stallSelect.options[stallSelect.selectedIndex].text.trim();
+            document.getElementById("confirmDate").textContent =
+                document.getElementById("inspection_date").value.replace("T", " ");
+            document.getElementById("confirmScore").textContent =
+                entered.textContent + " / " + maximum.textContent;
+            bootstrap.Modal.getOrCreateInstance(confirmModalEl).show();
         }
         form.classList.add("was-validated");
     });
+    const confirmBtn = document.getElementById("confirmSubmitBtn");
+    if (confirmBtn) {
+        confirmBtn.addEventListener("click", () => {
+            confirmed = true;
+            bootstrap.Modal.getOrCreateInstance(confirmModalEl).hide();
+            form.requestSubmit();
+        });
+    }
     updatePreview();
 })();
 </script>

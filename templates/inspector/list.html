@@ -1,4 +1,5 @@
 {% extends "inspector/base.html" %}
+{% import "inspector/_macros.html" as ui %}
 
 {% block title %}Assigned Inspections · Street Food Safety{% endblock %}
 {% block inspector_title %}Assigned Inspections{% endblock %}
@@ -6,36 +7,153 @@
 Review your inspection history{% if inspector.assigned_area %} for {{ inspector.assigned_area.area_name }}{% endif %}.
 {% endblock %}
 {% block inspector_action %}
+<a class="btn btn-outline-secondary" href="{{ url_for('inspector_complaints.complaints') }}">
+    <i class="fa-regular fa-message me-2"></i>Complaints
+</a>
 <a class="btn btn-success inspector-primary" href="{{ url_for('inspection_workflow.create') }}">
     <i class="fa-solid fa-plus me-2"></i>New Inspection
 </a>
 {% endblock %}
 
 {% block inspector_content %}
-<div class="inspector-panel p-0 overflow-hidden">
-    <div class="table-responsive">
-        <table class="table inspection-table align-middle mb-0">
-            <thead>
-                <tr><th>Stall</th><th>Inspection date</th><th>Score</th><th>Risk</th><th>Status</th><th></th></tr>
-            </thead>
-            <tbody>
-            {% for inspection in inspections %}
-                <tr>
-                    <td>
-                        <strong>{{ inspection.stall.stall_name }}</strong>
-                        <small>{{ inspection.stall.stall_code }} · {{ inspection.stall.area.area_name }}</small>
-                    </td>
-                    <td>{{ inspection.inspection_date.strftime('%d %b %Y, %I:%M %p') }}</td>
-                    <td><strong>{{ inspection.overall_score if inspection.overall_score is not none else '—' }}{% if inspection.overall_score is not none %}%{% endif %}</strong></td>
-                    <td><span class="inspection-pill risk-{{ inspection.risk_level or 'unrated' }}">{{ inspection.risk_level or 'unrated' }}</span></td>
-                    <td><span class="inspection-pill status-{{ inspection.status }}">{{ inspection.status }}</span></td>
-                    <td class="text-end"><a class="view-button" href="{{ url_for('inspection_workflow.detail', inspection_id=inspection.inspection_id) }}">View <i class="fa-solid fa-arrow-right ms-1"></i></a></td>
-                </tr>
-            {% else %}
-                <tr><td colspan="6" class="inspection-empty"><i class="fa-regular fa-clipboard d-block mb-3"></i>No assigned inspections yet.</td></tr>
+<section class="stat-grid mb-4" aria-label="Inspection summary">
+    <div class="stat-card stat-blue">
+        <div class="stat-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">Inspections done{% if stats.avg_score is not none %} · avg {{ stats.avg_score }}%{% endif %}</div>
+    </div>
+    <div class="stat-card stat-green">
+        <div class="stat-icon"><i class="fa-solid fa-store"></i></div>
+        <div class="stat-value">{{ stats.stalls }}</div>
+        <div class="stat-label">Stalls covered</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-value">{{ stats.high_risk }}</div>
+        <div class="stat-label">High / critical risk stalls</div>
+    </div>
+    <div class="stat-card stat-amber">
+        <div class="stat-icon"><i class="fa-regular fa-calendar-check"></i></div>
+        <div class="stat-value">{{ stats.due }}</div>
+        <div class="stat-label">Reinspections due</div>
+    </div>
+</section>
+
+<section data-ins-scope>
+    <div class="ins-toolbar">
+        <label class="ins-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" placeholder="Search stall, code or area…" data-ins-search aria-label="Search inspections">
+        </label>
+        <div class="ins-chips" role="group" aria-label="Filter by risk">
+            <button type="button" class="ins-chip active" data-ins-chip data-value="">All <b>{{ inspections|length }}</b></button>
+            {% for level in ('low', 'medium', 'high', 'critical') %}
+            {% set n = inspections|selectattr('risk_level', 'equalto', level)|list|length %}
+            {% if n %}
+            <button type="button" class="ins-chip" data-ins-chip data-value="{{ level }}">{{ level|title }} <b>{{ n }}</b></button>
+            {% endif %}
             {% endfor %}
-            </tbody>
-        </table>
+        </div>
+    </div>
+
+    {% if inspections %}
+    <div class="ins-card-grid">
+        {% for inspection in inspections %}
+        {% set stall = inspection.stall %}
+        {% set score = inspection.overall_score %}
+        {% set grade = ui.grade_of(score)|trim %}
+        {% set risk = inspection.risk_level or 'unrated' %}
+        {% set risk_tone = ui.risk_tone(inspection.risk_level)|trim %}
+        {% set status_tone = ui.inspection_status_tone(inspection.status)|trim %}
+        <article class="ins-card" data-ins-item data-risk="{{ inspection.risk_level or '' }}"
+                 data-search="{{ (stall.stall_name ~ ' ' ~ stall.stall_code ~ ' ' ~ stall.area.area_name)|lower }}">
+            <header class="ins-card-head">
+                {{ ui.grade_chip(score) }}
+                <div class="ins-card-title">
+                    <button type="button" class="ins-link-btn"
+                            data-ins-modal="#insQuickView"
+                            data-ins-stall="{{ stall.stall_name }}"
+                            data-ins-code="{{ stall.stall_code }}"
+                            data-ins-area="{{ stall.area.area_name }}"
+                            data-ins-address="{{ stall.address }}"
+                            data-ins-date="{{ inspection.inspection_date.strftime('%d %B %Y, %I:%M %p') }}"
+                            data-ins-score="{{ (score ~ '%') if score is not none else '' }}"
+                            data-ins-grade="{{ grade }}"
+                            data-ins-risk="{{ risk }}" data-ins-risk-tone="{{ risk_tone }}"
+                            data-ins-status="{{ inspection.status }}" data-ins-status-tone="{{ status_tone }}"
+                            data-ins-reinspection="{{ inspection.reinspection_date.strftime('%d %b %Y') if inspection.reinspection_date else '' }}"
+                            data-ins-remarks="{{ inspection.remarks or '' }}"
+                            data-ins-href-view="{{ url_for('inspection_workflow.detail', inspection_id=inspection.inspection_id) }}"
+                            data-ins-href-again="{{ url_for('inspection_workflow.create', stall_id=stall.stall_id) }}">
+                        {{ stall.stall_name }}
+                    </button>
+                    <small>{{ stall.stall_code }} · {{ stall.area.area_name }}</small>
+                </div>
+            </header>
+
+            <div class="ins-card-pills">
+                {{ ui.pill(risk ~ ' risk', risk_tone) }}
+                {{ ui.pill(inspection.status, status_tone) }}
+            </div>
+
+            <div class="ins-meter-row">
+                <span>Score</span>
+                <strong>{{ (score ~ '%') if score is not none else '—' }}</strong>
+            </div>
+            <div class="ins-meter" aria-hidden="true"><span class="ins-meter-fill ins-fill-{{ risk_tone }}" style="width: {{ (score|float) if score is not none else 0 }}%"></span></div>
+
+            <dl class="ins-facts">
+                <div><dt><i class="fa-regular fa-calendar"></i> Inspected</dt><dd>{{ inspection.inspection_date.strftime('%d %b %Y, %I:%M %p') }}</dd></div>
+                <div><dt><i class="fa-solid fa-rotate"></i> Next visit</dt><dd>{{ inspection.reinspection_date.strftime('%d %b %Y') if inspection.reinspection_date else 'Not set' }}</dd></div>
+            </dl>
+
+            <footer class="ins-card-foot">
+                <a class="ins-action" href="{{ url_for('inspection_workflow.detail', inspection_id=inspection.inspection_id) }}">View result <i class="fa-solid fa-arrow-right"></i></a>
+                <a class="ins-action ins-action-muted" href="{{ url_for('inspection_workflow.create', stall_id=stall.stall_id) }}" title="Start a new inspection for this stall"><i class="fa-solid fa-rotate-right"></i> Inspect again</a>
+            </footer>
+        </article>
+        {% endfor %}
+    </div>
+    <p class="ins-noresults d-none" data-ins-noresults><i class="fa-regular fa-face-frown"></i> No inspections match your search.</p>
+    {% else %}
+    <div class="ins-empty">
+        <i class="fa-regular fa-clipboard"></i>
+        <h2>No assigned inspections yet</h2>
+        <p>Once you submit an inspection it will show up here with its grade and risk level.</p>
+        <a class="btn btn-success" href="{{ url_for('inspection_workflow.create') }}"><i class="fa-solid fa-plus me-2"></i>Start your first inspection</a>
+    </div>
+    {% endif %}
+</section>
+
+<div class="modal fade ins-modal" id="insQuickView" tabindex="-1" aria-labelledby="insQuickViewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span data-fill-grade="grade" class="ins-grade ins-grade-none">—</span>
+                <div class="ms-3 flex-grow-1">
+                    <h2 class="modal-title" id="insQuickViewTitle" data-fill="stall"></h2>
+                    <small class="text-secondary"><span data-fill="code"></span> · <span data-fill="area"></span></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="ins-card-pills mb-3">
+                    <span data-fill-tone="risk"></span>
+                    <span data-fill-tone="status"></span>
+                </div>
+                <dl class="ins-detail-list">
+                    <div><dt>Score</dt><dd data-fill="score" data-empty="Not scored"></dd></div>
+                    <div><dt>Inspected</dt><dd data-fill="date"></dd></div>
+                    <div><dt>Next reinspection</dt><dd data-fill="reinspection" data-empty="Not set"></dd></div>
+                    <div><dt>Address</dt><dd data-fill="address"></dd></div>
+                    <div><dt>Remarks</dt><dd data-fill="remarks" data-empty="No remarks recorded."></dd></div>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <a class="btn btn-outline-secondary" data-fill-href="href-again"><i class="fa-solid fa-rotate-right me-2"></i>Inspect again</a>
+                <a class="btn btn-success" data-fill-href="href-view">Open full result <i class="fa-solid fa-arrow-right ms-1"></i></a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,4 +1,5 @@
 {% extends "inspector/base.html" %}
+{% import "inspector/_macros.html" as ui %}
 
 {% block head %}
 {{ super() }}
@@ -10,46 +11,151 @@
 {% block inspector_subtitle %}
 Review student-reported issues{% if inspector.assigned_area %} for {{ inspector.assigned_area.area_name }}{% endif %}.
 {% endblock %}
+{% block inspector_action %}
+<a class="btn btn-outline-secondary" href="{{ url_for('inspection_workflow.inspections') }}">
+    <i class="fa-solid fa-clipboard-check me-2"></i>Inspections
+</a>
+<a class="btn btn-success inspector-primary" href="{{ url_for('inspection_workflow.create') }}">
+    <i class="fa-solid fa-plus me-2"></i>New Inspection
+</a>
+{% endblock %}
 
 {% block inspector_content %}
-<div class="inspector-panel p-0 overflow-hidden">
-    <form class="d-flex align-items-center gap-2 p-3 border-bottom" method="get">
-        <select name="status" class="form-select form-select-sm w-auto">
-            <option value="">All statuses</option>
+{% set open_statuses = ['submitted', 'under_review', 'investigation', 'action_required'] %}
+<section class="stat-grid mb-4" aria-label="Complaint summary">
+    <div class="stat-card stat-blue">
+        <div class="stat-icon"><i class="fa-regular fa-message"></i></div>
+        <div class="stat-value">{{ complaints|length }}</div>
+        <div class="stat-label">{{ 'Complaints in this view' if selected_status else 'Complaints in your area' }}</div>
+    </div>
+    <div class="stat-card stat-amber">
+        <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+        <div class="stat-value">{{ complaints|selectattr('status', 'in', open_statuses)|list|length }}</div>
+        <div class="stat-label">Still open</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-value">{{ complaints|selectattr('complaint_type.severity_level', 'in', ['high', 'critical'])|list|length }}</div>
+        <div class="stat-label">High / critical severity</div>
+    </div>
+    <div class="stat-card stat-green">
+        <div class="stat-icon"><i class="fa-solid fa-camera"></i></div>
+        <div class="stat-value">{{ complaints|rejectattr('evidence')|list|length }}</div>
+        <div class="stat-label">Without evidence</div>
+    </div>
+</section>
+
+<section data-ins-scope>
+    <div class="ins-toolbar">
+        <label class="ins-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" placeholder="Search title, stall or type…" data-ins-search aria-label="Search complaints">
+        </label>
+        <nav class="ins-chips" aria-label="Filter by status">
+            <a class="ins-chip {{ 'active' if not selected_status }}" href="{{ url_for('inspector_complaints.complaints') }}">All</a>
             {% for value in ['submitted','under_review','investigation','action_required','resolved','rejected','closed'] %}
-            <option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|replace('_',' ')|title }}</option>
+            <a class="ins-chip {{ 'active' if selected_status == value }}" href="{{ url_for('inspector_complaints.complaints', status=value) }}">{{ value|replace('_',' ')|title }}</a>
             {% endfor %}
-        </select>
-        <button class="btn btn-sm btn-outline-secondary">Filter</button>
-    </form>
-    <div class="table-responsive">
-        <table class="table inspection-table align-middle mb-0">
-            <thead>
-                <tr><th>ID</th><th>Stall</th><th>Complaint</th><th>Severity</th><th>Submitted</th><th>Evidence</th><th>Status</th><th></th></tr>
-            </thead>
-            <tbody>
-            {% for complaint in complaints %}
-                <tr>
-                    <td>#{{ complaint.complaint_id }}</td>
-                    <td>
-                        <strong>{{ complaint.stall.stall_name }}</strong>
-                        <small>{{ complaint.stall.stall_code }} · {{ complaint.stall.area.area_name }}</small>
-                    </td>
-                    <td>
-                        <strong>{{ complaint.title }}</strong>
-                        <small>{{ complaint.complaint_type.type_name }}</small>
-                    </td>
-                    <td><span class="risk-badge risk-{{ complaint.complaint_type.severity_level }}">{{ complaint.complaint_type.severity_level }}</span></td>
-                    <td>{{ complaint.submitted_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ complaint.evidence|length or '—' }}</td>
-                    <td><span class="risk-badge status-{{ complaint.status }}">{{ complaint.status|replace('_',' ') }}</span></td>
-                    <td class="text-end"><a class="view-button" href="{{ url_for('inspector_complaints.complaint_manage', complaint_id=complaint.complaint_id) }}">Review <i class="fa-solid fa-arrow-right ms-1"></i></a></td>
-                </tr>
-            {% else %}
-                <tr><td colspan="8" class="inspection-empty"><i class="fa-regular fa-message d-block mb-3"></i>No complaints in your assigned area.</td></tr>
-            {% endfor %}
-            </tbody>
-        </table>
+        </nav>
+    </div>
+
+    {% if complaints %}
+    <div class="ins-card-grid">
+        {% for complaint in complaints %}
+        {% set stall = complaint.stall %}
+        {% set severity = complaint.complaint_type.severity_level %}
+        {% set sev_tone = ui.risk_tone(severity)|trim %}
+        {% set status_tone = ui.complaint_status_tone(complaint.status)|trim %}
+        {% set evidence_count = complaint.evidence|length %}
+        <article class="ins-card" data-ins-item data-risk="{{ severity }}"
+                 data-search="{{ (complaint.title ~ ' ' ~ stall.stall_name ~ ' ' ~ stall.stall_code ~ ' ' ~ complaint.complaint_type.type_name)|lower }}">
+            <header class="ins-card-head">
+                <span class="ins-idchip">#{{ complaint.complaint_id }}</span>
+                <div class="ins-card-title">
+                    <button type="button" class="ins-link-btn"
+                            data-ins-modal="#insComplaintView"
+                            data-ins-title="{{ complaint.title }}"
+                            data-ins-stall="{{ stall.stall_name }}"
+                            data-ins-code="{{ stall.stall_code }}"
+                            data-ins-area="{{ stall.area.area_name }}"
+                            data-ins-type="{{ complaint.complaint_type.type_name }}"
+                            data-ins-description="{{ complaint.description }}"
+                            data-ins-by="{{ complaint.submitted_by.full_name if complaint.submitted_by else 'Anonymous' }}"
+                            data-ins-date="{{ complaint.submitted_at.strftime('%d %B %Y, %I:%M %p') }}"
+                            data-ins-evidence="{{ (evidence_count ~ ' file' ~ ('s' if evidence_count != 1 else '')) if evidence_count else '' }}"
+                            data-ins-response="{{ complaint.admin_response or '' }}"
+                            data-ins-severity="{{ severity }}" data-ins-severity-tone="{{ sev_tone }}"
+                            data-ins-status="{{ complaint.status|replace('_',' ') }}" data-ins-status-tone="{{ status_tone }}"
+                            data-ins-href-review="{{ url_for('inspector_complaints.complaint_manage', complaint_id=complaint.complaint_id) }}"
+                            data-ins-href-inspect="{{ url_for('inspection_workflow.create', stall_id=stall.stall_id) }}">
+                        {{ complaint.title }}
+                    </button>
+                    <small>{{ stall.stall_name }} · {{ stall.stall_code }} · {{ stall.area.area_name }}</small>
+                </div>
+            </header>
+
+            <div class="ins-card-pills">
+                {{ ui.pill(severity ~ ' severity', sev_tone) }}
+                {{ ui.pill(complaint.status|replace('_',' '), status_tone) }}
+                <span class="ins-pill ins-pill-neutral">{{ complaint.complaint_type.type_name }}</span>
+            </div>
+
+            <p class="ins-excerpt">{{ complaint.description|truncate(120) }}</p>
+
+            <dl class="ins-facts">
+                <div><dt><i class="fa-regular fa-calendar"></i> Submitted</dt><dd>{{ complaint.submitted_at.strftime('%d %b %Y') }}</dd></div>
+                <div><dt><i class="fa-solid fa-camera"></i> Evidence</dt><dd>{{ evidence_count if evidence_count else 'None yet' }}</dd></div>
+            </dl>
+
+            <footer class="ins-card-foot">
+                <a class="ins-action" href="{{ url_for('inspector_complaints.complaint_manage', complaint_id=complaint.complaint_id) }}">Review <i class="fa-solid fa-arrow-right"></i></a>
+                <a class="ins-action ins-action-muted" href="{{ url_for('inspection_workflow.create', stall_id=stall.stall_id) }}" title="Start an inspection for {{ stall.stall_name }}"><i class="fa-solid fa-clipboard-check"></i> Inspect stall</a>
+            </footer>
+        </article>
+        {% endfor %}
+    </div>
+    <p class="ins-noresults d-none" data-ins-noresults><i class="fa-regular fa-face-frown"></i> No complaints match your search.</p>
+    {% else %}
+    <div class="ins-empty">
+        <i class="fa-regular fa-message"></i>
+        <h2>No complaints to show</h2>
+        <p>{% if selected_status %}Nothing has the status “{{ selected_status|replace('_',' ') }}” in your area.{% else %}No complaints in your assigned area.{% endif %}</p>
+        {% if selected_status %}
+        <a class="btn btn-outline-secondary" href="{{ url_for('inspector_complaints.complaints') }}">Clear filter</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+
+<div class="modal fade ins-modal" id="insComplaintView" tabindex="-1" aria-labelledby="insComplaintViewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="flex-grow-1">
+                    <h2 class="modal-title" id="insComplaintViewTitle" data-fill="title"></h2>
+                    <small class="text-secondary"><span data-fill="stall"></span> · <span data-fill="code"></span> · <span data-fill="area"></span></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="ins-card-pills mb-3">
+                    <span data-fill-tone="severity"></span>
+                    <span data-fill-tone="status"></span>
+                    <span class="ins-pill ins-pill-neutral" data-fill="type"></span>
+                </div>
+                <p class="ins-modal-text" data-fill="description"></p>
+                <dl class="ins-detail-list">
+                    <div><dt>Submitted by</dt><dd data-fill="by"></dd></div>
+                    <div><dt>Submitted</dt><dd data-fill="date"></dd></div>
+                    <div><dt>Evidence</dt><dd data-fill="evidence" data-empty="No evidence attached yet."></dd></div>
+                    <div><dt>Response so far</dt><dd data-fill="response" data-empty="No response sent yet."></dd></div>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <a class="btn btn-outline-secondary" data-fill-href="href-inspect"><i class="fa-solid fa-clipboard-check me-2"></i>Inspect this stall</a>
+                <a class="btn btn-success" data-fill-href="href-review">Review &amp; respond <i class="fa-solid fa-arrow-right ms-1"></i></a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
