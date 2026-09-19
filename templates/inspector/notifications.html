@@ -1,0 +1,159 @@
+{% extends "inspector/base.html" %}
+{% import "inspector/_macros.html" as ui %}
+
+{% block title %}Notifications · Inspector Portal{% endblock %}
+{% block inspector_title %}Notifications{% endblock %}
+{% block inspector_subtitle %}New complaints in your area and updates on your inspections.{% endblock %}
+{% block inspector_action %}
+{% if stats.unread %}
+<form method="post" action="{{ url_for('inspector_notifications.notifications_read_all') }}" class="m-0" data-ins-markall>
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-outline-secondary"><i class="fa-solid fa-check-double me-2"></i>Mark all as read</button>
+</form>
+{% endif %}
+<a class="btn btn-success inspector-primary" href="{{ url_for('inspector_complaints.complaints') }}">
+    <i class="fa-regular fa-message me-2"></i>Complaints
+</a>
+{% endblock %}
+
+{% block inspector_content %}
+<section class="stat-grid mb-4" aria-label="Notification summary">
+    <div class="stat-card stat-blue">
+        <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">Total notifications</div>
+    </div>
+    <div class="stat-card stat-green">
+        <div class="stat-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
+        <div class="stat-value" data-ins-unread-count-stat>{{ stats.unread }}</div>
+        <div class="stat-label">Unread</div>
+    </div>
+    <div class="stat-card stat-amber">
+        <div class="stat-icon"><i class="fa-regular fa-message"></i></div>
+        <div class="stat-value">{{ stats.complaints }}</div>
+        <div class="stat-label">Complaint alerts</div>
+    </div>
+    <div class="stat-card stat-red">
+        <div class="stat-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+        <div class="stat-value">{{ stats.updates }}</div>
+        <div class="stat-label">Inspection updates</div>
+    </div>
+</section>
+
+<section data-ins-scope>
+    <div class="ins-toolbar">
+        <label class="ins-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" placeholder="Search notifications…" data-ins-search aria-label="Search notifications">
+        </label>
+        <div class="ins-chips" role="group" aria-label="Filter notifications">
+            <button type="button" class="ins-chip active" data-ins-chip data-value="">All <b>{{ stats.total }}</b></button>
+            <button type="button" class="ins-chip" data-ins-chip data-value="unread">Unread <b data-ins-unread-count-stat>{{ stats.unread }}</b></button>
+            <button type="button" class="ins-chip" data-ins-chip data-value="complaint">Complaints <b>{{ stats.complaints }}</b></button>
+            <button type="button" class="ins-chip" data-ins-chip data-value="update">Inspections <b>{{ stats.updates }}</b></button>
+        </div>
+    </div>
+
+    {% if notifications %}
+    <div class="ins-notif-list">
+        {% for n in notifications %}
+        {% set complaint = n.complaint %}
+        {% set headline = complaint.title if complaint else 'Inspection update' %}
+        {% set status_tone = ui.complaint_status_tone(complaint.status)|trim if complaint else 'neutral' %}
+        <article class="ins-card ins-notif {{ 'is-unread' if not n.is_read }}" data-ins-item
+                 data-risk="{{ 'complaint' if complaint else 'update' }}{{ ' unread' if not n.is_read }}"
+                 data-search="{{ (headline ~ ' ' ~ n.message)|lower }}">
+            <span class="ins-notif-icon {{ 'is-complaint' if complaint else 'is-update' }}">
+                <i class="{{ 'fa-regular fa-message' if complaint else 'fa-solid fa-clipboard-check' }}"></i>
+            </span>
+            <div class="ins-notif-body">
+                <div class="ins-notif-top">
+                    <button type="button" class="ins-link-btn"
+                            data-ins-modal="#insNotifView"
+                            data-ins-title="{{ headline }}"
+                            data-ins-message="{{ n.message }}"
+                            data-ins-when="{{ n.created_at.strftime('%d %B %Y, %I:%M %p') }}"
+                            data-ins-kind="{{ 'Complaint alert' if complaint else 'Inspection update' }}"
+                            data-ins-kind-tone="{{ 'warn' if complaint else 'info' }}"
+                            data-ins-status="{{ complaint.status|replace('_',' ') if complaint else '' }}"
+                            data-ins-status-tone="{{ status_tone }}"
+                            data-ins-stall="{{ complaint.stall.stall_name if complaint else '' }}"
+                            data-ins-area="{{ complaint.stall.area.area_name if complaint else '' }}"
+                            data-ins-href-open="{{ url_for('inspector_complaints.complaint_manage', complaint_id=complaint.complaint_id) if complaint else url_for('inspection_workflow.inspections') }}"
+                            data-ins-href-inspect="{{ url_for('inspection_workflow.create', stall_id=complaint.stall_id) if complaint else '' }}"
+                            data-ins-read-url="{{ url_for('inspector_notifications.notification_read', notification_id=n.notification_id) }}"
+                            data-ins-unread="{{ '0' if n.is_read else '1' }}">
+                        {{ headline }}
+                    </button>
+                    {% if not n.is_read %}<span class="ins-new" data-ins-unread-flag>NEW</span>{% endif %}
+                </div>
+                <p class="ins-excerpt">{{ n.message }}</p>
+                <div class="ins-card-pills">
+                    {{ ui.pill('Complaint alert', 'warn') if complaint else ui.pill('Inspection update', 'info') }}
+                    {% if complaint %}{{ ui.pill(complaint.status|replace('_',' '), status_tone) }}{% endif %}
+                    {% if complaint %}<span class="ins-pill ins-pill-neutral">{{ complaint.stall.stall_name }}</span>{% endif %}
+                </div>
+                <div class="ins-notif-foot">
+                    <span class="ins-notif-time"><i class="fa-regular fa-clock"></i> {{ n.created_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+                    <span class="ins-notif-actions">
+                        {% if complaint %}
+                        <form method="post" action="{{ url_for('inspector_notifications.notification_read', notification_id=n.notification_id) }}" class="d-inline" data-no-ajax>
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="ins-action ins-action-btn">Open complaint <i class="fa-solid fa-arrow-right"></i></button>
+                        </form>
+                        {% else %}
+                        <a class="ins-action" href="{{ url_for('inspection_workflow.inspections') }}">My inspections <i class="fa-solid fa-arrow-right"></i></a>
+                        {% endif %}
+                        {% if not n.is_read %}
+                        <form method="post" action="{{ url_for('inspector_notifications.notification_read', notification_id=n.notification_id) }}" class="d-inline" data-ins-markread>
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="stay" value="1">
+                            <button type="submit" class="ins-action ins-action-btn ins-action-muted"><i class="fa-solid fa-check"></i> Mark read</button>
+                        </form>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    <p class="ins-noresults d-none" data-ins-noresults><i class="fa-regular fa-face-frown"></i> No notifications match your search.</p>
+    {% else %}
+    <div class="ins-empty">
+        <i class="fa-regular fa-bell-slash"></i>
+        <h2>You're all caught up</h2>
+        <p>You'll be notified here when a student reports a complaint in your area, or a vendor disputes one of your inspections.</p>
+        <a class="btn btn-success" href="{{ url_for('inspection_workflow.inspections') }}"><i class="fa-solid fa-clipboard-check me-2"></i>Go to inspections</a>
+    </div>
+    {% endif %}
+</section>
+
+<div class="modal fade ins-modal" id="insNotifView" tabindex="-1" aria-labelledby="insNotifViewTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="flex-grow-1">
+                    <h2 class="modal-title" id="insNotifViewTitle" data-fill="title"></h2>
+                    <small class="text-secondary" data-fill="when"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="ins-card-pills mb-3">
+                    <span data-fill-tone="kind"></span>
+                    <span data-fill-tone="status"></span>
+                </div>
+                <p class="ins-modal-text" data-fill="message"></p>
+                <dl class="ins-detail-list">
+                    <div><dt>Stall</dt><dd data-fill="stall" data-empty="Not linked to a single stall"></dd></div>
+                    <div><dt>Area</dt><dd data-fill="area" data-empty="—"></dd></div>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <a class="btn btn-outline-secondary" data-fill-href="href-inspect"><i class="fa-solid fa-clipboard-check me-2"></i>Inspect this stall</a>
+                <a class="btn btn-success" data-fill-href="href-open">Open <i class="fa-solid fa-arrow-right ms-1"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

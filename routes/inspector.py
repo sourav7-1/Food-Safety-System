@@ -6,6 +6,7 @@ from flask import (
     abort,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -23,6 +24,7 @@ from models import (
     InspectionCriterion,
     InspectionScore,
     Inspector,
+    Notification,
     Stall,
 )
 from routes import role_required
@@ -53,6 +55,12 @@ inspector_complaints_bp = Blueprint(
     "inspector_complaints",
     __name__,
     url_prefix="/inspector/complaints",
+)
+
+inspector_notifications_bp = Blueprint(
+    "inspector_notifications",
+    __name__,
+    url_prefix="/inspector/notifications",
 )
 
 
@@ -598,3 +606,86 @@ def evidence_download(evidence_id):
         abort(403)
     record_audit(evidence, current_user, "viewed")
     return serve_complaint_evidence(evidence)
+
+
+# -- notifications ---------------------------------------------------------
+#
+# Reads the same `notifications` table the student portal uses (scoped to the
+# signed-in inspector's own user_id). Who gets notified, and when, lives in
+# services/inspector_notifications.py.
+
+
+def _wants_json():
+    return "application/json" in request.headers.get("Accept", "")
+
+
+def _unread_count(user_id):
+    return Notification.query.filter_by(user_id=user_id, is_read=False).count()
+
+
+@inspector_notifications_bp.route("/")
+@login_required
+@role_required("inspector")
+def notifications():
+    _current_inspector()
+    records = (
+        Notification.query.filter_by(user_id=current_user.user_id)
+        .order_by(Notification.created_at.desc(), Notification.notification_id.desc())
+        .all()
+    )
+    unread = sum(1 for n in records if not n.is_read)
+    complaint_alerts = sum(1 for n in records if n.complaint_id)
+    return render_template(
+        "inspector/notifications.html",
+        notifications=records,
+        stats={
+            "total": len(records),
+            "unread": unread,
+            "complaints": complaint_alerts,
+            "updates": len(records) - complaint_alerts,
+        },
+    )
+
+
+@inspector_notifications_bp.route("/read-all", methods=["POST"])
+@login_required
+@role_required("inspector")
+def notifications_read_all():
+    _current_inspector()
+    Notification.query.filter_by(
+        user_id=current_user.user_id, is_read=False
+    ).update({"is_read": True})
+    db.session.commit()
+    if _wants_json():
+        return jsonify({"success": True, "unread_count": 0})
+    return redirect(url_for("inspector_notifications.notifications"))
+
+
+@inspector_notifications_bp.route("/<int:notification_id>/read", methods=["POST"])
+@login_required
+@role_required("inspector")
+def notification_read(notification_id):
+    _current_inspector()
+    notification = Notification.query.filter_by(
+        notification_id=notification_id, user_id=current_user.user_id
+    ).first_or_404()
+    notification.is_read = True
+    db.session.commit()
+    if _wants_json():
+        return jsonify(
+            {
+                "success": True,
+                "notification_id": notification_id,
+                "unread_count": _unread_count(current_user.user_id),
+            }
+        )
+    # "Mark read" buttons post stay=1 and land back on the list; the
+    # "Open complaint" button omits it and goes straight to the complaint.
+    if notification.complaint_id and not request.form.get("stay"):
+        return redirect(
+            url_for(
+                "inspector_complaints.complaint_manage",
+                complaint_id=notification.complaint_id,
+            )
+        )
+    return redirect(url_for("inspector_notifications.notifications"))

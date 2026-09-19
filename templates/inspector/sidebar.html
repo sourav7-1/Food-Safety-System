@@ -34,6 +34,10 @@
         <a class="dashboard-link {{ 'active' if request.endpoint and request.endpoint.startswith('inspector_complaints.') }}" href="{{ url_for('inspector_complaints.complaints') }}">
             <i class="fa-regular fa-message"></i><span>Complaints</span>
         </a>
+        <a class="dashboard-link {{ 'active' if request.endpoint and request.endpoint.startswith('inspector_notifications.') }}" href="{{ url_for('inspector_notifications.notifications') }}">
+            <i class="fa-regular fa-bell"></i><span>Notifications</span>
+            <span class="notification-badge {{ 'd-none' if not unread_notification_count }}" data-ins-unread-count>{{ unread_notification_count or 0 }}</span>
+        </a>
         <a class="dashboard-link {{ 'active' if request.endpoint and request.endpoint.startswith('profile.') }}" href="{{ url_for('profile.view') }}">
             <i class="fa-solid fa-id-card"></i><span>Profile</span>
         </a>

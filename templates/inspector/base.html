@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/inspector.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/inspector-portal.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inspector-notifications.css') }}">
 <script src="{{ url_for('static', filename='js/inspector.js') }}" defer></script>
 {% endblock %}
 {% block main_class %}dashboard-viewport{% endblock %}
@@ -40,7 +41,13 @@
                     <p class="dashboard-subtitle">{% block inspector_subtitle %}{% endblock %}</p>
                 </div>
             </div>
-            <div class="dashboard-topbar-extra">{% block inspector_action %}{% endblock %}</div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="dashboard-topbar-extra">{% block inspector_action %}{% endblock %}</div>
+                <a class="dashboard-notification-btn position-relative d-flex align-items-center justify-content-center text-decoration-none" href="{{ url_for('inspector_notifications.notifications') }}" aria-label="Notifications">
+                    <i class="fa-regular fa-bell"></i>
+                    {% if unread_notification_count %}<span class="notification-indicator-dot" data-ins-bell-dot></span>{% endif %}
+                </a>
+            </div>
         </header>
 
         <div class="dashboard-content">

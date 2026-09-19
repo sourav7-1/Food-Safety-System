@@ -28,6 +28,7 @@ from models import (
     Vendor,
 )
 from routes import role_required
+from services.inspector_notifications import notify_inspector_of_dispute
 from services.evidence import (
     EvidenceValidationError,
     delete_corrective_evidence_file,
@@ -454,6 +455,8 @@ def dispute_inspection(stall_id, inspection_id):
         return redirect(
             url_for("vendor_portal.stall_profile", stall_id=stall.stall_id)
         )
+
+    notify_inspector_of_dispute(dispute)
 
     flash("Dispute submitted. An administrator will review it.", "success")
     return redirect(

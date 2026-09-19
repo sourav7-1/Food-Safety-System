@@ -1,0 +1,65 @@
+/* Inspector notifications page -- loaded after inspector-portal.css. */
+
+.ins-notif-list { display: flex; flex-direction: column; gap: 12px; }
+
+.ins-notif {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+}
+.ins-notif.is-unread {
+    border-left: 4px solid #059669;
+    background: linear-gradient(90deg, #f4fdf8 0%, #fff 40%);
+}
+
+.ins-notif-icon {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    font-size: 1rem;
+}
+.ins-notif-icon.is-complaint { background: #fff4dc; color: #aa680d; }
+.ins-notif-icon.is-update { background: #e6f4ff; color: #1372c4; }
+
+.ins-notif-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.ins-notif-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ins-new {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #059669;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
+.ins-notif-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+}
+.ins-notif-time { font-size: 0.78rem; color: #64748b; }
+.ins-notif-time i { margin-right: 4px; }
+.ins-notif-actions { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 16px; }
+
+/* <button> styled as a text link (used inside POST forms) */
+.ins-action-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+@media (max-width: 575.98px) {
+    .ins-notif { padding: 14px; }
+    .ins-notif-icon { width: 36px; height: 36px; }
+}

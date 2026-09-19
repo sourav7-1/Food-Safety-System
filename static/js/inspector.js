@@ -42,6 +42,56 @@
         });
     }
 
+    // ---- Notifications: mark read when a card is opened ---------------------
+    // A trigger with data-ins-read-url + data-ins-unread="1" is an unread
+    // notification. Opening it in the quick-view modal counts as reading it:
+    // POST in the background, then clear the card's "new" styling and update
+    // every unread counter (sidebar badge, bell dot, stat card, filter chip).
+    function setUnreadCount(count) {
+        document.querySelectorAll("[data-ins-unread-count]").forEach(function (el) {
+            el.textContent = count;
+            el.classList.toggle("d-none", count === 0);
+        });
+        document.querySelectorAll("[data-ins-unread-count-stat]").forEach(function (el) {
+            el.textContent = count;
+        });
+        if (count === 0) {
+            document.querySelectorAll("[data-ins-bell-dot]").forEach(function (el) { el.remove(); });
+        }
+    }
+
+    function markReadFromTrigger(trigger) {
+        var url = trigger.getAttribute("data-ins-read-url");
+        if (!url || trigger.getAttribute("data-ins-unread") !== "1") { return; }
+        var tokenInput = document.querySelector('input[name="_csrf_token"]');
+        var body = new FormData();
+        if (tokenInput) { body.append("_csrf_token", tokenInput.value); }
+
+        fetch(url, {
+            method: "POST",
+            body: body,
+            headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+        })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+                if (!data || !data.success) { return; }
+                trigger.setAttribute("data-ins-unread", "0");
+                var card = trigger.closest("[data-ins-item]");
+                if (card) {
+                    card.classList.remove("is-unread");
+                    card.setAttribute(
+                        "data-risk",
+                        (card.getAttribute("data-risk") || "").replace(/\bunread\b/, "").trim()
+                    );
+                    card.querySelectorAll("[data-ins-unread-flag], [data-ins-markread]").forEach(function (el) {
+                        el.remove();
+                    });
+                }
+                setUnreadCount(data.unread_count);
+            })
+            .catch(function () { /* stays unread; the next page load shows the truth */ });
+    }
+
     document.addEventListener("click", function (event) {
         var trigger = event.target.closest("[data-ins-modal]");
         if (trigger && window.bootstrap) {
@@ -50,6 +100,7 @@
                 event.preventDefault();
                 fillModal(modal, trigger);
                 bootstrap.Modal.getOrCreateInstance(modal).show();
+                markReadFromTrigger(trigger);
             }
             return;
         }
@@ -80,7 +131,10 @@
 
         scope.querySelectorAll("[data-ins-item]").forEach(function (item) {
             var matchesText = !query || (item.getAttribute("data-search") || "").indexOf(query) !== -1;
-            var matchesRisk = !risk || item.getAttribute("data-risk") === risk;
+            // data-risk may hold several space-separated flags (e.g.
+            // "complaint unread" on a notification card).
+            var flags = (item.getAttribute("data-risk") || "").split(" ");
+            var matchesRisk = !risk || flags.indexOf(risk) !== -1;
             var show = matchesText && matchesRisk;
             item.classList.toggle("d-none", !show);
             if (show) { visible += 1; }

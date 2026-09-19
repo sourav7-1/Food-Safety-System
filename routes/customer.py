@@ -33,6 +33,7 @@ from models import (
 )
 from routes import role_required
 from services.ar_matching import bearing_degrees, confidence_band, confidence_score
+from services.inspector_notifications import notify_inspectors_of_new_complaint
 from services.evidence import (
     EvidenceValidationError,
     delete_stored_complaint_files,
@@ -903,6 +904,8 @@ def submit_complaint(stall_id):
             "Failed to write upload audit log for complaint %s",
             complaint.complaint_id,
         )
+
+    notify_inspectors_of_new_complaint(complaint)
 
     flash("Complaint submitted. You can track it from your account.", "success")
     return redirect(url_for("customer_portal.my_complaints"))
