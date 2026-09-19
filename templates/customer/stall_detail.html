@@ -4,18 +4,86 @@
 {% block portal_subtitle %}{{ stall.address }} &middot; {{ stall.area.area_name }}{% endblock %}
 
 {% block portal_content %}
+<!-- Back Navigation -->
+<div class="mb-3 d-flex justify-content-between align-items-center">
+    <a href="{{ url_for('customer_portal.search_stalls') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-medium">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to Stalls
+    </a>
+    <span class="badge bg-light text-secondary border rounded-pill px-3 py-1 small">
+        <i class="fa-solid fa-store text-success me-1"></i> Code: {{ stall.stall_code }}
+    </span>
+</div>
+
+<!-- Stall Banner Showcase -->
 {% if stall.photo_url %}
-<div class="stall-banner mb-4 img-shimmer-box">
+<div class="stall-banner mb-4 position-relative">
     <img src="{{ stall.photo_url }}" alt="{{ stall.stall_name }}" onerror="this.closest('.stall-banner').style.display='none'">
+    <div class="stall-banner-overlay p-4 d-flex flex-wrap justify-content-between align-items-end text-white">
+        <div>
+            <span class="badge bg-white text-dark rounded-pill px-3 py-1 mb-2 fw-semibold shadow-sm">
+                <i class="fa-solid fa-utensils text-success me-1"></i> {{ stall.category|replace('_', ' ')|title }}
+            </span>
+            <h2 class="h2 fw-bold mb-1 text-white text-shadow">{{ stall.stall_name }}</h2>
+            <p class="mb-0 text-white-50 text-shadow">
+                <i class="fa-solid fa-location-dot me-1 text-danger"></i> {{ stall.address }} &middot; {{ stall.area.area_name }}
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+            <span class="floating-risk-badge risk-badge-{{ latest.risk_level if latest else 'unrated' }} position-static shadow">
+                <span class="status-indicator-dot dot-{{ latest.risk_level if latest else 'unrated' }}"></span>
+                {{ (latest.risk_level if latest else 'Unrated')|title }} Risk
+            </span>
+        </div>
+    </div>
 </div>
 {% endif %}
 
-<div class="row g-4">
-    <div class="col-lg-8">
-        <!-- Safety Profile Section -->
-        <section class="portal-card mb-4">
+<!-- TOP ROW: Price List (Menu) & Food Safety Profile -->
+<div class="row g-4 mb-4">
+    <!-- Available Menu & Price List (Top Left) -->
+    <div class="col-lg-7">
+        <section class="portal-card h-100 mb-0 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <h3 class="panel-heading mb-1 d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-receipt text-success"></i> Available Menu & Price List
+                    </h3>
+                    <p class="text-secondary small mb-0">Transparent pricing for campus cafeteria items</p>
+                </div>
+                {% set available_items = stall.food_items|selectattr('is_available')|list %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fw-semibold">
+                    <i class="fa-solid fa-bowl-food me-1"></i> {{ available_items|length }} Item{{ 's' if available_items|length != 1 }}
+                </span>
+            </div>
+
+            <div class="menu-price-grid mt-2">
+                {% for item in stall.food_items if item.is_available %}
+                <div class="menu-item-card">
+                    <div class="menu-item-info">
+                        <span class="menu-item-name" title="{{ item.item_name }}">{{ item.item_name }}</span>
+                        <span class="menu-item-category">{{ item.category.category_name }}</span>
+                    </div>
+                    <span class="menu-price-badge">
+                        {{ item.price ~ ' BDT' if item.price is not none else 'N/A' }}
+                    </span>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-secondary col-12">
+                    <div class="empty-icon-wrap mb-2">
+                        <i class="fa-solid fa-utensils text-muted fs-3"></i>
+                    </div>
+                    <p class="mb-0 fw-medium">No menu information is currently listed for this stall.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <!-- Food Safety Profile (Top Right) -->
+    <div class="col-lg-5">
+        <section class="portal-card h-100 mb-0 shadow-sm">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="panel-heading mb-0">
+                <h3 class="panel-heading mb-0 d-flex align-items-center gap-2">
                     <i class="fa-solid fa-shield-heart text-success"></i> Food Safety Profile
                 </h3>
                 <span class="floating-risk-badge risk-badge-{{ latest.risk_level if latest else 'unrated' }} position-static">
@@ -30,127 +98,206 @@
                 </div>
                 <div class="customer-score large mb-0 mt-0 flex-grow-1 border-0 bg-transparent p-0">
                     <div>
-                        <small>Latest Hygiene Score</small>
+                        <small>Latest Hygiene</small>
                         <strong class="h4 fw-bold mb-0 text-dark">{{ latest.overall_score ~ '%' if latest and latest.overall_score is not none else '—' }}</strong>
                     </div>
                     <div>
-                        <small>Rating Grade</small>
+                        <small>Safety Grade</small>
                         <strong class="h4 fw-bold mb-0 text-dark">{{ grade or '—' }}</strong>
                     </div>
                     <div>
-                        <small>Next Reinspection</small>
+                        <small>Reinspection</small>
                         <strong class="date text-secondary">{{ latest.reinspection_date.strftime('%d %b %Y') if latest and latest.reinspection_date else 'Not scheduled' }}</strong>
                     </div>
                 </div>
             </div>
 
-            <h3 class="mt-4 panel-heading">
-                <i class="fa-solid fa-utensils text-success"></i> Available Menu
-            </h3>
-            <div class="menu-grid mt-3">
-                {% for item in stall.food_items if item.is_available %}
-                <div class="p-3 bg-light rounded-3 border">
-                    <strong class="d-block mb-1"><i class="fa-solid fa-bowl-food me-1 text-success"></i>{{ item.item_name }}</strong>
-                    <span class="text-secondary small d-block">{{ item.category.category_name }}</span>
-                    <b class="text-success fw-bold d-block mt-2">{{ item.price ~ ' BDT' if item.price is not none else 'Price unavailable' }}</b>
+            <div class="p-3 bg-light-subtle rounded-3 border mt-3 small text-secondary">
+                <div class="d-flex align-items-center gap-2 mb-1 text-dark fw-semibold">
+                    <i class="fa-solid fa-circle-info text-primary"></i> Inspection Standard Notice
                 </div>
-                {% else %}
-                <p class="text-secondary mb-0">No menu information is currently listed for this stall.</p>
-                {% endfor %}
+                Hygiene scores and grades are officially certified by university food inspectors assessing water purity, food handling, storage safety, and stall sanitation.
             </div>
-        </section>
-
-        <!-- Student Reviews Section -->
-        <section class="portal-card">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="panel-heading mb-0">
-                    <i class="fa-solid fa-star text-warning"></i> Student Reviews
-                </h3>
-                {% if average_rating %}
-                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold">
-                    ★ {{ average_rating }} / 5.0
-                </span>
-                {% endif %}
-            </div>
-
-            {% for review in visible_reviews %}
-            <div class="review-row py-3 border-bottom">
-                <div class="review-avatar">
-                    {{ review.user.full_name[:1]|upper }}
-                </div>
-                <div class="review-body">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <strong>{{ review.user.full_name }}</strong>
-                        <span class="text-warning small">{{ '★' * review.rating }}{{ '☆' * (5-review.rating) }}</span>
-                    </div>
-                    <p class="text-secondary mb-0 small">{{ review.review_text or 'No written comment.' }}</p>
-                </div>
-            </div>
-            {% else %}
-            <p class="text-secondary py-3 mb-0 text-center">No reviews submitted for this stall yet. Be the first to share your experience!</p>
-            {% endfor %}
         </section>
     </div>
+</div>
 
-    <!-- Side Actions (Review & Report) -->
-    <div class="col-lg-4">
-        {% if not existing_review %}
-        <section class="portal-card mb-4">
-            <h3 class="panel-heading mb-3">
-                <i class="fa-solid fa-pen text-success"></i> Write a Review
-            </h3>
+<!-- UPPER-MIDDLE ROW: Student Reviews & Community Ratings -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <section class="portal-card shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <h3 class="panel-heading mb-0 d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-star text-warning"></i> Student Reviews & Community Ratings
+                    </h3>
+                    {% if average_rating %}
+                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold">
+                        ★ {{ average_rating }} / 5.0
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-secondary small fw-medium me-2">
+                        {{ visible_reviews|length }} review{{ 's' if visible_reviews|length != 1 }}
+                    </span>
+                    <a href="#writeReviewSection" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+                        <i class="fa-solid fa-pen me-1"></i> Write a Review
+                    </a>
+                </div>
+            </div>
+
+            {% if visible_reviews %}
+            <div class="reviews-list-grid">
+                {% for review in visible_reviews %}
+                <div class="review-row-card p-3 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="review-avatar">
+                                    {{ review.user.full_name[:1]|upper }}
+                                </div>
+                                <div>
+                                    <strong class="d-block text-dark fw-bold small">{{ review.user.full_name }}</strong>
+                                    <span class="badge bg-light text-secondary border rounded-pill py-0 px-2" style="font-size: 0.68rem;">
+                                        <i class="fa-solid fa-graduation-cap me-1"></i>Student
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="text-warning small d-block">{{ '★' * review.rating }}{{ '☆' * (5-review.rating) }}</span>
+                                {% if review.created_at %}
+                                <span class="text-muted" style="font-size: 0.72rem;">{{ review.created_at.strftime('%d %b %Y') }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p class="text-secondary mb-0 small lh-base mt-2 bg-light p-2 rounded-3 border border-light">
+                            {{ review.review_text or 'No written comment provided.' }}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <div class="empty-icon-wrap mb-3">
+                    <i class="fa-solid fa-comments text-muted fs-2"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-1">No Reviews Yet</h5>
+                <p class="text-secondary small mb-3">Be the first student to share your dining experience at this stall!</p>
+                <a href="#writeReviewSection" class="btn btn-success btn-sm rounded-pill px-4 fw-semibold">
+                    <i class="fa-solid fa-pen me-1"></i> Write the First Review
+                </a>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+<!-- BOTTOM ROW: Write a Review & Report a Concern -->
+<div class="row g-4" id="writeReviewSection">
+    <!-- Write a Review Form (Bottom Left) -->
+    <div class="col-lg-6">
+        <section class="portal-card h-100 shadow-sm">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="badge-icon bg-success-subtle text-success rounded-circle">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <div>
+                    <h3 class="panel-heading mb-0">Write a Review</h3>
+                    <p class="text-secondary small mb-0">Share your dining feedback to help fellow students</p>
+                </div>
+            </div>
+
+            <hr class="my-3 opacity-25">
+
+            {% if not existing_review %}
             <form method="post" action="{{ url_for('customer_portal.submit_review', stall_id=stall.stall_id) }}">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <label class="form-label">Rating</label>
-                <select class="form-select mb-3" name="rating" required>
-                    {% for value in range(5,0,-1) %}
-                    <option value="{{ value }}">{{ value }} Star{{ 's' if value > 1 }}</option>
-                    {% endfor %}
-                </select>
-                <label class="form-label">Review Comment</label>
-                <textarea class="form-control mb-3" name="review_text" rows="3" maxlength="2000" placeholder="Share your dining experience..."></textarea>
-                <button class="btn btn-success w-100" type="submit">
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-dark small">Rating</label>
+                    <select class="form-select" name="rating" required>
+                        <option value="5" selected>5 Stars &mdash; Excellent Quality & Cleanliness</option>
+                        <option value="4">4 Stars &mdash; Good Experience</option>
+                        <option value="3">3 Stars &mdash; Average Food / Standard</option>
+                        <option value="2">2 Stars &mdash; Needs Improvement</option>
+                        <option value="1">1 Star &mdash; Poor Quality / Hygiene Concern</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-dark small">Review Comment</label>
+                    <textarea class="form-control" name="review_text" rows="4" maxlength="2000" placeholder="Share your dining experience regarding taste, portion, cleanliness, and service..."></textarea>
+                    <div class="form-text small text-muted">Your review will be visible to students and the stall vendor.</div>
+                </div>
+
+                <button class="btn btn-success w-100 fw-semibold py-2 shadow-sm" type="submit">
                     <i class="fa-solid fa-paper-plane me-1"></i> Submit Review
                 </button>
             </form>
+            {% else %}
+            <div class="alert alert-success d-flex align-items-start gap-3 rounded-4 shadow-sm mb-0">
+                <i class="fa-solid fa-circle-check fs-4 mt-1 text-success"></i>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold mb-1">You Reviewed This Stall</h6>
+                    <p class="mb-2 small">Your submitted rating: <strong>{{ existing_review.rating }} star{{ 's' if existing_review.rating > 1 }}</strong></p>
+                    {% if existing_review.review_text %}
+                    <div class="bg-white p-2 rounded-2 border small text-secondary fst-italic">
+                        "{{ existing_review.review_text }}"
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
         </section>
-        {% else %}
-        <div class="alert alert-success d-flex align-items-center gap-2 mb-4 rounded-4 shadow-sm">
-            <i class="fa-solid fa-circle-check fs-5"></i>
-            <div>You reviewed this stall with <strong>{{ existing_review.rating }} star{{ 's' if existing_review.rating > 1 }}</strong>.</div>
-        </div>
-        {% endif %}
+    </div>
 
-        <!-- Report Concern Form -->
-        <section class="portal-card">
-            <h3 class="panel-heading mb-3">
-                <i class="fa-solid fa-triangle-exclamation text-danger"></i> Report a Concern
-            </h3>
+    <!-- Report Concern Form (Bottom Right) -->
+    <div class="col-lg-6">
+        <section class="portal-card h-100 shadow-sm">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="badge-icon bg-danger-subtle text-danger rounded-circle">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h3 class="panel-heading mb-0">Report a Safety Concern</h3>
+                    <p class="text-secondary small mb-0">Escalate hygiene or food adulteration directly to inspectors</p>
+                </div>
+            </div>
+
+            <hr class="my-3 opacity-25">
+
             <form method="post" action="{{ url_for('customer_portal.submit_complaint', stall_id=stall.stall_id) }}" enctype="multipart/form-data" data-no-ajax>
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 
-                <label class="form-label">Complaint Type</label>
-                <select class="form-select mb-3" name="complaint_type_id" required>
-                    {% for type in complaint_types %}
-                    <option value="{{ type.complaint_type_id }}">{{ type.type_name }}</option>
-                    {% endfor %}
-                </select>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-dark small">Complaint Type</label>
+                    <select class="form-select" name="complaint_type_id" required>
+                        {% for type in complaint_types %}
+                        <option value="{{ type.complaint_type_id }}">{{ type.type_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                <label class="form-label">Complaint Title</label>
-                <input class="form-control mb-3" name="title" required maxlength="150" placeholder="Brief summary of the issue">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-dark small">Complaint Title</label>
+                    <input class="form-control" name="title" required maxlength="150" placeholder="e.g. Under-cooked meat, flies spotted, unhygienic water">
+                </div>
 
-                <label class="form-label">Description</label>
-                <textarea class="form-control mb-3" name="description" rows="4" required placeholder="Detailed explanation of what you observed..."></textarea>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-dark small">Description</label>
+                    <textarea class="form-control" name="description" rows="3" required placeholder="Detailed explanation of what you observed, date/time, and safety risks..."></textarea>
+                </div>
 
                 <div class="evidence-upload mb-3">
-                    <label class="form-label">Supporting Evidence <span class="text-secondary fw-normal">(Optional)</span></label>
-                    <p class="form-text mt-0 mb-2 small text-secondary">You may attach photos, audio, or video files for administrator investigation.</p>
+                    <label class="form-label fw-semibold text-dark small">Supporting Evidence <span class="text-secondary fw-normal">(Optional)</span></label>
                     <input class="form-control" type="file" name="evidence" id="complaint-evidence-input" multiple accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,.mp3,.wav,.m4a,.pdf">
                     <div class="form-text mt-1 small">Allowed: JPG, PNG, WEBP, MP4, MP3, PDF &middot; up to 5 files.</div>
                     <ul class="evidence-file-list list-unstyled mt-2 mb-0" id="complaint-evidence-list"></ul>
                 </div>
 
-                <button class="btn btn-outline-danger w-100" type="submit">
+                <button class="btn btn-outline-danger w-100 fw-semibold py-2 shadow-sm" type="submit">
                     <i class="fa-solid fa-shield-exclamation me-1"></i> Submit Report
                 </button>
             </form>
@@ -203,8 +350,9 @@
             if (typeof DataTransfer !== 'undefined') {
                 var remove = document.createElement('button');
                 remove.type = 'button';
-                remove.className = 'btn btn-sm btn-link text-danger p-0 text-decoration-none';
+                remove.className = 'btn btn-sm btn-link text-danger p-0 text-decoration-none ms-2';
                 remove.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+                remove.setAttribute('title', 'Remove file');
                 remove.addEventListener('click', function () {
                     removeAt(index);
                 });

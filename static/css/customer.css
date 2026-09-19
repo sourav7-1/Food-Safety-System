@@ -642,16 +642,139 @@
 .customer-shell .grade-ring.grade-d { background: linear-gradient(145deg, #ef4444, #dc2626); }
 
 .customer-shell .review-avatar {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
-    background: #f1f5f9;
-    color: var(--cf-ink);
+    background: #ecfdf5;
+    color: #059669;
     font-weight: 800;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     display: grid;
     place-items: center;
+    border: 1.5px solid #a7f3d0;
+}
+
+/* Stall Banner Overlay & Enhancements */
+.stall-banner {
+    position: relative;
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    box-shadow: var(--cf-shadow-md);
+    background: #0f172a;
+}
+
+.stall-banner-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
+.text-shadow {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Minimal Menu Price Grid & Cards */
+.menu-price-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 0.65rem;
+}
+
+.menu-item-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    transition: all 0.18s ease-in-out;
+}
+
+.menu-item-card:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.05);
+}
+
+.menu-item-info {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.menu-item-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--cf-ink);
+    line-height: 1.25;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.menu-item-category {
+    font-size: 0.7rem;
+    color: var(--cf-ink-tertiary);
+    display: block;
+    margin-top: 0.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.category-pill-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--cf-ink-tertiary);
+    background: var(--cf-canvas);
+    border: 1px solid var(--cf-border-light);
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-pill);
+}
+
+.menu-price-badge {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #059669;
+    background: #ecfdf5;
+    border: 1px solid #d1fae5;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+}
+
+/* Reviews List Grid */
+.reviews-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+}
+
+.review-row-card {
     border: 1px solid var(--cf-border);
+    border-radius: var(--radius-card-sm);
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.review-row-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: var(--cf-shadow-xs);
+}
+
+.badge-icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    font-size: 0.9rem;
 }
 
 /* Empty State Card */
