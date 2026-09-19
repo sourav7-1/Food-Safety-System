@@ -23,7 +23,7 @@ from models import (
     RoleAuditLog,
     User,
 )
-from services.account_classification import is_valid_student_email
+from services.account_classification import violates_student_email_rule
 from services.email_verification import send_verification_email
 from services.profile_photo import (
     ProfilePhotoValidationError,
@@ -177,9 +177,8 @@ def edit():
             User.user_id != current_user.user_id,
         ).first():
             errors.append("That email address is already in use.")
-        elif (
-            current_user.role_name == "student"
-            and not is_valid_student_email(new_email)
+        elif violates_student_email_rule(
+            current_user.role_name, new_email, current_user.email_classification
         ):
             # Prevents the exact drift the login-time re-check in
             # routes/auth.py guards against: a student account's email

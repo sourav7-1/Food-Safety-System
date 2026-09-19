@@ -5,13 +5,14 @@
 {% block main_class %}container py-3 py-md-4{% endblock %}
 
 {% block content %}
+{% set is_vendor = (request.args.get('role') or request.form.get('role')) == 'vendor' %}
 <div class="login-shell mx-auto">
     <section class="login-role-panel">
         <div class="login-logo-lockup">
             <img src="{{ url_for('static', filename='images/food-safety-logo.png') }}" alt="Smart Food Safety Inspection logo">
             <span>Smart Food Safety Inspection</span>
         </div>
-        {% if request.args.get('role') == 'vendor' %}
+        {% if is_vendor %}
         <span class="login-eyebrow">VENDOR SIGN-UP &middot; STEP 1 OF 2</span>
         <h1>Create your vendor account</h1>
         <p>
@@ -47,12 +48,13 @@
     <section class="login-form-panel">
         <div class="mb-4">
             <span class="login-eyebrow text-success">ACCOUNT DETAILS</span>
-            <h2 class="h3 mb-2">{{ 'Create your account' if request.args.get('role') == 'vendor' else 'Create student account' }}</h2>
+            <h2 class="h3 mb-2">{{ 'Create your account' if is_vendor else 'Create student account' }}</h2>
             <p class="text-secondary mb-0">Fill in your details to get started.</p>
         </div>
 
         <form method="post" data-no-ajax>
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            {% if is_vendor %}<input type="hidden" name="role" value="vendor">{% endif %}
             <div class="mb-3">
                 <label class="form-label" for="full_name">Full name</label>
                 <input class="form-control" id="full_name" name="full_name" type="text"
@@ -62,7 +64,11 @@
                 <label class="form-label" for="email">Email address</label>
                 <input class="form-control" id="email" name="email" type="email"
                        value="{{ request.form.get('email', '') }}" autocomplete="email" maxlength="150" required>
+                {% if is_vendor %}
+                <div class="form-text">Any email address works for vendor sign-up. You'll use it to log in and to verify your account.</div>
+                {% else %}
                 <div class="form-text">Only official DIU student emails are accepted, e.g. john222-35-456@diu.edu.bd.</div>
+                {% endif %}
             </div>
             <div class="mb-3">
                 <label class="form-label" for="phone">Phone number <span class="text-secondary">(optional)</span></label>
@@ -100,6 +106,7 @@
             </button>
         </form>
 
+        {% set google_role = 'vendor' if is_vendor else none %}
         {% include "auth/_google_button.html" %}
 
         <p class="text-center text-secondary mt-4 mb-0">

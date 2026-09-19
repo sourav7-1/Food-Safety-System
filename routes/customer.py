@@ -32,6 +32,7 @@ from models import (
     Vendor,
 )
 from routes import role_required
+from services.account_classification import is_vendor_applicant_account
 from services.ar_matching import bearing_degrees, confidence_band, confidence_score
 from services.inspector_notifications import notify_inspectors_of_new_complaint
 from services.evidence import (
@@ -48,6 +49,28 @@ customer_bp = Blueprint(
     __name__,
     url_prefix="/customer",
 )
+
+
+@customer_bp.before_request
+def _keep_vendor_applicants_on_their_application():
+    """An account that signed up through /register?role=vendor with a
+    non-DIU-student email holds the student role only as the starting point
+    for vendor_application -- it isn't a DIU student, so the student-only
+    features (browsing, reviews, complaints, AR scan...) stay closed to it
+    until an admin approves the application and it becomes a vendor."""
+    if (
+        current_user.is_authenticated
+        and is_vendor_applicant_account(
+            current_user.role_name, current_user.email_classification
+        )
+        and request.endpoint != "customer_portal.vendor_application"
+    ):
+        flash(
+            "Student features are for DIU students. Complete your vendor "
+            "application below -- an administrator will review it.",
+            "info",
+        )
+        return redirect(url_for("customer_portal.vendor_application"))
 
 
 @customer_bp.context_processor

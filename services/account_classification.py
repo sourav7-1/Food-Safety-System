@@ -86,6 +86,55 @@ def is_allowed_signup_email(email):
     return classify_email(email) == STUDENT
 
 
+# A self-service *vendor* signup (/register?role=vendor) accepts any email
+# address, not just a DIU student ID -- a stall owner has no reason to hold
+# one. Such an account is still created with the plain "student" role (the
+# starting point routes/customer.py:vendor_application requires; the vendor
+# role itself is only ever granted by an admin approving that application),
+# and its classification is stamped EXTERNAL or OFFICIAL_DIU from the email.
+# That stamp is what exempts it from the exact-DIU-ID rule below, so a
+# genuine student account can never slip out of that rule by changing its
+# email: their classification stays STUDENT.
+VENDOR_SIGNUP_CLASSIFICATIONS = frozenset({EXTERNAL, OFFICIAL_DIU})
+
+
+def is_vendor_applicant_account(role_name, classification):
+    """True for a student-role account that signed up through the vendor
+    sign-up page with a non-DIU-student email."""
+    return role_name == "student" and classification in VENDOR_SIGNUP_CLASSIFICATIONS
+
+
+def refreshed_classification(role_name, current_classification, email):
+    """The classification to store when an existing account re-authenticates
+    (Google login refreshes it from the email each time).
+
+    A student-role account must never *enter* a vendor-applicant
+    classification this way -- that would exempt it from the exact-DIU-ID
+    rule just by signing in with Google (e.g. a legacy student-role account
+    with a Gmail address). Only the vendor sign-up page may stamp one.
+    """
+    new = classify_email(email)
+    if (
+        role_name == "student"
+        and new in VENDOR_SIGNUP_CLASSIFICATIONS
+        and current_classification not in VENDOR_SIGNUP_CLASSIFICATIONS
+    ):
+        return current_classification
+    return new
+
+
+def violates_student_email_rule(role_name, email, classification):
+    """True when a student-role account's email isn't in the exact DIU ID
+    format and it isn't a vendor applicant (see above). Used at login and on
+    profile email changes so a real student's email can't drift away from
+    the DIU ID format."""
+    return (
+        role_name == "student"
+        and not is_valid_student_email(email)
+        and classification not in VENDOR_SIGNUP_CLASSIFICATIONS
+    )
+
+
 def resolve_signup_role_name(email):
     """The only role a self-service signup (local register or Google
     OAuth) may ever receive is "student" -- see is_allowed_signup_email,

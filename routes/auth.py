@@ -9,6 +9,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    session,
     url_for,
 )
 from flask_login import current_user, login_required, login_user, logout_user
@@ -18,11 +19,11 @@ from sqlalchemy.exc import IntegrityError
 from extensions import db, limiter, oauth
 from models import Role, User
 from services.account_classification import (
-    classify_email,
     is_allowed_signup_email,
     is_student_domain_email,
-    is_valid_student_email,
+    refreshed_classification,
     resolve_signup_role_name,
+    violates_student_email_rule,
 )
 from services.auth_audit import record_auth_event
 from services.email_verification import (
@@ -148,7 +149,9 @@ def login():
             )
             return render_template("auth/login.html"), 403
 
-        if user.role_name == "student" and not is_valid_student_email(user.email):
+        if violates_student_email_rule(
+            user.role_name, user.email, user.email_classification
+        ):
             # Defense in depth: the student role can only ever be granted
             # at signup when the email matched the exact DIU ID pattern
             # (see _role_for_signup below), but the email itself can
@@ -185,6 +188,15 @@ def google_login():
         flash("Google sign-in is not configured.", "danger")
         return redirect(url_for("auth.login"))
 
+    # The vendor sign-up page links here with ?role=vendor. Remember that
+    # across the Google round-trip (the callback has no query string of its
+    # own) so a NEW non-DIU account can be created for it; every other entry
+    # point clears any stale flag.
+    if request.args.get("role") == "vendor":
+        session["google_signup_intent"] = "vendor"
+    else:
+        session.pop("google_signup_intent", None)
+
     redirect_uri = url_for("auth.google_callback", _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
 
@@ -195,6 +207,9 @@ def google_callback():
     if not _google_oauth_configured():
         flash("Google sign-in is not configured.", "danger")
         return redirect(url_for("auth.login"))
+
+    # One-shot: consumed here whatever happens next.
+    is_vendor_signup = session.pop("google_signup_intent", None) == "vendor"
 
     try:
         token = oauth.google.authorize_access_token()
@@ -242,17 +257,24 @@ def google_callback():
             # a vendor/admin just by re-authenticating with a different
             # inbox pattern). Only the classification tag is refreshed.
             user.google_id = google_id
-            user.email_classification = classify_email(email)
+            user.email_classification = refreshed_classification(
+                user.role_name, user.email_classification, email
+            )
             if user.email_verified_at is None:
                 # Google already confirmed ownership of this inbox above.
                 user.email_verified_at = datetime.now(timezone.utc)
         else:
-            if not is_allowed_signup_email(email):
-                # Same rule as local register(): only a genuine DIU
-                # student email (john222-35-456@diu.edu.bd) may create a NEW
-                # account, Google or otherwise. Existing accounts (linked
-                # above by google_id or email) are unaffected -- this
-                # only gates account *creation*.
+            # Same rule as local register(): only a genuine DIU student
+            # email (john222-35-456@diu.edu.bd) may create a NEW account,
+            # Google or otherwise -- except through the vendor sign-up page,
+            # which accepts any email (never a malformed diu.edu.bd one:
+            # that's the students' domain). Existing accounts (linked above
+            # by google_id or email) are unaffected -- this only gates
+            # account *creation*.
+            signup_blocked = not is_allowed_signup_email(email) and (
+                is_student_domain_email(email) or not is_vendor_signup
+            )
+            if signup_blocked:
                 if is_student_domain_email(email):
                     message = (
                         "DIU student Google accounts must use the exact ID "
@@ -319,7 +341,9 @@ def google_callback():
         )
         return redirect(url_for("auth.login"))
 
-    if user.role_name == "student" and not is_valid_student_email(user.email):
+    if violates_student_email_rule(
+        user.role_name, user.email, user.email_classification
+    ):
         # Same defense-in-depth re-check as the local login() route.
         flash(
             "This account's email no longer matches the required DIU "
@@ -347,6 +371,12 @@ def register():
         phone = request.form.get("phone", "").strip() or None
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
+        # /register?role=vendor: any email address is accepted (see
+        # services/account_classification.py:VENDOR_SIGNUP_CLASSIFICATIONS).
+        # The role granted is still only ever "student" either way.
+        is_vendor_signup = (
+            request.form.get("role") or request.args.get("role")
+        ) == "vendor"
 
         errors = []
         if not full_name:
@@ -368,11 +398,14 @@ def register():
             # is accepted here. This never affects logging in to an
             # account that already exists.
             if is_student_domain_email(email):
+                # Rejected for vendor sign-up too: diu.edu.bd is the
+                # students' domain, so a malformed address there is a typo
+                # or a spoofing attempt, not a stall owner.
                 errors.append(
                     "DIU student emails must use the exact ID format, e.g. "
                     "john222-35-456@diu.edu.bd, to register."
                 )
-            else:
+            elif not is_vendor_signup:
                 errors.append(
                     "Only official DIU student email addresses "
                     "(e.g. john222-35-456@diu.edu.bd) are allowed to register."
