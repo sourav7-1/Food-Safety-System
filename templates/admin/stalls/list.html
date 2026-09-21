@@ -3,44 +3,33 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <style>
 .stall-location-map {
-    height: 260px;
+    height: 240px;
     width: 100%;
-    border-radius: 12px;
+    border-radius: 14px;
     border: 1px solid #e2e8f0;
-    margin-top: 6px;
+    margin-top: 8px;
 }
 .stall-location-pin {
     display: block;
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #1f7a4d;
+    background: #10b981;
     border: 3px solid #fff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 </style>
 {% endblock %}
 {% block content %}
-<div class="page-actionbar">
+<!-- Page Header -->
+<div class="page-actionbar mb-4">
     <div>
-        <p class="eyebrow mb-1">MANAGEMENT</p>
+        <p class="eyebrow mb-1">CAMPUS FOOD NETWORK</p>
         <h2 class="h3 fw-bold mb-1">Food Stalls</h2>
         <p class="text-secondary mb-0">Manage food stall locations, ownership, hygiene ratings and operational status.</p>
     </div>
-    <div class="d-flex gap-2 align-items-center flex-wrap">
-        <form class="search-bar" method="get">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input name="q" value="{{ search }}" placeholder="Search by stall, code, vendor or area..." aria-label="Search">
-            {% if search %}<a href="{{ url_for('admin.stalls') }}" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></a>{% endif %}
-            <button type="submit">Search</button>
-        </form>
-        {% if current_user.has_permission('stalls.create') %}
-        <button type="button" class="btn btn-primary action-button" data-stall-modal-create {{ 'disabled' if not vendors or not areas }}>
-            <i class="fa-solid fa-plus me-2"></i>Add Stall
-        </button>
-        {% endif %}
-    </div>
 </div>
+
 {% if not vendors or not areas %}
 <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
     <i class="fa-solid fa-triangle-exclamation fs-5"></i>
@@ -48,138 +37,225 @@
 </div>
 {% endif %}
 
-<div class="row g-4 admin-stall-grid">
-{% for stall in stalls %}{% set risk_info = stall_risk.get(stall.stall_id) %}
+{% set active_stalls = stalls|selectattr('status', 'equalto', 'active')|list %}
+{% set low_risk_count = namespace(total=0) %}
+{% for s in stalls %}
+    {% set r = stall_risk.get(s.stall_id) %}
+    {% if r and r.risk and r.risk|lower == 'low' %}
+        {% set low_risk_count.total = low_risk_count.total + 1 %}
+    {% endif %}
+{% endfor %}
+
+<!-- Floating Stats Grid -->
+<div class="stall-stats-grid">
+    <div class="stall-stat-card">
+        <div class="stat-icon-wrap stat-icon-primary">
+            <i class="fa-solid fa-shop"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Total Stalls</span>
+            <div class="stat-number">{{ stalls|length }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-solid fa-store me-1 text-primary"></i>Campus food outlets</span>
+        </div>
+    </div>
+    <div class="stall-stat-card">
+        <div class="stat-icon-wrap stat-icon-success">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Active Outlets</span>
+            <div class="stat-number text-success">{{ active_stalls|length }}</div>
+            <span class="stat-subtext text-success"><span class="pulse-dot"></span> Live & operating</span>
+        </div>
+    </div>
+    <div class="stall-stat-card">
+        <div class="stat-icon-wrap stat-icon-purple">
+            <i class="fa-solid fa-shield-heart"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Hygiene Certified</span>
+            <div class="stat-number text-primary">{{ low_risk_count.total }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-solid fa-shield-check me-1 text-success"></i>Low Risk / Grade A</span>
+        </div>
+    </div>
+    <div class="stall-stat-card">
+        <div class="stat-icon-wrap stat-icon-warning">
+            <i class="fa-solid fa-map-location-dot"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Campus Areas</span>
+            <div class="stat-number text-warning">{{ areas|length }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-solid fa-location-dot me-1 text-danger"></i>Food zones covered</span>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toolbar & Quick Filter Pills -->
+<div class="stall-floating-toolbar mb-4">
+    <div class="d-flex align-items-center gap-3 flex-wrap flex-grow-1">
+        <form class="search-bar m-0" method="get" style="max-width: 360px; flex-grow: 1;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input name="q" id="stallSearchInput" value="{{ search }}" placeholder="Search stall, code, vendor or area..." aria-label="Search">
+            {% if search %}<a href="{{ url_for('admin.stalls') }}" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></a>{% endif %}
+            <button type="submit">Search</button>
+        </form>
+
+        <div class="stall-filter-group" id="stallFilterChips">
+            <button type="button" class="stall-filter-pill active" data-filter="all">
+                <i class="fa-solid fa-layer-group me-1"></i>All <span class="badge">{{ stalls|length }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill" data-filter="active">
+                <span class="pulse-dot me-1"></span>Active <span class="badge">{{ active_stalls|length }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill" data-filter="closed">
+                <i class="fa-regular fa-pause-circle me-1"></i>Closed <span class="badge">{{ stalls|length - active_stalls|length }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill" data-filter="food_court">
+                <i class="fa-solid fa-utensils me-1"></i>Food Court <span class="badge">{{ stalls|selectattr('category', 'equalto', 'food_court')|list|length }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill" data-filter="hall_canteen">
+                <i class="fa-solid fa-building me-1"></i>Canteen <span class="badge">{{ stalls|selectattr('category', 'equalto', 'hall_canteen')|list|length }}</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+        {% if current_user.has_permission('stalls.create') %}
+        <button type="button" class="btn btn-primary action-button" data-stall-modal-create {{ 'disabled' if not vendors or not areas }}>
+            <i class="fa-solid fa-plus me-1.5"></i>Add Stall
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Stall Grid -->
+<div class="row g-4 admin-stall-grid" id="stallGridContainer">
+{% for stall in stalls %}
+{% set risk_info = stall_risk.get(stall.stall_id) %}
 {% set risk_name = ((risk_info.risk if risk_info else none) or 'unrated')|lower %}
-<div class="col-12 col-md-6 col-xl-4">
+<div class="col-12 col-md-6 col-xl-4 stall-col-item"
+     data-status="{{ stall.status }}"
+     data-category="{{ stall.category }}"
+     data-risk="{{ risk_name }}"
+     data-search="{{ stall.stall_name|lower }} {{ stall.stall_code|lower }} {{ stall.vendor.business_name|lower }} {{ stall.area.area_name|lower }} {{ stall.address|lower }}">
     <article
-        class="panel-card p-0 overflow-hidden admin-stall-card risk-border-{{ risk_name }}"
+        class="stall-card-minimal"
         role="button"
         tabindex="0"
-        aria-label="View {{ stall.stall_name }} details"
+        aria-label="View {{ stall.stall_name }} profile"
         onclick="if (!event.target.closest('a, button, form, input, select')) { openEntityDetailModal('stall', {{ stall.stall_id }}); }"
         onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button, form, input, select')) { event.preventDefault(); openEntityDetailModal('stall', {{ stall.stall_id }}); }"
     >
-        <!-- Photo Banner / Modern Gradient Fallback -->
-        <div class="admin-stall-card-photo img-shimmer-box">
-            {% if stall.photo_url %}
-            <img src="{{ stall.photo_url }}" alt="{{ stall.stall_name }}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className: 'admin-stall-card-mesh-fallback', innerHTML: '<div class=\'mesh-ambient\'></div><i class=\'fa-solid fa-shop mesh-icon\'></i><span class=\'mesh-code\'>{{ stall.stall_code }}</span>'}))">
-            {% else %}
-            <div class="admin-stall-card-mesh-fallback">
-                <div class="mesh-ambient"></div>
-                <i class="fa-solid fa-shop mesh-icon"></i>
-                <span class="mesh-code">{{ stall.stall_code }}</span>
-            </div>
-            {% endif %}
-            
-            <div class="stall-photo-gradient-overlay"></div>
-
-            <!-- Top Left: Code Glass Pill -->
-            <div class="stall-glass-pill pill-code">
-                <i class="fa-solid fa-hashtag"></i>
-                <span>{{ stall.stall_code }}</span>
+        <!-- Card Top: Thumbnail + Header info -->
+        <div class="stall-card-top">
+            <div class="stall-thumb-wrap">
+                {% if stall.photo_url %}
+                <img src="{{ stall.photo_url }}" alt="{{ stall.stall_name }}" class="stall-thumb-img" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className: 'stall-icon-avatar', innerHTML: '<i class=\'fa-solid fa-shop text-muted\'></i>'}))">
+                {% else %}
+                <div class="stall-icon-avatar">
+                    {% if stall.category == 'food_court' %}
+                    <i class="fa-solid fa-utensils text-primary"></i>
+                    {% elif stall.category == 'hall_canteen' %}
+                    <i class="fa-solid fa-building text-info"></i>
+                    {% else %}
+                    <i class="fa-solid fa-shop text-secondary"></i>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
 
-            <!-- Top Right: Glass Risk Badge with Pulsing Dot -->
-            <div class="stall-glass-pill pill-risk risk-pill-{{ risk_name }}">
-                <span class="pulse-dot dot-{{ risk_name }}"></span>
-                <span>{{ risk_name|title }} Risk</span>
+            <div class="flex-grow-1 min-w-0">
+                <div class="d-flex align-items-center justify-content-between gap-1 mb-1">
+                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                        <span class="stall-code-chip">{{ stall.stall_code }}</span>
+                        <span class="stall-badge-category">{{ stall_category_labels.get(stall.category, stall.category) }}</span>
+                    </div>
+                    <div>
+                        {% if stall.status == 'active' %}
+                        <span class="stall-status-badge active"><span class="pulse-dot"></span> Active</span>
+                        {% else %}
+                        <span class="stall-status-badge closed"><span class="static-dot"></span> {{ stall.status|title }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <h3 class="stall-card-title-text text-truncate" title="{{ stall.stall_name }}">{{ stall.stall_name }}</h3>
             </div>
-
-            <!-- Bottom Left: Grade Tag Overlay -->
-            {% if risk_info and risk_info.grade %}
-            <div class="stall-grade-overlay grade-tag-{{ risk_info.grade|lower }}">
-                <i class="fa-solid fa-shield-check me-1"></i>
-                <span>Grade {{ risk_info.grade }}</span>
-            </div>
-            {% endif %}
         </div>
 
-        <!-- Card Body -->
-        <div class="admin-stall-card-body">
-            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                <h3 class="admin-stall-card-title text-truncate" title="{{ stall.stall_name }}">{{ stall.stall_name }}</h3>
-                <span class="status-indicator-pill status-pill-{{ stall.status }}">
-                    <span class="status-dot-{{ stall.status }}"></span>
-                    {{ stall.status|title }}
-                </span>
-            </div>
-
-            <!-- Category Line -->
-            <div class="stall-meta-line mb-1.5">
-                <div class="meta-icon-wrap">
-                    {% if stall.category == 'food_court' %}<i class="fa-solid fa-utensils"></i>
-                    {% elif stall.category == 'hall_canteen' %}<i class="fa-solid fa-building"></i>
-                    {% else %}<i class="fa-solid fa-cart-shopping"></i>{% endif %}
-                </div>
-                <span class="text-truncate text-secondary">{{ stall_category_labels.get(stall.category, stall.category) }}</span>
-            </div>
-
-            <!-- Vendor Line -->
-            <div class="stall-meta-line mb-1.5">
-                <div class="meta-icon-wrap"><i class="fa-solid fa-store"></i></div>
-                <a class="entity-link text-truncate" href="{{ url_for('admin.vendors', q=stall.vendor.license_number) }}" title="Vendor: {{ stall.vendor.business_name }}" onclick="event.stopPropagation()">
-                    {{ stall.vendor.business_name }}
-                </a>
-            </div>
-
+        <!-- Info stack -->
+        <div class="stall-info-stack">
             <!-- Location Line -->
-            <div class="stall-meta-line mb-3">
-                <div class="meta-icon-wrap"><i class="fa-solid fa-location-dot text-danger"></i></div>
-                <span class="text-truncate text-secondary" title="{{ stall.area.area_name }} &middot; {{ stall.address }}">
+            <div class="stall-info-item">
+                <span class="stall-info-icon"><i class="fa-solid fa-location-dot text-danger"></i></span>
+                <span class="text-truncate" title="{{ stall.area.area_name }} &middot; {{ stall.address }}">
                     <strong class="text-dark">{{ stall.area.area_name }}</strong> &middot; {{ stall.address }}
                 </span>
             </div>
 
-            <!-- Hygiene Score Bar -->
-            <div class="stall-hygiene-row mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-1.5">
-                    <span class="hygiene-label"><i class="fa-solid fa-heart-pulse me-1 text-primary"></i>Hygiene Rating</span>
-                    <strong class="hygiene-value score-text-{{ risk_name }}">
-                        {{ (risk_info.score ~ '%') if risk_info and risk_info.score is not none else 'Unrated' }}
-                    </strong>
-                </div>
-                <div class="stall-score-bar-track">
-                    <div class="stall-score-bar-fill fill-{{ risk_name }}" style="width: {{ (risk_info.score if risk_info and risk_info.score is not none else 0) }}%;"></div>
-                </div>
+            <!-- Vendor Line -->
+            <div class="stall-info-item">
+                <span class="stall-info-icon"><i class="fa-solid fa-store text-primary"></i></span>
+                <a class="text-truncate text-decoration-none fw-semibold text-dark" href="{{ url_for('admin.vendors', q=stall.vendor.business_name) }}" title="Vendor: {{ stall.vendor.business_name }}" onclick="event.stopPropagation()">
+                    {{ stall.vendor.business_name }}
+                </a>
             </div>
+        </div>
 
-            <!-- Action Toolbar -->
-            <div class="admin-stall-card-footer">
-                <button type="button" class="btn-card-quickview" title="Quick Stall Profile" onclick="openEntityDetailModal('stall', {{ stall.stall_id }})">
-                    <i class="fa-solid fa-eye me-1.5"></i>
-                    <span>Preview</span>
-                </button>
-
-                <div class="d-flex align-items-center gap-1.5">
-                    {% if current_user.has_permission('stalls.edit') %}
-                    <button
-                        type="button"
-                        class="btn-card-action btn-card-edit"
-                        title="Edit Stall"
-                        aria-label="Edit"
-                        data-stall-modal-edit
-                        data-action="{{ url_for('admin.stall_edit', stall_id=stall.stall_id) }}"
-                        data-stall-name="{{ stall.stall_name }}"
-                        data-stall-code="{{ stall.stall_code }}"
-                        data-vendor-id="{{ stall.vendor_id }}"
-                        data-area-id="{{ stall.area_id }}"
-                        data-address="{{ stall.address }}"
-                        data-photo-url="{{ stall.photo_url or '' }}"
-                        data-latitude="{{ stall.latitude if stall.latitude is not none else '' }}"
-                        data-longitude="{{ stall.longitude if stall.longitude is not none else '' }}"
-                        data-category="{{ stall.category }}"
-                        data-status="{{ stall.status }}"
-                    ><i class="fa-solid fa-pen-to-square"></i></button>
+        <!-- Hygiene Rating Bar -->
+        <div class="stall-hygiene-meter">
+            <div class="stall-meter-header">
+                <span class="text-muted d-flex align-items-center gap-1">
+                    <i class="fa-solid fa-heart-pulse text-primary"></i>
+                    Hygiene Rating
+                    {% if risk_info and risk_info.grade %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px;">Grade {{ risk_info.grade }}</span>
                     {% endif %}
+                </span>
+                <span class="stall-risk-tag risk-{{ risk_name }}">
+                    {{ (risk_info.score ~ '%') if risk_info and risk_info.score is not none else 'Unrated' }}
+                    &middot; {{ risk_name|title }} Risk
+                </span>
+            </div>
+            <div class="stall-meter-track">
+                <div class="stall-meter-fill fill-{{ risk_name }}" style="width: {{ (risk_info.score if risk_info and risk_info.score is not none else 0) }}%;"></div>
+            </div>
+        </div>
 
-                    {% if current_user.has_permission('stalls.delete') %}
-                    <form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" data-confirm="Are you sure you want to delete stall '{{ stall.stall_name }}'?" class="m-0 d-inline">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                        <button class="btn-card-action btn-card-delete" aria-label="Delete Stall" title="Delete Stall"><i class="fa-solid fa-trash-can"></i></button>
-                    </form>
-                    {% endif %}
-                </div>
+        <!-- Card Footer Action Dock -->
+        <div class="stall-card-bottom">
+            <button type="button" class="btn-stall-preview" title="Open Floating Profile" onclick="openEntityDetailModal('stall', {{ stall.stall_id }})">
+                <i class="fa-solid fa-eye"></i>
+                <span>Inspect</span>
+            </button>
+
+            <div class="d-flex align-items-center gap-1.5">
+                {% if current_user.has_permission('stalls.edit') %}
+                <button
+                    type="button"
+                    class="btn-dock-action btn-edit"
+                    title="Edit Stall"
+                    aria-label="Edit"
+                    data-stall-modal-edit
+                    data-action="{{ url_for('admin.stall_edit', stall_id=stall.stall_id) }}"
+                    data-stall-name="{{ stall.stall_name }}"
+                    data-stall-code="{{ stall.stall_code }}"
+                    data-vendor-id="{{ stall.vendor_id }}"
+                    data-area-id="{{ stall.area_id }}"
+                    data-address="{{ stall.address }}"
+                    data-photo-url="{{ stall.photo_url or '' }}"
+                    data-latitude="{{ stall.latitude if stall.latitude is not none else '' }}"
+                    data-longitude="{{ stall.longitude if stall.longitude is not none else '' }}"
+                    data-category="{{ stall.category }}"
+                    data-status="{{ stall.status }}"
+                ><i class="fa-solid fa-pen-to-square"></i></button>
+                {% endif %}
+
+                {% if current_user.has_permission('stalls.delete') %}
+                <form action="{{ url_for('admin.stall_delete', stall_id=stall.stall_id) }}" method="post" data-confirm="Are you sure you want to delete stall '{{ stall.stall_name }}'?" class="m-0 d-inline">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn-dock-action btn-delete" aria-label="Delete Stall" title="Delete Stall"><i class="fa-solid fa-trash-can"></i></button>
+                </form>
+                {% endif %}
             </div>
         </div>
     </article>
@@ -195,103 +271,139 @@
 {% endfor %}
 </div>
 
-<!-- Add / Edit Stall Modal -->
-<div class="modal fade" id="stallModal" tabindex="-1" aria-labelledby="stallModalLabel" aria-hidden="true">
+<!-- Empty filter message container (for client-side filtering) -->
+<div id="stallEmptyFilterMsg" class="panel-card empty-state text-center py-5 d-none my-4">
+    <i class="fa-solid fa-filter-circle-xmark fs-1 text-muted mb-2 d-block"></i>
+    <h4 class="h6 fw-bold text-dark">No matching stalls found</h4>
+    <p class="text-secondary small mb-0">No food stalls match your selected filter or search keyword.</p>
+</div>
+
+<!-- Add / Edit Stall Modal (macOS Floating Window Style) -->
+<div class="modal fade modal-floating-window" id="stallModal" tabindex="-1" aria-labelledby="stallModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+        <div class="modal-content border-0">
+            <div class="window-titlebar">
+                <div class="window-traffic-lights">
+                    <span class="window-dot window-dot-red" data-bs-dismiss="modal" role="button" title="Close"></span>
+                    <span class="window-dot window-dot-yellow"></span>
+                    <span class="window-dot window-dot-green"></span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-shop text-primary small"></i>
+                    <span class="fw-bold small text-dark" id="stallModalLabel">Add Stall</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
             <form method="post" id="stallModalForm" action="{{ url_for('admin.stall_create') }}" class="entity-form">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="badge-circle bg-primary-subtle text-primary rounded-circle d-grid place-items-center" style="width: 38px; height: 38px; font-size: 16px;">
-                            <i class="fa-solid fa-shop"></i>
-                        </div>
-                        <div>
-                            <h2 class="modal-title h5 fw-bold mb-0" id="stallModalLabel">Add Stall</h2>
-                            <p class="text-secondary small mb-0" id="stallModalSubtitle">Enter food stall profile and location information.</p>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
+                
                 <div class="modal-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-dark" for="stallName">Stall name</label>
-                            <input class="form-control" id="stallName" name="stall_name" placeholder="e.g. Green Lounge Cafe" required maxlength="150">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-dark" for="stallCode">Stall code</label>
-                            <input class="form-control" id="stallCode" name="stall_code" placeholder="e.g. ST-101" required maxlength="80" style="font-family: monospace;">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-dark" for="stallVendor">Assigned Vendor</label>
-                            <select class="form-select" id="stallVendor" name="vendor_id" required>
-                                <option value="">Select vendor</option>
-                                {% for vendor in vendors %}
-                                <option value="{{ vendor.vendor_id }}">{{ vendor.business_name }} ({{ vendor.user.full_name }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold text-dark" for="stallArea">Campus Area / Food Court</label>
-                            <select class="form-select" id="stallArea" name="area_id" required>
-                                <option value="">Select area</option>
-                                {% for area in areas %}
-                                <option value="{{ area.area_id }}">{{ area.area_name }} — {{ area.city }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label small fw-bold text-dark" for="stallAddress">Full address / Booth location</label>
-                            <input class="form-control" id="stallAddress" name="address" placeholder="e.g. Level 2, Food Court, Main Campus" required maxlength="255">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label small fw-bold text-dark" for="stallPhotoUrl">Photo URL <span class="text-secondary fw-normal">(Optional)</span></label>
-                            <input class="form-control" id="stallPhotoUrl" name="photo_url" maxlength="1000" placeholder="https://images.unsplash.com/...">
-                            <!-- Photo Preview Container -->
-                            <div class="stall-modal-preview-box mt-2 d-none" id="stallPhotoPreviewWrap">
-                                <span class="preview-label small text-muted mb-1 d-block">Live Preview:</span>
-                                <div class="preview-img-holder rounded-3 overflow-hidden" style="max-height: 140px; background: #0f172a;">
-                                    <img id="stallPhotoPreviewImg" src="" alt="Preview" style="width: 100%; height: 140px; object-fit: cover;">
-                                </div>
+                    <p class="text-secondary small mb-3" id="stallModalSubtitle">Configure food stall profile, campus location, and assigned vendor.</p>
+
+                    <!-- Section 1: Basic Information -->
+                    <div class="floating-section-card mb-3">
+                        <h6 class="fw-bold text-dark mb-3 small text-uppercase tracking-wider">
+                            <i class="fa-solid fa-circle-info me-1 text-primary"></i> 1. Stall Details
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="floating-field-label" for="stallName">Stall name</label>
+                                <input class="form-control" id="stallName" name="stall_name" placeholder="e.g. Green Lounge Cafe" required maxlength="150">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="floating-field-label" for="stallCode">Stall code</label>
+                                <input class="form-control" id="stallCode" name="stall_code" placeholder="e.g. ST-101" required maxlength="80" style="font-family: monospace;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="floating-field-label" for="stallCategory">Stall type</label>
+                                <select class="form-select" id="stallCategory" name="category" required>
+                                    {% for value, label in stall_category_labels.items() %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="floating-field-label" for="stallStatus">Operational Status</label>
+                                <select class="form-select" id="stallStatus" name="status">
+                                    {% for value in ['active','closed','suspended'] %}
+                                    <option value="{{ value }}">{{ value|title }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
-                        <div class="col-12">
-                            <label class="form-label small fw-bold text-dark d-flex align-items-center justify-content-between">
-                                <span>Map location <span class="text-secondary fw-normal">(Optional)</span></span>
-                                <span class="d-flex align-items-center gap-2">
-                                    <small class="text-secondary" id="stallCoordsReadout">Not set</small>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="stallUseMyLocationBtn" title="Use my current location as a starting point">
-                                        <i class="fa-solid fa-location-crosshairs me-1"></i>Use my location
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" id="stallClearLocationBtn" title="Clear the saved location">
-                                        <i class="fa-solid fa-xmark me-1"></i>Clear
-                                    </button>
-                                </span>
-                            </label>
-                            <div id="stallLocationMap" class="stall-location-map"></div>
-                            <div class="form-text">Click the map or drag the pin to set the stall's location. Leave unset if unknown -- it's optional.</div>
-                            <input type="hidden" id="stallLatitude" name="latitude">
-                            <input type="hidden" id="stallLongitude" name="longitude">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-dark" for="stallCategory">Stall type</label>
-                            <select class="form-select" id="stallCategory" name="category" required>
-                                {% for value, label in stall_category_labels.items() %}
-                                <option value="{{ value }}">{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold text-dark" for="stallStatus">Operational Status</label>
-                            <select class="form-select" id="stallStatus" name="status">
-                                {% for value in ['active','closed','suspended'] %}
-                                <option value="{{ value }}">{{ value|title }}</option>
-                                {% endfor %}
-                            </select>
+                    </div>
+
+                    <!-- Section 2: Vendor & Campus Area -->
+                    <div class="floating-section-card mb-3">
+                        <h6 class="fw-bold text-dark mb-3 small text-uppercase tracking-wider">
+                            <i class="fa-solid fa-map-location-dot me-1 text-success"></i> 2. Vendor & Campus Placement
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="floating-field-label" for="stallVendor">Assigned Vendor</label>
+                                <select class="form-select" id="stallVendor" name="vendor_id" required>
+                                    <option value="">Select vendor</option>
+                                    {% for vendor in vendors %}
+                                    <option value="{{ vendor.vendor_id }}">{{ vendor.business_name }} ({{ vendor.user.full_name }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="floating-field-label" for="stallArea">Campus Area / Food Court</label>
+                                <select class="form-select" id="stallArea" name="area_id" required>
+                                    <option value="">Select area</option>
+                                    {% for area in areas %}
+                                    <option value="{{ area.area_id }}">{{ area.area_name }} &mdash; {{ area.city }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="floating-field-label" for="stallAddress">Full address / Booth location</label>
+                                <input class="form-control" id="stallAddress" name="address" placeholder="e.g. Level 2, Food Court, Main Campus" required maxlength="255">
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Section 3: Photo & Live Preview -->
+                    <div class="floating-section-card mb-3">
+                        <h6 class="fw-bold text-dark mb-3 small text-uppercase tracking-wider">
+                            <i class="fa-regular fa-image me-1 text-info"></i> 3. Cover Photo (Optional)
+                        </h6>
+                        <label class="floating-field-label" for="stallPhotoUrl">Photo URL</label>
+                        <input class="form-control" id="stallPhotoUrl" name="photo_url" maxlength="1000" placeholder="https://images.unsplash.com/...">
+                        
+                        <div class="stall-modal-preview-box mt-3 d-none" id="stallPhotoPreviewWrap">
+                            <span class="preview-label small text-muted mb-1 d-block fw-semibold">Live Preview:</span>
+                            <div class="preview-img-holder rounded-3 overflow-hidden border" style="max-height: 140px; background: #0f172a;">
+                                <img id="stallPhotoPreviewImg" src="" alt="Preview" style="width: 100%; height: 140px; object-fit: cover;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Map Location Picker -->
+                    <div class="floating-section-card">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <h6 class="fw-bold text-dark mb-0 small text-uppercase tracking-wider">
+                                <i class="fa-solid fa-map-pin me-1 text-danger"></i> 4. Map Pin Coordinates (Optional)
+                            </h6>
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-secondary fw-semibold font-monospace" id="stallCoordsReadout">Not set</small>
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-0.5 px-2" id="stallUseMyLocationBtn" title="Use my current location as a starting point">
+                                    <i class="fa-solid fa-location-crosshairs me-1"></i>My Location
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger py-0.5 px-2" id="stallClearLocationBtn" title="Clear the saved location">
+                                    <i class="fa-solid fa-xmark me-1"></i>Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div id="stallLocationMap" class="stall-location-map"></div>
+                        <div class="form-text mt-1.5 small text-muted">Click the map or drag the pin to set the stall's precise geographic coordinates.</div>
+                        <input type="hidden" id="stallLatitude" name="latitude">
+                        <input type="hidden" id="stallLongitude" name="longitude">
+                    </div>
                 </div>
+
                 <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
                     <button type="button" class="btn btn-light px-4 fw-semibold" style="border-radius: 10px;" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary px-4 fw-semibold" id="stallModalSubmitBtn" style="border-radius: 10px;" data-busy-label="Saving..." data-done-label="Saved">Save Stall</button>
@@ -327,8 +439,6 @@
         if (locationMap || !window.L) { return; }
         var mapEl = document.getElementById("stallLocationMap");
         if (!mapEl) { return; }
-        // Zoom 15 reads as "DIU campus", not "somewhere in the country"
-        // -- almost every stall an admin adds here will be near it.
         locationMap = L.map(mapEl, {
             center: [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng],
             zoom: 15,
@@ -341,7 +451,7 @@
             "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
             {
                 maxZoom: 19,
-                attribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+                attribution: "Tiles &copy; Esri",
             }
         );
         L.control.layers(
@@ -388,11 +498,6 @@
         }
     }
 
-    // Reads whatever is currently in the (hidden) latitude/longitude
-    // inputs and makes the map match -- called once the modal has
-    // finished its Bootstrap show transition, so the map container has
-    // its real on-screen size (Leaflet needs a non-zero pixel height at
-    // init, which a still-animating/hidden modal does not have yet).
     function syncLocationMapFromInputs() {
         ensureLocationMap();
         var latVal = document.getElementById("stallLatitude").value;
@@ -415,12 +520,6 @@
         var clearBtn = document.getElementById("stallClearLocationBtn");
         if (!modalEl) { return; }
 
-        // An AJAX content-swap (admin:content-updated) replaces #stallModal
-        // with a fresh DOM node, orphaning any Leaflet map instance still
-        // bound to the old #stallLocationMap div. Tear it down explicitly
-        // instead of leaving it attached to nothing -- ensureLocationMap()
-        // otherwise sees a non-null locationMap and skips creating a new
-        // one for the replacement node.
         if (locationMap) {
             locationMap.remove();
             locationMap = null;
@@ -431,9 +530,6 @@
 
         if (useLocationBtn) {
             if (!("geolocation" in navigator) || !navigator.geolocation) {
-                // Older browser, or geolocation disabled by policy -- disable
-                // up front with an explanatory tooltip rather than letting the
-                // click silently do nothing.
                 useLocationBtn.disabled = true;
                 useLocationBtn.title = "Your browser doesn't support location services.";
             } else {
@@ -497,7 +593,7 @@
             form.reset();
             form.action = createUrl;
             titleEl.textContent = "Add Stall";
-            subtitleEl.textContent = "Enter food stall profile and location information.";
+            subtitleEl.textContent = "Configure food stall profile, campus location, and assigned vendor.";
             submitBtn.setAttribute("data-busy-label", "Creating...");
             submitBtn.setAttribute("data-done-label", "Created");
             updatePhotoPreview("");
@@ -559,16 +655,75 @@
         }
     }
 
-    // Both init functions re-run on their own every time this script
-    // re-executes (every AJAX content swap re-runs inline page scripts --
-    // see executeScriptsFromDoc in admin/base.html), so also subscribing
-    // them to "admin:content-updated" double-ran them on the very swap
-    // that just re-executed them -- and since document itself is never
-    // replaced, the subscription piled up on every visit to this page,
-    // each one binding its own "shown.bs.modal" handler and creating a
-    // fresh Leaflet map on top of the previous ones in #stallLocationMap.
+    function initStallClientFilters() {
+        var chips = document.querySelectorAll("#stallFilterChips .stall-filter-pill");
+        var items = document.querySelectorAll(".stall-col-item");
+        var searchInput = document.getElementById("stallSearchInput");
+        var emptyMsg = document.getElementById("stallEmptyFilterMsg");
+
+        var activeFilter = "all";
+        var searchQuery = "";
+
+        function applyFilter() {
+            var visibleCount = 0;
+            items.forEach(function (el) {
+                var status = (el.getAttribute("data-status") || "").toLowerCase();
+                var category = (el.getAttribute("data-category") || "").toLowerCase();
+                var searchText = (el.getAttribute("data-search") || "").toLowerCase();
+
+                var matchesFilter = true;
+                if (activeFilter === "active") {
+                    matchesFilter = (status === "active");
+                } else if (activeFilter === "closed") {
+                    matchesFilter = (status !== "active");
+                } else if (activeFilter === "food_court") {
+                    matchesFilter = (category === "food_court");
+                } else if (activeFilter === "hall_canteen") {
+                    matchesFilter = (category === "hall_canteen");
+                }
+
+                var matchesSearch = true;
+                if (searchQuery.length > 0) {
+                    matchesSearch = searchText.indexOf(searchQuery) !== -1;
+                }
+
+                if (matchesFilter && matchesSearch) {
+                    el.classList.remove("d-none");
+                    visibleCount++;
+                } else {
+                    el.classList.add("d-none");
+                }
+            });
+
+            if (emptyMsg) {
+                if (visibleCount === 0) {
+                    emptyMsg.classList.remove("d-none");
+                } else {
+                    emptyMsg.classList.add("d-none");
+                }
+            }
+        }
+
+        chips.forEach(function (chip) {
+            chip.addEventListener("click", function () {
+                chips.forEach(function (c) { c.classList.remove("active"); });
+                chip.classList.add("active");
+                activeFilter = chip.getAttribute("data-filter") || "all";
+                applyFilter();
+            });
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener("input", function () {
+                searchQuery = this.value.trim().toLowerCase();
+                applyFilter();
+            });
+        }
+    }
+
     initStallModal();
     initStallLocationPicker();
+    initStallClientFilters();
 })();
 </script>
 {% endblock %}

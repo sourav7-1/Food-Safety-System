@@ -1,96 +1,333 @@
 {% extends "admin/base.html" %}
 {% block content %}
-<div class="page-actionbar">
+<!-- Page Header -->
+<div class="page-actionbar mb-4">
     <div>
-        <p class="eyebrow mb-1">FIELD OPERATIONS</p>
-        <h2 class="h3 fw-bold mb-1">Inspections</h2>
-        <p class="text-secondary mb-0">Review submitted audit scores, risk decisions, and approve reinspection dates.</p>
+        <p class="eyebrow mb-1">FIELD OPERATIONS &amp; AUDITING</p>
+        <h2 class="h3 fw-bold mb-1">Safety Inspections</h2>
+        <p class="text-secondary mb-0">Review submitted audit scores, hygiene risk decisions, and manage reinspection workflows.</p>
     </div>
-    <form class="d-flex gap-2 flex-wrap" method="get">
-        <select class="form-select form-select-sm" name="status" style="width: auto;">
-            <option value="">All statuses</option>
-            {% for value in ['draft','submitted','approved','rejected'] %}
-            <option value="{{ value }}" {{ 'selected' if selected_status == value }}>{{ value|replace('_',' ')|title }}</option>
-            {% endfor %}
-        </select>
-        <select class="form-select form-select-sm" name="risk" style="width: auto;">
-            <option value="">All risks</option>
-            {% for value in ['low','medium','high','critical'] %}
-            <option value="{{ value }}" {{ 'selected' if selected_risk == value }}>{{ value|title }}</option>
-            {% endfor %}
-        </select>
-        <button class="btn btn-sm btn-primary action-button px-3">
-            <i class="fa-solid fa-filter me-1"></i> Filter
-        </button>
-    </form>
 </div>
 
-<div class="panel-card p-0 overflow-hidden">
+{% set submitted_count = inspections|selectattr('status', 'equalto', 'submitted')|list|length %}
+{% set approved_count = inspections|selectattr('status', 'equalto', 'approved')|list|length %}
+{% set high_risk_count = namespace(total=0) %}
+{% for insp in inspections %}
+    {% if insp.risk_level in ['high', 'critical'] %}
+        {% set high_risk_count.total = high_risk_count.total + 1 %}
+    {% endif %}
+{% endfor %}
+
+<!-- Floating Stats Grid -->
+<div class="stall-stats-grid mb-4">
+    <div class="stall-stat-card">
+        <div class="stat-icon-wrap stat-icon-primary">
+            <i class="fa-solid fa-clipboard-check"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Total Audits</span>
+            <div class="stat-number">{{ inspections|length }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-solid fa-list-check me-1 text-primary"></i>Logged inspections</span>
+        </div>
+    </div>
+    <div class="stall-stat-card">
+        <div class="stat-icon-wrap stat-icon-warning">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Pending Review</span>
+            <div class="stat-number text-warning">{{ submitted_count }}</div>
+            <span class="stat-subtext text-muted"><span class="pulse-dot" style="background:#f59e0b; box-shadow:0 0 0 2px rgba(245, 158, 11, 0.2);"></span> Awaiting decision</span>
+        </div>
+    </div>
+    <div class="stall-stat-card">
+        <div class="stat-icon-wrap stat-icon-success">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Approved Audits</span>
+            <div class="stat-number text-success">{{ approved_count }}</div>
+            <span class="stat-subtext text-success"><i class="fa-solid fa-shield-check me-1"></i>Certified &amp; closed</span>
+        </div>
+    </div>
+    <div class="stall-stat-card">
+        <div class="stat-icon-wrap stat-icon-purple">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">High Risk Flags</span>
+            <div class="stat-number text-danger">{{ high_risk_count.total }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-solid fa-triangle-exclamation me-1 text-danger"></i>Requires attention</span>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toolbar & Filter Pills -->
+<div class="stall-floating-toolbar mb-3">
+    <div class="d-flex align-items-center gap-3 flex-wrap flex-grow-1">
+        <form class="search-bar m-0" method="get" style="max-width: 360px; flex-grow: 1;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input name="q" id="inspectionSearchInput" placeholder="Search stall, code, inspector, or notes..." aria-label="Search">
+            <button type="submit">Search</button>
+        </form>
+
+        <div class="stall-filter-group" id="inspectionFilterChips">
+            <button type="button" class="stall-filter-pill active" data-filter="all">
+                <i class="fa-solid fa-layer-group me-1"></i>All <span class="badge">{{ inspections|length }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill" data-filter="submitted">
+                <span class="pulse-dot me-1" style="background:#f59e0b; box-shadow:0 0 0 2px rgba(245,158,11,0.2);"></span>Pending <span class="badge">{{ submitted_count }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill" data-filter="approved">
+                <i class="fa-solid fa-check me-1"></i>Approved <span class="badge">{{ approved_count }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill" data-filter="low">
+                <i class="fa-solid fa-shield-halved me-1 text-success"></i>Low Risk <span class="badge">{{ inspections|selectattr('risk_level', 'equalto', 'low')|list|length }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill" data-filter="high">
+                <i class="fa-solid fa-triangle-exclamation me-1 text-danger"></i>High Risk <span class="badge">{{ high_risk_count.total }}</span>
+            </button>
+        </div>
+    </div>
+    <div class="text-secondary small fw-medium d-none d-md-block">
+        <i class="fa-solid fa-mouse-pointer text-muted me-1"></i> Click row to open floating audit report
+    </div>
+</div>
+
+<!-- Floating Inspection Table Container -->
+<div class="floating-table-container">
     <div class="table-responsive">
-        <table class="table admin-table align-middle mb-0">
+        <table class="table floating-inspection-table align-middle mb-0" id="inspectionDataTable">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Stall</th>
+                    <th>Audit</th>
+                    <th>Target Stall</th>
                     <th>Inspector</th>
                     <th>Audit Date</th>
                     <th>Hygiene Score</th>
-                    <th>Risk</th>
+                    <th>Risk Tier</th>
                     <th>Next Reinspection</th>
                     <th>Status</th>
+                    {% if current_user.has_permission('inspections.approve') or current_user.has_permission('inspections.reject') %}
                     <th class="text-end">Decision</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
             {% for inspection in inspections %}
-                <tr>
-                    <td class="text-nowrap">
-                        <button type="button" class="btn btn-sm btn-light text-primary border me-1" title="View Details" style="border-radius: 8px; width: 28px; height: 28px; display: inline-grid; place-items: center;" onclick="openEntityDetailModal('inspection', {{ inspection.inspection_id }})"><i class="fa-solid fa-eye"></i></button>
-                        <span class="code-chip">#{{ inspection.inspection_id }}</span>
-                    </td>
-                    <td>
-                        <a class="entity-link" href="{{ url_for('admin.stalls', q=inspection.stall.stall_code) }}">
-                            <strong class="text-primary">{{ inspection.stall.stall_name }}</strong>
-                        </a>
-                        <small class="text-secondary"><i class="fa-solid fa-hashtag me-1"></i>{{ inspection.stall.stall_code }}</small>
-                    </td>
-                    <td>
-                        <div class="fw-semibold text-dark">{{ inspection.inspector.user.full_name }}</div>
-                        <small class="text-muted">{{ inspection.inspector.employee_code }}</small>
-                    </td>
-                    <td>{{ inspection.inspection_date.strftime('%d %b %Y, %I:%M %p') }}</td>
-                    <td>
-                        <span class="score-value">
-                            {{ (inspection.overall_score ~ '%') if inspection.overall_score is not none else '—' }}
+            {% set risk_name = (inspection.risk_level or 'unrated')|lower %}
+            {% set score_val = inspection.overall_score if inspection.overall_score is not none else none %}
+            <tr class="inspection-row-card"
+                data-status="{{ inspection.status }}"
+                data-risk="{{ risk_name }}"
+                data-search="{{ inspection.inspection_id }} {{ inspection.stall.stall_name|lower }} {{ inspection.stall.stall_code|lower }} {{ inspection.inspector.user.full_name|lower }} {{ inspection.inspector.employee_code|lower }} {{ (inspection.remarks or '')|lower }}"
+                onclick="if (!event.target.closest('a, button, form, input, select')) { openEntityDetailModal('inspection', {{ inspection.inspection_id }}); }"
+            >
+                <!-- Col 1: Audit ID & Preview -->
+                <td class="text-nowrap">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-dock-action btn-inspect" title="Quick Audit Report" onclick="event.stopPropagation(); openEntityDetailModal('inspection', {{ inspection.inspection_id }})">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <span class="vendor-licence-chip py-0.5 px-2">#{{ inspection.inspection_id }}</span>
+                    </div>
+                </td>
+
+                <!-- Col 2: Target Stall -->
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="business-icon-badge"><i class="fa-solid fa-shop"></i></div>
+                        <div class="min-w-0">
+                            <a class="business-name text-decoration-none text-truncate d-block" href="{{ url_for('admin.stalls', q=inspection.stall.stall_code) }}" onclick="event.stopPropagation()">
+                                {{ inspection.stall.stall_name }}
+                            </a>
+                            <small class="text-secondary d-flex align-items-center gap-1.5 flex-wrap" style="font-size: 11px;">
+                                <span class="stall-code-chip py-0 px-1.5" style="font-size: 10px;">{{ inspection.stall.stall_code }}</span>
+                                <span>&middot;</span>
+                                <span>{{ inspection.stall.area.area_name }}</span>
+                            </small>
+                        </div>
+                    </div>
+                </td>
+
+                <!-- Col 3: Inspector -->
+                <td>
+                    <div class="fw-semibold text-dark" style="font-size: 13px;">{{ inspection.inspector.user.full_name }}</div>
+                    <small class="text-muted d-block" style="font-size: 11px;"><i class="fa-solid fa-id-badge me-1"></i>{{ inspection.inspector.employee_code }}</small>
+                </td>
+
+                <!-- Col 4: Audit Date -->
+                <td>
+                    <span class="text-secondary small fw-medium d-block"><i class="fa-regular fa-calendar me-1"></i>{{ inspection.inspection_date.strftime('%d %b %Y') }}</span>
+                    <small class="text-muted d-block" style="font-size: 11px;">{{ inspection.inspection_date.strftime('%I:%M %p') }}</small>
+                </td>
+
+                <!-- Col 5: Hygiene Score -->
+                <td>
+                    {% if score_val is not none %}
+                    <div class="audit-score-pill">
+                        <span class="fw-bold {% if score_val >= 80 %}text-success{% elif score_val >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                            {{ score_val }}%
                         </span>
-                    </td>
-                    <td><span class="status-pill risk-{{ inspection.risk_level or 'unrated' }}">{{ inspection.risk_level or 'unrated' }}</span></td>
-                    <td>{{ inspection.reinspection_date.strftime('%d %b %Y') if inspection.reinspection_date else '—' }}</td>
-                    <td><span class="status-pill status-{{ inspection.status }}">{{ inspection.status }}</span></td>
-                    <td class="text-end">
-                        {% if inspection.status == 'submitted' %}
-                        <form class="d-inline" method="post" action="{{ url_for('admin.inspection_approve', inspection_id=inspection.inspection_id) }}">
+                    </div>
+                    <div class="stall-meter-track mt-1" style="width: 80px; height: 4px;">
+                        <div class="stall-meter-fill fill-{{ risk_name }}" style="width: {{ score_val }}%;"></div>
+                    </div>
+                    {% else %}
+                    <span class="text-muted small">Unrated</span>
+                    {% endif %}
+                </td>
+
+                <!-- Col 6: Risk Tier -->
+                <td>
+                    <span class="stall-risk-tag risk-{{ risk_name }}">
+                        {{ risk_name|title }}
+                    </span>
+                </td>
+
+                <!-- Col 7: Next Reinspection -->
+                <td>
+                    {% if inspection.reinspection_date %}
+                    <span class="text-dark fw-semibold small"><i class="fa-regular fa-clock me-1 text-primary"></i>{{ inspection.reinspection_date.strftime('%d %b %Y') }}</span>
+                    {% else %}
+                    <span class="text-muted small">Not scheduled</span>
+                    {% endif %}
+                </td>
+
+                <!-- Col 8: Status -->
+                <td>
+                    <span class="audit-status-badge {{ inspection.status }}">
+                        {% if inspection.status == 'submitted' %}<span class="pulse-dot" style="background:#f59e0b;"></span>
+                        {% elif inspection.status == 'approved' %}<i class="fa-solid fa-circle-check"></i>
+                        {% elif inspection.status == 'rejected' %}<i class="fa-solid fa-circle-xmark"></i>{% endif %}
+                        {{ inspection.status|title }}
+                    </span>
+                </td>
+
+                <!-- Col 9: Decision -->
+                {% if current_user.has_permission('inspections.approve') or current_user.has_permission('inspections.reject') %}
+                <td class="text-end">
+                    {% if inspection.status == 'submitted' %}
+                    <div class="d-flex align-items-center justify-content-end gap-1.5 flex-wrap">
+                        {% if current_user.has_permission('inspections.approve') %}
+                        <form class="d-inline m-0" method="post" action="{{ url_for('admin.inspection_approve', inspection_id=inspection.inspection_id) }}" data-confirm="Approve this audit report?">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                            <button class="btn btn-sm btn-success px-3 fw-bold rounded-pill shadow-sm" type="submit">
-                                <i class="fa-solid fa-check me-1"></i> Approve
+                            <button class="btn-decision-approve" type="submit">
+                                <i class="fa-solid fa-check me-1"></i>Approve
                             </button>
                         </form>
-                        <form class="d-inline ms-1" method="post" action="{{ url_for('admin.inspection_reject', inspection_id=inspection.inspection_id) }}">
-                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                            <button class="btn btn-sm btn-outline-danger px-3 fw-semibold rounded-pill" type="submit">
-                                <i class="fa-solid fa-xmark me-1"></i> Reject
-                            </button>
-                        </form>
-                        {% else %}
-                        <span class="text-muted small">Completed</span>
                         {% endif %}
-                    </td>
-                </tr>
+                        {% if current_user.has_permission('inspections.reject') %}
+                        <form class="d-inline m-0" method="post" action="{{ url_for('admin.inspection_reject', inspection_id=inspection.inspection_id) }}" data-confirm="Reject this audit report?">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn-decision-reject" type="submit">
+                                <i class="fa-solid fa-xmark me-1"></i>Reject
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <span class="text-muted small"><i class="fa-solid fa-check-double me-1 text-success"></i>Signed off</span>
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
             {% else %}
-                <tr><td colspan="9" class="empty-state"><i class="fa-solid fa-clipboard-check mb-2"></i>No inspections found matching criteria.</td></tr>
+            <tr>
+                <td colspan="9" class="p-0 border-0">
+                    <div class="panel-card empty-state text-center py-5">
+                        <i class="fa-solid fa-clipboard-check fs-1 text-muted mb-2 d-block"></i>
+                        <h4 class="h6 fw-bold text-dark">No safety inspections found</h4>
+                        <p class="text-secondary small mb-0">No field audit logs are recorded yet.</p>
+                    </div>
+                </td>
+            </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- Empty filter message container (for client-side filtering) -->
+<div id="inspectionEmptyFilterMsg" class="panel-card empty-state text-center py-5 d-none my-4">
+    <i class="fa-solid fa-filter-circle-xmark fs-1 text-muted mb-2 d-block"></i>
+    <h4 class="h6 fw-bold text-dark">No matching audits found</h4>
+    <p class="text-secondary small mb-0">No safety inspections match your selected filter or search keyword.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    "use strict";
+
+    function initInspectionClientFilters() {
+        var chips = document.querySelectorAll("#inspectionFilterChips .stall-filter-pill");
+        var rows = document.querySelectorAll("#inspectionDataTable tbody .inspection-row-card");
+        var searchInput = document.getElementById("inspectionSearchInput");
+        var emptyMsg = document.getElementById("inspectionEmptyFilterMsg");
+
+        var activeFilter = "all";
+        var searchQuery = "";
+
+        function applyFilter() {
+            var visibleCount = 0;
+            rows.forEach(function (row) {
+                var status = (row.getAttribute("data-status") || "").toLowerCase();
+                var risk = (row.getAttribute("data-risk") || "").toLowerCase();
+                var searchText = (row.getAttribute("data-search") || "").toLowerCase();
+
+                var matchesFilter = true;
+                if (activeFilter === "submitted") {
+                    matchesFilter = (status === "submitted");
+                } else if (activeFilter === "approved") {
+                    matchesFilter = (status === "approved");
+                } else if (activeFilter === "low") {
+                    matchesFilter = (risk === "low");
+                } else if (activeFilter === "high") {
+                    matchesFilter = (risk === "high" || risk === "critical");
+                }
+
+                var matchesSearch = true;
+                if (searchQuery.length > 0) {
+                    matchesSearch = searchText.indexOf(searchQuery) !== -1;
+                }
+
+                if (matchesFilter && matchesSearch) {
+                    row.classList.remove("d-none");
+                    visibleCount++;
+                } else {
+                    row.classList.add("d-none");
+                }
+            });
+
+            if (emptyMsg) {
+                if (visibleCount === 0 && rows.length > 0) {
+                    emptyMsg.classList.remove("d-none");
+                } else {
+                    emptyMsg.classList.add("d-none");
+                }
+            }
+        }
+
+        chips.forEach(function (chip) {
+            chip.addEventListener("click", function () {
+                chips.forEach(function (c) { c.classList.remove("active"); });
+                chip.classList.add("active");
+                activeFilter = chip.getAttribute("data-filter") || "all";
+                applyFilter();
+            });
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener("input", function () {
+                searchQuery = this.value.trim().toLowerCase();
+                applyFilter();
+            });
+        }
+    }
+
+    initInspectionClientFilters();
+})();
+</script>
 {% endblock %}

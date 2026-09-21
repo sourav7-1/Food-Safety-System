@@ -469,8 +469,10 @@ def api_entity_detail(entity_type, entity_id):
         latest_insp = Inspection.query.filter_by(stall_id=stall.stall_id).order_by(Inspection.inspection_date.desc()).first()
         risk_level = (latest_insp.risk_level if (latest_insp and latest_insp.risk_level) else "Unrated").title()
         score = float(latest_insp.overall_score) if (latest_insp and latest_insp.overall_score is not None) else None
+        grade = _grade(latest_insp.overall_score) if (latest_insp and latest_insp.overall_score is not None) else None
         return jsonify({
             "type": "stall",
+            "id": stall.stall_id,
             "title": stall.stall_name,
             "code": stall.stall_code,
             "area": stall.area.area_name if stall.area else "—",
@@ -480,24 +482,35 @@ def api_entity_detail(entity_type, entity_id):
             "status": stall.status.title(),
             "risk": risk_level,
             "score": score,
+            "grade": grade,
             "vendor_name": stall.vendor.user.full_name if stall.vendor and stall.vendor.user else "—",
             "vendor_business": stall.vendor.business_name if stall.vendor else "—",
             "inspections_count": inspections_count,
             "complaints_count": complaints_count,
-            "photo_url": stall.photo_url or None
+            "photo_url": stall.photo_url or None,
+            "latitude": float(stall.latitude) if stall.latitude is not None else None,
+            "longitude": float(stall.longitude) if stall.longitude is not None else None,
         })
     elif entity_type == "inspection":
         inspection = db.get_or_404(Inspection, entity_id)
+        grade = _grade(inspection.overall_score) if inspection.overall_score is not None else None
         return jsonify({
             "type": "inspection",
+            "id": inspection.inspection_id,
             "title": f"Inspection #{inspection.inspection_id}",
+            "stall_id": inspection.stall_id,
             "stall_name": inspection.stall.stall_name if inspection.stall else "—",
+            "stall_code": inspection.stall.stall_code if inspection.stall else "—",
+            "stall_area": inspection.stall.area.area_name if inspection.stall and inspection.stall.area else "—",
             "inspector_name": inspection.inspector.user.full_name if inspection.inspector and inspection.inspector.user else "Inspector",
+            "inspector_code": inspection.inspector.employee_code if inspection.inspector else "—",
             "date": inspection.inspection_date.strftime('%d %b %Y, %I:%M %p') if inspection.inspection_date else "—",
+            "reinspection_date": inspection.reinspection_date.strftime('%d %b %Y') if inspection.reinspection_date else None,
             "score": float(inspection.overall_score) if inspection.overall_score is not None else None,
-            "risk": (inspection.risk_level or "Unknown").title(),
+            "grade": grade,
+            "risk": (inspection.risk_level or "Unrated").title(),
             "status": inspection.status.title(),
-            "notes": inspection.notes or "No additional notes provided for this inspection."
+            "notes": inspection.remarks or "No additional remarks provided for this inspection."
         })
     elif entity_type == "complaint":
         complaint = db.get_or_404(Complaint, entity_id)
