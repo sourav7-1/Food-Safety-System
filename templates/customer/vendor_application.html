@@ -3,8 +3,28 @@
 {% block portal_title %}Become a Vendor{% endblock %}
 {% block portal_subtitle %}Apply to list your stall. An administrator reviews every application before the vendor role is activated.{% endblock %}
 {% block portal_content %}
+{% if messages %}
+<div class="portal-card mb-3" id="reviewMessages">
+    <h3 class="panel-heading"><i class="fa-regular fa-comments text-success me-1"></i> Messages from the review team</h3>
+    <ul class="list-unstyled mb-0">
+        {% for item in messages %}
+        <li class="d-flex justify-content-between align-items-start gap-3 py-2 {{ 'border-top' if not loop.first }}">
+            <div>
+                {% if item.is_new %}<span class="badge bg-success me-1">NEW</span>{% endif %}
+                {{ item.notification.message }}
+            </div>
+            <small class="text-secondary text-nowrap">{{ item.notification.created_at.strftime('%d %b %Y, %I:%M %p') }}</small>
+        </li>
+        {% endfor %}
+    </ul>
+    {% if not application or application.status == 'pending' %}
+    <p class="text-secondary small mt-3 mb-0">Update your details below to answer &mdash; an administrator reviews your application again after you save.</p>
+    {% endif %}
+</div>
+{% endif %}
+
 {% if application %}
-<div class="portal-card">
+<div class="portal-card mb-3">
     <div class="d-flex justify-content-between align-items-start gap-3">
         <div>
             <span class="code">APPLICATION STATUS</span>
@@ -15,7 +35,7 @@
     </div>
 
     {% if application.status == 'pending' %}
-    <p class="mt-3 mb-0 text-secondary">Your application is waiting for an administrator to review it. You'll keep your current account access until it's approved.</p>
+    <p class="mt-3 mb-0 text-secondary">Your application is waiting for an administrator to review it. You'll keep your current account access until it's approved. You can still correct your details below.</p>
     {% elif application.status == 'approved' %}
     <p class="mt-3 mb-0 text-secondary">Your application was approved on {{ application.reviewed_at.strftime('%d %b %Y') if application.reviewed_at else 'an earlier date' }}. Your account now has vendor access &mdash; sign out and back in if you don't see the Vendor portal yet.</p>
     {% elif application.status == 'rejected' %}
@@ -32,18 +52,26 @@
     </dl>
     {% endif %}
 </div>
-{% else %}
+{% endif %}
+
+{% if not application or application.status == 'pending' %}
+{# One form for both: a first submission, and correcting a pending
+   application (e.g. after an inquiry). Prefilled from the application, or
+   from what was just typed if validation failed. #}
+{% set a = application %}
 <form class="portal-card" method="post">
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-    <h3 class="panel-heading"><i class="fa-solid fa-store text-success me-1"></i> Business details</h3>
+    <h3 class="panel-heading"><i class="fa-solid fa-store text-success me-1"></i> {{ 'Update your business details' if a else 'Business details' }}</h3>
     <div class="row g-3 mb-4">
         <div class="col-md-6">
             <label class="form-label fw-semibold">Business name</label>
-            <input class="form-control" name="business_name" required maxlength="150" placeholder="e.g. Dhaka Express Kitchen">
+            <input class="form-control" name="business_name" required maxlength="150" placeholder="e.g. Dhaka Express Kitchen"
+                   value="{{ request.form.get('business_name', a.business_name if a else '') }}">
         </div>
         <div class="col-md-6">
             <label class="form-label fw-semibold">Trade Licence number</label>
-            <input class="form-control" name="license_number" required maxlength="80" placeholder="e.g. TRAD/DIU/2026/089">
+            <input class="form-control" name="license_number" required maxlength="80" placeholder="e.g. TRAD/DIU/2026/089"
+                   value="{{ request.form.get('license_number', a.license_number if a else '') }}">
         </div>
     </div>
 
@@ -52,25 +80,28 @@
     <div class="row g-3 mb-4">
         <div class="col-md-6">
             <label class="form-label fw-semibold">Stall name</label>
-            <input class="form-control" name="requested_stall_name" required maxlength="150" placeholder="e.g. Main Cafe Snack Corner">
+            <input class="form-control" name="requested_stall_name" required maxlength="150" placeholder="e.g. Main Cafe Snack Corner"
+                   value="{{ request.form.get('requested_stall_name', (a.requested_stall_name or '') if a else '') }}">
         </div>
         <div class="col-md-6">
             <label class="form-label fw-semibold">Campus Area</label>
+            {% set chosen_area = (request.form.get('requested_area_id') or (a.requested_area_id if a else '') or '')|string %}
             <select class="form-select" name="requested_area_id" required>
                 <option value="">Select area</option>
                 {% for area in areas %}
-                <option value="{{ area.area_id }}">{{ area.area_name }} — {{ area.city }}</option>
+                <option value="{{ area.area_id }}" {{ 'selected' if chosen_area == area.area_id|string }}>{{ area.area_name }} — {{ area.city }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="col-12">
             <label class="form-label fw-semibold">Full location address</label>
-            <input class="form-control" name="requested_address" required maxlength="255" placeholder="e.g. Ground Floor, Knowledge Tower Building 4">
+            <input class="form-control" name="requested_address" required maxlength="255" placeholder="e.g. Ground Floor, Knowledge Tower Building 4"
+                   value="{{ request.form.get('requested_address', (a.requested_address or '') if a else '') }}">
         </div>
     </div>
 
     <button class="btn btn-success px-4 rounded-pill fw-semibold" type="submit">
-        <i class="fa-solid fa-paper-plane me-1"></i> Submit application
+        <i class="fa-solid fa-paper-plane me-1"></i> {{ 'Save changes' if a else 'Submit application' }}
     </button>
 </form>
 {% endif %}

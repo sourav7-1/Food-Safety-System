@@ -1,29 +1,180 @@
 {% extends "admin/base.html" %}
 {% block content %}
-<div class="page-actionbar">
+<div class="page-actionbar mb-4">
     <div>
-        <p class="eyebrow mb-1">MANAGEMENT</p>
-        <h2 class="h3 fw-bold mb-1">Vendors</h2>
-        <p class="text-secondary mb-0">Manage registered food businesses and vendor accounts.</p>
+        <p class="eyebrow mb-1">OPERATIONS &bull; PARTNERS</p>
+        <h2 class="h3 fw-bold mb-1 text-dark">Vendors & Food Businesses</h2>
+        <p class="text-secondary mb-0">Manage registered cafeteria vendors, compliance certifications, and operator accounts.</p>
     </div>
     <div class="d-flex gap-2 align-items-center flex-wrap">
-        <form class="search-bar" method="get">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input name="q" value="{{ search }}" placeholder="Search by business, licence, name or email..." aria-label="Search">
-            {% if search %}<a href="{{ url_for('admin.vendors') }}" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></a>{% endif %}
-            <button type="submit">Search</button>
-        </form>
         {% if current_user.has_permission('vendors.create') %}
-        <button type="button" class="btn btn-primary action-button" data-vendor-modal-create>
+        <button type="button" class="btn btn-primary action-button shadow-sm" data-vendor-modal-create>
             <i class="fa-solid fa-plus me-2"></i>Add Vendor
         </button>
         {% endif %}
     </div>
 </div>
 
-<div class="panel-card p-0 overflow-hidden">
+<!-- Floating Stats Metric Cards -->
+<div class="vendor-stats-grid mb-4">
+    <div class="vendor-stat-card">
+        <div class="stat-icon-wrap stat-icon-primary">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Total Partners</span>
+            <div class="stat-number">{{ vendors|length }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-solid fa-store me-1 text-primary"></i>Food businesses</span>
+        </div>
+    </div>
+    <div class="vendor-stat-card">
+        <div class="stat-icon-wrap stat-icon-success">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Active Accounts</span>
+            <div class="stat-number text-success">{{ vendors|selectattr('user.status', 'equalto', 'active')|list|length }}</div>
+            <span class="stat-subtext text-success"><span class="pulse-dot"></span> Live & operational</span>
+        </div>
+    </div>
+    <div class="vendor-stat-card">
+        <div class="stat-icon-wrap stat-icon-warning">
+            <i class="fa-solid fa-user-clock"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Inactive / Paused</span>
+            <div class="stat-number text-secondary">{{ vendors|selectattr('user.status', 'ne', 'active')|list|length }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-regular fa-pause-circle me-1"></i>Deactivated</span>
+        </div>
+    </div>
+    <div class="vendor-stat-card">
+        <div class="stat-icon-wrap stat-icon-purple">
+            <i class="fa-solid fa-inbox"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-label">Requests Waiting</span>
+            <div class="stat-number text-warning">{{ pending_applications|length + signups|length }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-solid fa-clock-rotate-left me-1 text-warning"></i>Action required</span>
+        </div>
+    </div>
+</div>
+
+<!-- Vendor Requests Panel (Pending Applications & Signups) -->
+<div class="panel-card vendor-requests mb-4" id="vendorRequests">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+        <h3 class="h6 fw-bold mb-0">
+            <i class="fa-solid fa-inbox text-warning me-2"></i>Vendor requests
+            <span class="badge {{ 'bg-warning text-dark' if (pending_applications|length + signups|length) else 'bg-secondary-subtle text-secondary' }} ms-1">{{ pending_applications|length + signups|length }}</span>
+        </h3>
+    </div>
+    <p class="text-secondary small mb-3">Everything waiting on you, in one place. <strong>Approve</strong> makes the person a vendor, <strong>Decline</strong> tells them why not, and <strong>Inquiry</strong> asks them a question (they see it in their portal, and by email if mail is set up).</p>
+
+    {% if pending_applications or signups %}
     <div class="table-responsive">
         <table class="table admin-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Person</th>
+                    <th>Request</th>
+                    <th>Business / proposed stall</th>
+                    <th>Since</th>
+                    {% if current_user.has_permission('vendors.edit') %}<th class="text-end">Decide</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for vendor in pending_applications %}
+                <tr>
+                    <td>
+                        <strong class="text-dark">{{ vendor.user.full_name }}</strong>
+                        <small class="text-muted d-block">{{ vendor.user.email }}</small>
+                    </td>
+                    <td><span class="badge bg-warning-subtle text-warning-emphasis border-0"><i class="fa-solid fa-file-lines me-1"></i>Application</span></td>
+                    <td>
+                        <span class="fw-semibold">{{ vendor.business_name }}</span>
+                        <small class="text-muted d-block">Licence {{ vendor.license_number }}{% if vendor.requested_stall_name %} &middot; Stall: {{ vendor.requested_stall_name }}{% endif %}{% if vendor.requested_area %} ({{ vendor.requested_area.area_name }}){% endif %}</small>
+                    </td>
+                    <td>{{ vendor.created_at.strftime('%d %b %Y') }}</td>
+                    {% if current_user.has_permission('vendors.edit') %}
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-2 flex-wrap">
+                            <form action="{{ url_for('admin.vendor_approve', vendor_id=vendor.vendor_id) }}" method="post" data-confirm="Approve this vendor application? The applicant's account will immediately gain vendor access." class="m-0">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-success req-btn" type="submit"><i class="fa-solid fa-check me-1"></i>Approve</button>
+                            </form>
+                            <button type="button" class="btn btn-sm btn-outline-danger req-btn" data-vendor-reject-open data-action="{{ url_for('admin.vendor_reject', vendor_id=vendor.vendor_id) }}"><i class="fa-solid fa-xmark me-1"></i>Decline</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary req-btn" data-vendor-inquiry-open data-name="{{ vendor.user.full_name }}" data-action="{{ url_for('admin.vendor_request_inquiry', user_id=vendor.user_id) }}"><i class="fa-regular fa-comment-dots me-1"></i>Inquiry</button>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            {% for person in signups %}
+                <tr>
+                    <td>
+                        <strong class="text-dark">{{ person.full_name }}</strong>
+                        <small class="text-muted d-block">{{ person.email }}</small>
+                    </td>
+                    <td><span class="badge bg-secondary-subtle text-secondary border-0"><i class="fa-solid fa-user-clock me-1"></i>Sign-up only</span></td>
+                    <td>
+                        <span class="text-muted">No business details yet</span>
+                        <small class="d-block {{ 'text-success' if person.email_verified_at else 'text-muted' }}">
+                            {% if person.email_verified_at %}<i class="fa-solid fa-circle-check me-1"></i>Email verified{% else %}<i class="fa-regular fa-envelope me-1"></i>Email not verified -- can't log in yet{% endif %}
+                        </small>
+                    </td>
+                    <td>{{ person.created_at.strftime('%d %b %Y') }}</td>
+                    {% if current_user.has_permission('vendors.edit') %}
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-2 flex-wrap">
+                            <button type="button" class="btn btn-sm btn-success req-btn" data-vendor-signup-approve-open data-name="{{ person.full_name }}" data-action="{{ url_for('admin.vendor_signup_approve', user_id=person.user_id) }}"><i class="fa-solid fa-check me-1"></i>Approve</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger req-btn" data-vendor-reject-open data-action="{{ url_for('admin.vendor_signup_decline', user_id=person.user_id) }}"><i class="fa-solid fa-xmark me-1"></i>Decline</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary req-btn" data-vendor-inquiry-open data-name="{{ person.full_name }}" data-action="{{ url_for('admin.vendor_request_inquiry', user_id=person.user_id) }}"><i class="fa-regular fa-comment-dots me-1"></i>Inquiry</button>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-secondary mb-0"><i class="fa-regular fa-circle-check me-1 text-success"></i>No vendor requests waiting{% if search %} for "{{ search }}"{% endif %}.</p>
+    {% endif %}
+</div>
+
+<!-- Floating Toolbar & Quick Status Filter Pills -->
+<div class="vendor-floating-toolbar mb-3">
+    <div class="d-flex align-items-center gap-3 flex-wrap flex-grow-1">
+        <form class="search-bar m-0" method="get" style="max-width: 380px; flex-grow: 1;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input name="q" id="vendorSearchInput" value="{{ search }}" placeholder="Search business, licence, name or email..." aria-label="Search">
+            {% if search %}<a href="{{ url_for('admin.vendors') }}" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></a>{% endif %}
+            <button type="submit">Search</button>
+        </form>
+
+        <div class="vendor-filter-group" id="vendorFilterChips">
+            <button type="button" class="vendor-filter-pill active" data-filter="all">
+                <i class="fa-solid fa-layer-group me-1"></i>All <span class="badge">{{ vendors|length }}</span>
+            </button>
+            <button type="button" class="vendor-filter-pill" data-filter="active">
+                <span class="pulse-dot me-1"></span>Active <span class="badge">{{ vendors|selectattr('user.status', 'equalto', 'active')|list|length }}</span>
+            </button>
+            <button type="button" class="vendor-filter-pill" data-filter="inactive">
+                <i class="fa-regular fa-pause-circle me-1"></i>Inactive <span class="badge">{{ vendors|selectattr('user.status', 'ne', 'active')|list|length }}</span>
+            </button>
+            <button type="button" class="vendor-filter-pill" data-filter="approved">
+                <i class="fa-solid fa-check me-1"></i>Approved <span class="badge">{{ vendors|selectattr('status', 'equalto', 'approved')|list|length }}</span>
+            </button>
+        </div>
+    </div>
+    <div class="text-secondary small fw-medium d-none d-md-block">
+        <i class="fa-solid fa-mouse-pointer text-muted me-1"></i> Click row to open floating window
+    </div>
+</div>
+
+<!-- Floating Table Container -->
+<div class="floating-table-container">
+    <div class="table-responsive">
+        <table class="table floating-vendor-table align-middle mb-0" id="vendorDataTable">
             <thead>
                 <tr>
                     <th>Vendor</th>
@@ -37,15 +188,33 @@
             </thead>
             <tbody>
             {% for vendor in vendors %}
-                <tr>
+                {% set grad_idx = (vendor.vendor_id % 6) + 1 %}
+                <tr class="vendor-row-card"
+                    data-vendor-id="{{ vendor.vendor_id }}"
+                    data-status="{{ vendor.user.status }}"
+                    data-app-status="{{ vendor.status }}"
+                    data-name="{{ vendor.user.full_name|lower }}"
+                    data-business="{{ (vendor.business_name or '')|lower }}"
+                    data-license="{{ vendor.license_number|lower }}"
+                    onclick="openEntityDetailModal('vendor', {{ vendor.vendor_id }})"
+                    title="Click to inspect vendor in floating window">
                     <td>
                         <div class="d-flex align-items-center gap-3">
-                            <div class="avatar-circle-sm" style="background: linear-gradient(135deg, #4f46e5, #8b5cf6); color: white; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; flex-shrink: 0;">
+                            <div class="vendor-avatar-circle vendor-avatar-grad-{{ grad_idx }}">
                                 {{ vendor.user.full_name[:2] | upper }}
                             </div>
-                            <div>
+                            <div class="min-w-0">
                                 <strong class="text-dark fw-bold" style="font-size: 13.5px;">{{ vendor.user.full_name }}</strong>
-                                <small class="text-muted d-block" style="font-size: 11px; margin-top: 1px;">{{ vendor.user.email }}</small>
+                                {% if vendor.user.email.startswith('imported.vendor.') %}
+                                <span class="badge-import-tag" title="{{ vendor.user.email }}">
+                                    <i class="fa-solid fa-cloud-arrow-down me-1"></i>Imported Profile
+                                </span>
+                                {% else %}
+                                <span class="vendor-email-text">
+                                    <i class="fa-regular fa-envelope me-1"></i>{{ vendor.user.email }}
+                                </span>
+                                {% endif %}
+
                                 {% if vendor.status == 'pending' and vendor.requested_stall_name %}
                                 <small class="d-block mt-1 text-warning-emphasis" style="font-size: 10.5px; font-weight: 500;">
                                     <i class="fa-solid fa-store me-1"></i>Proposed: {{ vendor.requested_stall_name }}
@@ -56,69 +225,69 @@
                         </div>
                     </td>
                     <td>
-                        <span class="fw-semibold text-dark" style="font-size: 13px;">
-                            <i class="fa-solid fa-briefcase text-secondary me-1" style="font-size: 12px;"></i>
-                            {{ vendor.business_name if vendor.business_name else '—' }}
-                        </span>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="business-icon-badge">
+                                <i class="fa-solid fa-store"></i>
+                            </div>
+                            <span class="business-name">
+                                {{ vendor.business_name if vendor.business_name else '—' }}
+                            </span>
+                        </div>
                     </td>
                     <td>
-                        <span class="code-chip border-0 bg-light text-secondary px-2 py-1" style="font-size: 11px; font-family: monospace; border-radius: 6px;">
-                            <i class="fa-solid fa-id-card me-1" style="font-size: 10px;"></i>{{ vendor.license_number }}
+                        <span class="vendor-licence-chip" title="Click to copy licence" onclick="event.stopPropagation(); navigator.clipboard.writeText('{{ vendor.license_number }}'); if(window.showFloatingToast) showFloatingToast('Licence copied: {{ vendor.license_number }}');">
+                            <i class="fa-solid fa-id-card me-1 text-muted"></i>{{ vendor.license_number }}
                         </span>
                     </td>
                     <td>
                         {% if vendor.license_expiry_date %}
-                        <span class="text-dark" style="font-size: 12px;">
-                            <i class="fa-regular fa-calendar me-1 text-muted"></i>
+                        <span class="vendor-expiry-pill">
+                            <i class="fa-regular fa-calendar-check text-muted me-1"></i>
                             {{ vendor.license_expiry_date.strftime('%d %b %Y') }}
                         </span>
                         {% else %}
-                        <span class="text-muted">—</span>
+                        <span class="vendor-no-expiry">
+                            <i class="fa-solid fa-infinity me-1"></i>Permanent / Unset
+                        </span>
                         {% endif %}
                     </td>
                     <td>
                         {% if vendor.status == 'approved' %}
-                        <span class="badge bg-success-subtle text-success border-0 px-2 py-1.5 fw-semibold" style="font-size: 11px; border-radius: 12px;">
+                        <span class="app-status-badge approved">
                             <i class="fa-solid fa-circle-check me-1"></i>Approved
                         </span>
                         {% elif vendor.status == 'pending' %}
-                        <span class="badge bg-warning-subtle text-warning border-0 px-2 py-1.5 fw-semibold" style="font-size: 11px; border-radius: 12px;">
+                        <span class="app-status-badge pending">
                             <i class="fa-solid fa-clock me-1"></i>Pending
                         </span>
                         {% else %}
-                        <span class="badge bg-danger-subtle text-danger border-0 px-2 py-1.5 fw-semibold" style="font-size: 11px; border-radius: 12px;">
-                            <i class="fa-solid fa-circle-xmark me-1"></i>{{ vendor.status | title }}
+                        <span class="app-status-badge other">
+                            {{ vendor.status | title }}
                         </span>
                         {% endif %}
                     </td>
                     <td>
                         {% if vendor.user.status == 'active' %}
-                        <span class="d-inline-flex align-items-center gap-2 text-success fw-semibold" style="font-size: 12px;">
-                            <span class="status-dot-active"></span>Active
+                        <span class="account-status-badge active">
+                            <span class="pulse-dot"></span> Active
                         </span>
                         {% else %}
-                        <span class="d-inline-flex align-items-center gap-2 text-muted fw-semibold" style="font-size: 12px;">
-                            <span class="status-dot-inactive"></span>{{ vendor.user.status | title }}
+                        <span class="account-status-badge inactive">
+                            <span class="static-dot"></span> {{ vendor.user.status | title }}
                         </span>
                         {% endif %}
                     </td>
-                    <td class="text-end table-actions">
-                        <div class="d-flex justify-content-end gap-2 align-items-center">
-                            {% if vendor.status == 'pending' and current_user.has_permission('vendors.edit') %}
-                            <form action="{{ url_for('admin.vendor_approve', vendor_id=vendor.vendor_id) }}" method="post" data-confirm="Approve this vendor application? The applicant's account will immediately gain vendor access." class="m-0">
-                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                <button class="btn btn-sm btn-success px-3 fw-bold" style="border-radius: 8px; font-size: 11px; height: 32px;" type="submit">Approve</button>
-                            </form>
-                            <button type="button" class="btn btn-sm btn-outline-danger px-3 fw-bold" style="border-radius: 8px; font-size: 11px; height: 32px;" data-vendor-reject-open data-action="{{ url_for('admin.vendor_reject', vendor_id=vendor.vendor_id) }}">Reject</button>
-                            {% endif %}
-                            
-                            <button type="button" class="btn btn-sm btn-light text-primary border me-1" title="View Profile" style="border-radius: 8px; width: 32px; height: 32px; display: grid; place-items: center;" onclick="openEntityDetailModal('vendor', {{ vendor.vendor_id }})"><i class="fa-solid fa-eye"></i></button>
+                    <td class="text-end">
+                        <div class="d-flex justify-content-end gap-1 align-items-center" onclick="event.stopPropagation();">
+                            <button type="button" class="btn-dock-action btn-inspect" title="Floating Window Inspect" onclick="openEntityDetailModal('vendor', {{ vendor.vendor_id }})">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </button>
                             
                             {% if vendor.status != 'pending' and current_user.has_permission('vendors.edit') %}
                             <button
                                 type="button"
-                                class="btn-action-edit"
-                                aria-label="Edit"
+                                class="btn-dock-action btn-edit"
+                                title="Edit Vendor"
                                 data-vendor-modal-edit
                                 data-action="{{ url_for('admin.vendor_edit', vendor_id=vendor.vendor_id) }}"
                                 data-full-name="{{ vendor.user.full_name }}"
@@ -133,140 +302,245 @@
                             {% endif %}
                             
                             {% if current_user.has_permission('vendors.delete') %}
-                            <form action="{{ url_for('admin.vendor_delete', vendor_id=vendor.vendor_id) }}" method="post" data-confirm="Delete this vendor?" class="m-0">
+                            <form action="{{ url_for('admin.vendor_delete', vendor_id=vendor.vendor_id) }}" method="post" data-confirm="Delete this vendor? This will archive their credentials." class="m-0">
                                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                <button class="btn-action-delete" aria-label="Delete" data-done-label="" data-error-label=""><i class="fa-solid fa-trash"></i></button>
+                                <button class="btn-dock-action btn-delete" title="Delete Vendor" aria-label="Delete" data-done-label="" data-error-label=""><i class="fa-solid fa-trash"></i></button>
                             </form>
                             {% endif %}
                         </div>
                     </td>
                 </tr>
-            {% else %}<tr><td colspan="7" class="empty-state"><i class="fa-solid fa-store-slash" aria-hidden="true"></i>No vendors found.</td></tr>{% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="empty-state py-4">
+                            <i class="fa-solid fa-store-slash fs-1 text-muted mb-2 d-block" aria-hidden="true"></i>
+                            <h5 class="fw-bold text-dark">No vendors found</h5>
+                            <p class="text-secondary small mb-0">Try clearing your search filters or add a new vendor.</p>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 
-<style>
-/* Modern Admin Table Enhancements */
-.admin-table tbody tr {
-    transition: background-color 0.2s ease, transform 0.2s ease;
-}
-.admin-table tbody tr:hover {
-    background-color: #f8fafc !important;
-}
-.avatar-circle-sm {
-    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.12);
-}
-/* Search Bar & Action Button alignments */
-.search-bar {
-    border-radius: 10px;
-    border: 1px solid #dfe6ef;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    height: 40px;
-    margin-bottom: 0 !important;
-}
-.search-bar:focus-within {
-    border-color: #8179ed;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.09);
-}
-.action-button {
-    height: 40px;
-    border-radius: 10px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-}
-</style>
-
-<div class="modal fade" id="vendorModal" tabindex="-1" aria-labelledby="vendorModalLabel" aria-hidden="true">
+<!-- Add / Edit Vendor Modal Styled Like a Modern Floating Window -->
+<div class="modal fade modal-floating-window" id="vendorModal" tabindex="-1" aria-labelledby="vendorModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
         <div class="modal-content">
+            <!-- Window Title Bar -->
+            <div class="window-titlebar">
+                <div class="window-traffic-lights">
+                    <span class="window-dot window-dot-red" data-bs-dismiss="modal" role="button" title="Close"></span>
+                    <span class="window-dot window-dot-yellow"></span>
+                    <span class="window-dot window-dot-green"></span>
+                </div>
+                <div class="small fw-bold text-secondary text-uppercase tracking-wider">
+                    <i class="fa-solid fa-window-maximize me-1 text-primary"></i> Vendor Management Console
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
             <form method="post" id="vendorModalForm" action="{{ url_for('admin.vendor_create') }}" class="entity-form">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-header">
-                    <h2 class="modal-title h5" id="vendorModalLabel">Add Vendor</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <h3>Account information</h3>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label for="vendorFullName">Full name</label>
-                            <input class="form-control" id="vendorFullName" name="full_name" required maxlength="120">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="vendorEmail">Email</label>
-                            <input class="form-control" type="email" id="vendorEmail" name="email" required maxlength="150">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="vendorPhone">Phone</label>
-                            <input class="form-control" id="vendorPhone" name="phone" maxlength="30">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="vendorStatus">Status</label>
-                            <select class="form-select" id="vendorStatus" name="status">
-                                {% for value in ['active','inactive','suspended'] %}
-                                <option value="{{ value }}">{{ value|title }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="vendorPassword"><span id="vendorPasswordLabel">Password</span></label>
-                            <input class="form-control" type="password" id="vendorPassword" name="password" minlength="8">
-                            <div class="form-text" id="vendorPasswordHint">At least 8 characters.</div>
-                        </div>
-                    </div>
-                    <hr>
-                    <h3>Business and licence</h3>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="vendorBusinessName">Business name</label>
-                            <input class="form-control" id="vendorBusinessName" name="business_name" required maxlength="150">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="vendorLicenseNumber">Licence number</label>
-                            <input class="form-control" id="vendorLicenseNumber" name="license_number" required maxlength="80">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="vendorLicenseExpiry">Licence expiry date</label>
-                            <input class="form-control" type="date" id="vendorLicenseExpiry" name="license_expiry_date">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="vendorNationalId">National ID</label>
-                            <input class="form-control" id="vendorNationalId" name="national_id" maxlength="80">
-                        </div>
+                
+                <div class="modal-header border-0 pb-1 pt-3 px-4">
+                    <div>
+                        <h2 class="modal-title h4 fw-bold text-dark mb-0" id="vendorModalLabel">Add Vendor</h2>
+                        <p class="text-secondary small mb-0">Create or update vendor operator credentials and trade certification.</p>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="vendorModalSubmit">Save Vendor</button>
+
+                <div class="modal-body px-4 py-3">
+                    <!-- Section 1: Account Information -->
+                    <div class="floating-section-card mb-3">
+                        <h6 class="fw-bold text-dark mb-3 small text-uppercase tracking-wider d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-user-shield text-primary"></i> Operator Account Information
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark small" for="vendorFullName">Full Name</label>
+                                <input class="form-control" id="vendorFullName" name="full_name" required maxlength="120" placeholder="e.g. Mohammad Rahim">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark small" for="vendorEmail">Email Address</label>
+                                <input class="form-control" type="email" id="vendorEmail" name="email" required maxlength="150" placeholder="vendor@diu.edu.bd">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-dark small" for="vendorPhone">Phone Number</label>
+                                <input class="form-control" id="vendorPhone" name="phone" maxlength="30" placeholder="+880 1700-000000">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-dark small" for="vendorStatus">Account Status</label>
+                                <select class="form-select" id="vendorStatus" name="status">
+                                    {% for value in ['active','inactive','suspended'] %}
+                                    <option value="{{ value }}">{{ value|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-dark small" for="vendorPassword"><span id="vendorPasswordLabel">Password</span></label>
+                                <input class="form-control" type="password" id="vendorPassword" name="password" minlength="8" placeholder="••••••••">
+                                <div class="form-text" id="vendorPasswordHint">At least 8 characters.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Business & Licensing -->
+                    <div class="floating-section-card">
+                        <h6 class="fw-bold text-dark mb-3 small text-uppercase tracking-wider d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-store text-success"></i> Business Entity & Trade Licence
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark small" for="vendorBusinessName">Business / Brand Name</label>
+                                <input class="form-control" id="vendorBusinessName" name="business_name" required maxlength="150" placeholder="e.g. Campus Fresh Juice Bar">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark small" for="vendorLicenseNumber">Trade Licence Number</label>
+                                <input class="form-control text-monospace" id="vendorLicenseNumber" name="license_number" required maxlength="80" placeholder="LIC-2026-XXXX">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark small" for="vendorLicenseExpiry">Licence Expiry Date</label>
+                                <input class="form-control" type="date" id="vendorLicenseExpiry" name="license_expiry_date">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark small" for="vendorNationalId">National ID (NID / Passport)</label>
+                                <input class="form-control" id="vendorNationalId" name="national_id" maxlength="80" placeholder="Optional NID number">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer px-4 py-3 bg-light border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm" id="vendorModalSubmit">
+                        <i class="fa-solid fa-check me-1"></i> Save Vendor
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-<div class="modal fade" id="vendorRejectModal" tabindex="-1" aria-labelledby="vendorRejectModalLabel" aria-hidden="true">
+
+<!-- Decline Request Modal -->
+<div class="modal fade modal-floating-window" id="vendorRejectModal" tabindex="-1" aria-labelledby="vendorRejectModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
+            <div class="window-titlebar">
+                <div class="window-traffic-lights">
+                    <span class="window-dot window-dot-red" data-bs-dismiss="modal" role="button"></span>
+                    <span class="window-dot window-dot-yellow"></span>
+                    <span class="window-dot window-dot-green"></span>
+                </div>
+                <div class="small fw-bold text-danger text-uppercase tracking-wider">
+                    <i class="fa-solid fa-ban me-1"></i> Decline Request
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
             <form method="post" id="vendorRejectForm">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-header">
-                    <h2 class="modal-title h5" id="vendorRejectModalLabel">Reject Vendor Application</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-header border-0 pb-1 pt-3 px-4">
+                    <h2 class="modal-title h5 fw-bold text-dark" id="vendorRejectModalLabel">Decline vendor request</h2>
                 </div>
-                <div class="modal-body">
-                    <label for="vendorRejectReason">Reason <span class="text-secondary">(shown to the applicant)</span></label>
-                    <textarea class="form-control" id="vendorRejectReason" name="rejection_reason" rows="3" maxlength="500"></textarea>
+                <div class="modal-body px-4 py-3">
+                    <label class="form-label fw-semibold text-dark small" for="vendorRejectReason">Reason <span class="text-secondary">(shown to the applicant)</span></label>
+                    <textarea class="form-control" id="vendorRejectReason" name="rejection_reason" rows="3" maxlength="500" placeholder="Explain missing trade documentation or sanitation requirements..."></textarea>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger">Reject Application</button>
+                <div class="modal-footer px-4 py-3 bg-light border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Decline request</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Vendor Inquiry Modal -->
+<div class="modal fade modal-floating-window" id="vendorInquiryModal" tabindex="-1" aria-labelledby="vendorInquiryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="window-titlebar">
+                <div class="window-traffic-lights">
+                    <span class="window-dot window-dot-red" data-bs-dismiss="modal" role="button"></span>
+                    <span class="window-dot window-dot-yellow"></span>
+                    <span class="window-dot window-dot-green"></span>
+                </div>
+                <div class="small fw-bold text-primary text-uppercase tracking-wider">
+                    <i class="fa-regular fa-comment-dots me-1"></i> Send Official Inquiry
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="vendorInquiryForm">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header border-0 pb-1 pt-3 px-4">
+                    <h2 class="modal-title h5 fw-bold text-dark" id="vendorInquiryModalLabel">Ask <span id="vendorInquiryName">the applicant</span> a question</h2>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <label class="form-label fw-semibold text-dark small" for="vendorInquiryText">Your Question <span class="text-secondary">(visible on their vendor portal)</span></label>
+                    <textarea class="form-control" id="vendorInquiryText" name="message" rows="4" maxlength="{{ inquiry_max_length }}" required placeholder="e.g. Please provide your renewed trade licence certificate and kitchen location details."></textarea>
+                </div>
+                <div class="modal-footer px-4 py-3 bg-light border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold"><i class="fa-regular fa-paper-plane me-1"></i>Send inquiry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Vendor Signup Approve Modal -->
+<div class="modal fade modal-floating-window" id="vendorSignupApproveModal" tabindex="-1" aria-labelledby="vendorSignupApproveLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="window-titlebar">
+                <div class="window-traffic-lights">
+                    <span class="window-dot window-dot-red" data-bs-dismiss="modal" role="button"></span>
+                    <span class="window-dot window-dot-yellow"></span>
+                    <span class="window-dot window-dot-green"></span>
+                </div>
+                <div class="small fw-bold text-success text-uppercase tracking-wider">
+                    <i class="fa-solid fa-user-check me-1"></i> Authorize Vendor Partner
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" id="vendorSignupApproveForm">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header border-0 pb-1 pt-3 px-4">
+                    <h2 class="modal-title h5 fw-bold text-dark" id="vendorSignupApproveLabel">Approve <span id="vendorSignupApproveName">this person</span> as a vendor</h2>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <p class="text-secondary small mb-3">They haven't submitted business details, so enter what you've verified. The account gets vendor access immediately.</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark small" for="signupBusinessName">Business name</label>
+                            <input class="form-control" id="signupBusinessName" name="business_name" required maxlength="150" placeholder="e.g. Campus Corner">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark small" for="signupLicense">Licence number</label>
+                            <input class="form-control text-monospace" id="signupLicense" name="license_number" required maxlength="80" placeholder="LIC-XXXX">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark small" for="signupExpiry">Licence expiry <span class="text-secondary">(optional)</span></label>
+                            <input class="form-control" type="date" id="signupExpiry" name="license_expiry_date">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark small" for="signupNid">National ID <span class="text-secondary">(optional)</span></label>
+                            <input class="form-control" id="signupNid" name="national_id" maxlength="80">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer px-4 py-3 bg-light border-top">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold"><i class="fa-solid fa-check me-1"></i>Approve vendor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% if reopen_modal %}
 <script type="application/json" id="reopenModalData">{{ reopen_modal | tojson }}</script>
 {% endif %}
@@ -276,118 +550,190 @@
 <script>
 (function () {
     "use strict";
+
+    // Instant Client-Side Filter Chips
+    function initVendorFilters() {
+        var chips = document.querySelectorAll("#vendorFilterChips .vendor-filter-pill");
+        var rows = document.querySelectorAll("#vendorDataTable tbody tr.vendor-row-card");
+        if (!chips.length || !rows.length) return;
+
+        chips.forEach(function (chip) {
+            chip.addEventListener("click", function () {
+                chips.forEach(function (c) { c.classList.remove("active"); });
+                chip.classList.add("active");
+                var filter = chip.getAttribute("data-filter");
+
+                rows.forEach(function (row) {
+                    var status = (row.getAttribute("data-status") || "").toLowerCase();
+                    var appStatus = (row.getAttribute("data-app-status") || "").toLowerCase();
+
+                    if (filter === "all") {
+                        row.style.display = "";
+                    } else if (filter === "active") {
+                        row.style.display = (status === "active") ? "" : "none";
+                    } else if (filter === "inactive") {
+                        row.style.display = (status !== "active") ? "" : "none";
+                    } else if (filter === "approved") {
+                        row.style.display = (appStatus === "approved") ? "" : "none";
+                    }
+                });
+            });
+        });
+    }
+
+    // Floating Toast Notification Helper
+    window.showFloatingToast = function (msg) {
+        var toast = document.createElement("div");
+        toast.className = "floating-copy-toast";
+        toast.style.cssText = "position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #fff; padding: 10px 18px; border-radius: 30px; font-size: 12.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.25); z-index: 9999; display: flex; align-items: center; gap: 8px; animation: toastIn 0.25s ease;";
+        toast.innerHTML = '<i class="fa-solid fa-circle-check text-success"></i> ' + msg;
+        document.body.appendChild(toast);
+        setTimeout(function () {
+            toast.style.opacity = "0";
+            toast.style.transition = "opacity 0.3s";
+            setTimeout(function () { toast.remove(); }, 300);
+        }, 2200);
+    };
+
     function initVendorModal() {
-    var modalEl = document.getElementById("vendorModal");
-    if (!modalEl) { return; }
-    var modal = new bootstrap.Modal(modalEl);
-    var form = document.getElementById("vendorModalForm");
-    var titleEl = document.getElementById("vendorModalLabel");
-    var passwordInput = document.getElementById("vendorPassword");
-    var passwordLabel = document.getElementById("vendorPasswordLabel");
-    var passwordHint = document.getElementById("vendorPasswordHint");
-    var submitBtn = document.getElementById("vendorModalSubmit");
-    var createUrl = "{{ url_for('admin.vendor_create') }}";
+        var modalEl = document.getElementById("vendorModal");
+        if (!modalEl) { return; }
+        var modal = new bootstrap.Modal(modalEl);
+        var form = document.getElementById("vendorModalForm");
+        var titleEl = document.getElementById("vendorModalLabel");
+        var passwordInput = document.getElementById("vendorPassword");
+        var passwordLabel = document.getElementById("vendorPasswordLabel");
+        var passwordHint = document.getElementById("vendorPasswordHint");
+        var submitBtn = document.getElementById("vendorModalSubmit");
+        var createUrl = "{{ url_for('admin.vendor_create') }}";
 
-    function setSubmitLabels(mode) {
-        var busy = mode === "edit" ? "Saving..." : "Adding...";
-        var done = mode === "edit" ? "Saved" : "Added";
-        submitBtn.setAttribute("data-busy-label", busy);
-        submitBtn.setAttribute("data-done-label", done);
-        submitBtn.setAttribute("data-error-label", "Failed");
-    }
+        function setSubmitLabels(mode) {
+            var busy = mode === "edit" ? "Saving..." : "Adding...";
+            var done = mode === "edit" ? "Saved" : "Added";
+            submitBtn.setAttribute("data-busy-label", busy);
+            submitBtn.setAttribute("data-done-label", done);
+            submitBtn.setAttribute("data-error-label", "Failed");
+        }
 
-    function resetForm() {
-        form.reset();
-        form.action = createUrl;
-        titleEl.textContent = "Add Vendor";
-        passwordLabel.textContent = "Password";
-        passwordInput.required = true;
-        passwordHint.textContent = "At least 8 characters.";
-        setSubmitLabels("create");
-    }
-
-    document.querySelectorAll("[data-vendor-modal-create]").forEach(function (button) {
-        button.addEventListener("click", function () {
-            resetForm();
-            modal.show();
-        });
-    });
-
-    document.querySelectorAll("[data-vendor-modal-edit]").forEach(function (button) {
-        button.addEventListener("click", function () {
-            resetForm();
-            form.action = button.getAttribute("data-action");
-            titleEl.textContent = "Edit Vendor";
-            passwordLabel.textContent = "New password";
-            passwordInput.required = false;
-            passwordHint.textContent = "Leave blank to keep the current password.";
-            setSubmitLabels("edit");
-
-            document.getElementById("vendorFullName").value = button.getAttribute("data-full-name") || "";
-            document.getElementById("vendorEmail").value = button.getAttribute("data-email") || "";
-            document.getElementById("vendorPhone").value = button.getAttribute("data-phone") || "";
-            document.getElementById("vendorStatus").value = button.getAttribute("data-status") || "active";
-            document.getElementById("vendorBusinessName").value = button.getAttribute("data-business-name") || "";
-            document.getElementById("vendorLicenseNumber").value = button.getAttribute("data-license-number") || "";
-            document.getElementById("vendorLicenseExpiry").value = button.getAttribute("data-license-expiry-date") || "";
-            document.getElementById("vendorNationalId").value = button.getAttribute("data-national-id") || "";
-
-            modal.show();
-        });
-    });
-
-    var reopenEl = document.getElementById("reopenModalData");
-    if (reopenEl) {
-        var reopen = JSON.parse(reopenEl.textContent);
-        var values = reopen.values || {};
-        form.action = reopen.action;
-        titleEl.textContent = reopen.mode === "edit" ? "Edit Vendor" : "Add Vendor";
-        setSubmitLabels(reopen.mode === "edit" ? "edit" : "create");
-        if (reopen.mode === "edit") {
-            passwordLabel.textContent = "New password";
-            passwordInput.required = false;
-            passwordHint.textContent = "Leave blank to keep the current password.";
-        } else {
+        function resetForm() {
+            form.reset();
+            form.action = createUrl;
+            titleEl.textContent = "Add Vendor";
             passwordLabel.textContent = "Password";
             passwordInput.required = true;
             passwordHint.textContent = "At least 8 characters.";
+            setSubmitLabels("create");
         }
-        document.getElementById("vendorFullName").value = values.full_name || "";
-        document.getElementById("vendorEmail").value = values.email || "";
-        document.getElementById("vendorPhone").value = values.phone || "";
-        document.getElementById("vendorStatus").value = values.status || "active";
-        document.getElementById("vendorBusinessName").value = values.business_name || "";
-        document.getElementById("vendorLicenseNumber").value = values.license_number || "";
-        document.getElementById("vendorLicenseExpiry").value = values.license_expiry_date || "";
-        document.getElementById("vendorNationalId").value = values.national_id || "";
-        modal.show();
-    }
+
+        document.querySelectorAll("[data-vendor-modal-create]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                resetForm();
+                modal.show();
+            });
+        });
+
+        document.querySelectorAll("[data-vendor-modal-edit]").forEach(function (button) {
+            button.addEventListener("click", function (e) {
+                e.stopPropagation();
+                resetForm();
+                form.action = button.getAttribute("data-action");
+                titleEl.textContent = "Edit Vendor";
+                passwordLabel.textContent = "New password";
+                passwordInput.required = false;
+                passwordHint.textContent = "Leave blank to keep the current password.";
+                setSubmitLabels("edit");
+
+                document.getElementById("vendorFullName").value = button.getAttribute("data-full-name") || "";
+                document.getElementById("vendorEmail").value = button.getAttribute("data-email") || "";
+                document.getElementById("vendorPhone").value = button.getAttribute("data-phone") || "";
+                document.getElementById("vendorStatus").value = button.getAttribute("data-status") || "active";
+                document.getElementById("vendorBusinessName").value = button.getAttribute("data-business-name") || "";
+                document.getElementById("vendorLicenseNumber").value = button.getAttribute("data-license-number") || "";
+                document.getElementById("vendorLicenseExpiry").value = button.getAttribute("data-license-expiry-date") || "";
+                document.getElementById("vendorNationalId").value = button.getAttribute("data-national-id") || "";
+
+                modal.show();
+            });
+        });
+
+        var reopenEl = document.getElementById("reopenModalData");
+        if (reopenEl) {
+            var reopen = JSON.parse(reopenEl.textContent);
+            var values = reopen.values || {};
+            form.action = reopen.action;
+            titleEl.textContent = reopen.mode === "edit" ? "Edit Vendor" : "Add Vendor";
+            setSubmitLabels(reopen.mode === "edit" ? "edit" : "create");
+            if (reopen.mode === "edit") {
+                passwordLabel.textContent = "New password";
+                passwordInput.required = false;
+                passwordHint.textContent = "Leave blank to keep the current password.";
+            } else {
+                passwordLabel.textContent = "Password";
+                passwordInput.required = true;
+                passwordHint.textContent = "At least 8 characters.";
+            }
+            document.getElementById("vendorFullName").value = values.full_name || "";
+            document.getElementById("vendorEmail").value = values.email || "";
+            document.getElementById("vendorPhone").value = values.phone || "";
+            document.getElementById("vendorStatus").value = values.status || "active";
+            document.getElementById("vendorBusinessName").value = values.business_name || "";
+            document.getElementById("vendorLicenseNumber").value = values.license_number || "";
+            document.getElementById("vendorLicenseExpiry").value = values.license_expiry_date || "";
+            document.getElementById("vendorNationalId").value = values.national_id || "";
+            modal.show();
+        }
     }
 
     function initVendorRejectModal() {
-    var modalEl = document.getElementById("vendorRejectModal");
-    if (!modalEl) { return; }
-    var modal = new bootstrap.Modal(modalEl);
-    var form = document.getElementById("vendorRejectForm");
+        var modalEl = document.getElementById("vendorRejectModal");
+        if (!modalEl) { return; }
+        var modal = new bootstrap.Modal(modalEl);
+        var form = document.getElementById("vendorRejectForm");
 
-    document.querySelectorAll("[data-vendor-reject-open]").forEach(function (button) {
-        button.addEventListener("click", function () {
-            form.action = button.getAttribute("data-action");
-            document.getElementById("vendorRejectReason").value = "";
-            modal.show();
+        document.querySelectorAll("[data-vendor-reject-open]").forEach(function (button) {
+            button.addEventListener("click", function (e) {
+                e.stopPropagation();
+                form.action = button.getAttribute("data-action");
+                document.getElementById("vendorRejectReason").value = "";
+                modal.show();
+            });
         });
-    });
     }
 
-    // Both init functions re-run on their own every time this script
-    // re-executes (every AJAX content swap re-runs inline page scripts --
-    // see executeScriptsFromDoc in admin/base.html), so also subscribing
-    // them to "admin:content-updated" would double-run them on the very
-    // swap that just re-executed them, and since document itself is never
-    // replaced, the subscriptions would keep piling up across repeated
-    // visits to this page, stacking duplicate click/submit bindings.
+    function initVendorRequestModals() {
+        var inquiryEl = document.getElementById("vendorInquiryModal");
+        if (inquiryEl) {
+            var inquiryModal = new bootstrap.Modal(inquiryEl);
+            document.querySelectorAll("[data-vendor-inquiry-open]").forEach(function (button) {
+                button.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    document.getElementById("vendorInquiryForm").action = button.getAttribute("data-action");
+                    document.getElementById("vendorInquiryName").textContent = button.getAttribute("data-name") || "the applicant";
+                    document.getElementById("vendorInquiryText").value = "";
+                    inquiryModal.show();
+                });
+            });
+        }
+        var approveEl = document.getElementById("vendorSignupApproveModal");
+        if (approveEl) {
+            var approveModal = new bootstrap.Modal(approveEl);
+            document.querySelectorAll("[data-vendor-signup-approve-open]").forEach(function (button) {
+                button.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    var form = document.getElementById("vendorSignupApproveForm");
+                    form.reset();
+                    form.action = button.getAttribute("data-action");
+                    document.getElementById("vendorSignupApproveName").textContent = button.getAttribute("data-name") || "this person";
+                    approveModal.show();
+                });
+            });
+        }
+    }
+
+    initVendorFilters();
     initVendorModal();
     initVendorRejectModal();
+    initVendorRequestModals();
 })();
 </script>
 {% endblock %}

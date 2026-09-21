@@ -42,6 +42,7 @@ from models import (
     Vendor,
 )
 from routes import admin_tier_required, permission_required, super_admin_required
+from services.account_classification import VENDOR_SIGNUP_CLASSIFICATIONS
 from services.auth_audit import record_auth_event
 from services.complaints import (
     COMPLAINT_STATUSES,
@@ -59,6 +60,7 @@ from services.evidence import (
 )
 from services.registration_import import cache_photo
 from services.role_audit import record_role_change
+from services.vendor_requests import INQUIRY_MAX_LENGTH, send_vendor_inquiry
 from services.role_requests import (
     RoleRequestError,
     approve_role_request,
@@ -179,6 +181,52 @@ def _reopen_payload(mode, action, form):
     return {"mode": mode, "action": action, "values": values}
 
 
+def _vendor_signups_query(search=""):
+    """Accounts created through the vendor sign-up page (/register?role=vendor
+    with a non-DIU-student email) that haven't submitted the second step --
+    the business/stall application -- yet. They hold the plain student role
+    and have no Vendor row, so they never show in the vendors table; without
+    this they'd be invisible to admins until they finish applying."""
+    query = User.query.filter(
+        User.email_classification.in_(VENDOR_SIGNUP_CLASSIFICATIONS),
+        User.role.has(Role.role_name == "student"),
+        ~User.vendor_profile.has(),
+    )
+    if search:
+        term = f"%{search}%"
+        query = query.filter(or_(User.full_name.ilike(term), User.email.ilike(term)))
+    return query
+
+
+def _vendor_signup_or_none(user_id):
+    """The sign-up-without-application account with this id, or None if it
+    doesn't exist, isn't a vendor sign-up, or has since applied/been handled."""
+    return _vendor_signups_query().filter(User.user_id == user_id).first()
+
+
+def _pending_vendor_count():
+    """Everything waiting on an admin: submitted applications plus sign-ups
+    that haven't applied yet."""
+    return (
+        Vendor.query.filter_by(status="pending").count()
+        + _vendor_signups_query().count()
+    )
+
+
+@admin_bp.app_context_processor
+def _inject_pending_vendor_count():
+    """Feeds the Vendors badge in the admin sidebar (templates/admin/
+    sidebar.html). Cheap guard first so non-admin pages run no query."""
+    if (
+        not current_user.is_authenticated
+        or not current_user.role
+        or not current_user.role.is_admin_tier
+        or not current_user.has_permission("vendors.view")
+    ):
+        return {}
+    return {"pending_vendor_count": _pending_vendor_count()}
+
+
 def _render_vendors_list(search="", reopen_modal=None, status_code=200):
     query = Vendor.query.join(Vendor.user)
     if search:
@@ -191,12 +239,25 @@ def _render_vendors_list(search="", reopen_modal=None, status_code=200):
                 User.email.ilike(term),
             )
         )
-    records = query.order_by(Vendor.created_at.desc()).all()
+    # Anything still waiting on an admin (submitted applications and
+    # sign-ups that haven't applied) lives in the single "Vendor requests"
+    # panel; the main table is the decided vendors.
+    decided = query.filter(Vendor.status != "pending").order_by(
+        Vendor.created_at.desc()
+    ).all()
+    pending_applications = query.filter(Vendor.status == "pending").order_by(
+        Vendor.created_at.desc()
+    ).all()
+    signups = _vendor_signups_query(search).order_by(User.created_at.desc()).all()
     return (
         render_template(
             "admin/vendors/list.html",
             page_title="Vendors",
-            vendors=records,
+            vendors=decided,
+            pending_applications=pending_applications,
+            signups=signups,
+            pending_count=_pending_vendor_count(),
+            inquiry_max_length=INQUIRY_MAX_LENGTH,
             search=search,
             reopen_modal=reopen_modal,
         ),
@@ -627,6 +688,160 @@ def vendor_reject(vendor_id):
         "Vendor application rejected.",
         "Could not reject this application.",
     )
+    return redirect(url_for("admin.vendors"))
+
+
+# -- vendor sign-ups that haven't applied yet --------------------------------
+#
+# The same three decisions an admin can make on a submitted application
+# (approve / decline) plus an inquiry, applied to an account that signed up
+# through the vendor page but hasn't filled in its business details. The
+# applicant never gets the vendor role except here or in vendor_approve.
+
+
+def _vendor_signup_gone():
+    flash(
+        "That sign-up is no longer waiting -- the person has since "
+        "applied or it was already handled.",
+        "warning",
+    )
+    return redirect(url_for("admin.vendors"))
+
+
+@admin_bp.route("/vendor-signups/<int:user_id>/approve", methods=["POST"])
+@login_required
+@permission_required("vendors.edit")
+def vendor_signup_approve(user_id):
+    user = _vendor_signup_or_none(user_id)
+    if user is None:
+        return _vendor_signup_gone()
+
+    business_name = request.form.get("business_name", "").strip()
+    license_number = request.form.get("license_number", "").strip()
+    if not business_name or not license_number:
+        flash(
+            "Enter the business name and licence number you verified to "
+            "approve this vendor.",
+            "danger",
+        )
+        return redirect(url_for("admin.vendors"))
+    try:
+        license_expiry_date = _parse_date(request.form.get("license_expiry_date"))
+    except ValueError:
+        flash("Enter a valid licence expiry date.", "danger")
+        return redirect(url_for("admin.vendors"))
+
+    vendor_role = _role("vendor")
+    if vendor_role is None:
+        flash("The vendor role is missing from the roles table.", "danger")
+        return redirect(url_for("admin.vendors"))
+
+    old_role_id = user.role_id
+    db.session.add(
+        Vendor(
+            user_id=user.user_id,
+            business_name=business_name,
+            license_number=license_number,
+            license_expiry_date=license_expiry_date,
+            national_id=request.form.get("national_id", "").strip() or None,
+            status="approved",
+            reviewed_by_user_id=current_user.user_id,
+            reviewed_at=datetime.now(),
+        )
+    )
+    user.role_id = vendor_role.role_id
+    record_role_change(
+        current_user, user, old_role_id, vendor_role.role_id,
+        "Vendor sign-up approved directly by an administrator",
+    )
+    _commit(
+        f"{user.full_name} is now an approved vendor.",
+        "Could not approve this vendor. The licence number or national ID "
+        "may already be registered.",
+    )
+    return redirect(url_for("admin.vendors"))
+
+
+@admin_bp.route("/vendor-signups/<int:user_id>/decline", methods=["POST"])
+@login_required
+@permission_required("vendors.edit")
+def vendor_signup_decline(user_id):
+    user = _vendor_signup_or_none(user_id)
+    if user is None:
+        return _vendor_signup_gone()
+
+    reason = request.form.get("rejection_reason", "").strip() or None
+    # The decision is stored as a *rejected* Vendor row so it is recorded,
+    # shows up in the vendors table history, and the applicant sees the
+    # reason on their Become a Vendor page (which already renders a rejected
+    # application). business_name/license_number are NOT NULL (and licence
+    # is UNIQUE), hence the placeholders -- there were no real details.
+    db.session.add(
+        Vendor(
+            user_id=user.user_id,
+            business_name="(no application submitted)",
+            license_number=f"DECLINED-{user.user_id}",
+            status="rejected",
+            rejection_reason=reason,
+            reviewed_by_user_id=current_user.user_id,
+            reviewed_at=datetime.now(),
+        )
+    )
+    record_auth_event(
+        "role_rejected", user=user,
+        details=f"Vendor sign-up declined by {current_user.email}"[:255],
+    )
+    _commit(
+        f"Vendor sign-up from {user.full_name} declined.",
+        "Could not decline this sign-up.",
+    )
+    return redirect(url_for("admin.vendors"))
+
+
+@admin_bp.route("/vendor-requests/<int:user_id>/inquiry", methods=["POST"])
+@login_required
+@permission_required("vendors.edit")
+def vendor_request_inquiry(user_id):
+    """Ask the person behind a vendor request for more information. Works
+    on both kinds of request: a sign-up that hasn't applied, and a submitted
+    application that's still pending."""
+    user = db.session.get(User, user_id)
+    is_request = user is not None and (
+        _vendor_signup_or_none(user_id) is not None
+        or (
+            user.vendor_profile is not None
+            and user.vendor_profile.status == "pending"
+        )
+    )
+    if not is_request:
+        flash("That vendor request is no longer open.", "warning")
+        return redirect(url_for("admin.vendors"))
+
+    text_ = request.form.get("message", "").strip()
+    if not text_:
+        flash("Write the question you want to ask the applicant.", "danger")
+        return redirect(url_for("admin.vendors"))
+    if len(text_) > INQUIRY_MAX_LENGTH:
+        flash(
+            f"Keep the inquiry under {INQUIRY_MAX_LENGTH} characters.", "danger"
+        )
+        return redirect(url_for("admin.vendors"))
+
+    saved, emailed = send_vendor_inquiry(user, current_user, text_)
+    if not saved:
+        flash("Could not send the inquiry. Please try again.", "danger")
+    elif emailed:
+        flash(
+            f"Inquiry sent to {user.full_name} -- they can see it in their "
+            "portal and were also emailed.",
+            "success",
+        )
+    else:
+        flash(
+            f"Inquiry sent to {user.full_name}. They'll see it in their "
+            "portal when they sign in.",
+            "success",
+        )
     return redirect(url_for("admin.vendors"))
 
 

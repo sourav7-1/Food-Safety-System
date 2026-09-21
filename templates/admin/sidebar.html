@@ -15,6 +15,7 @@
         {% if current_user.has_permission('vendors.view') %}
         <a class="sidebar-link nav-vendors {{ 'active' if request.endpoint and request.endpoint.startswith('admin.vendor') }}" href="{{ url_for('admin.vendors') }}">
             <i class="fa-solid fa-store"></i><span>Vendors</span>
+            {% if pending_vendor_count %}<span class="sidebar-count" title="Vendor requests waiting for a decision">{{ pending_vendor_count }}</span>{% endif %}
         </a>
         {% endif %}
         {% if current_user.has_permission('stalls.view') %}

@@ -1062,6 +1062,24 @@ def _parse_application_date(value):
     return datetime.strptime(value, "%Y-%m-%d").date()
 
 
+def _vendor_review_messages(mark_read):
+    """Inquiries the review team sent this applicant (notifications with no
+    complaint attached -- an applicant can't file complaints). Newest first,
+    each with whether it was unread when fetched; optionally marks them read."""
+    records = (
+        Notification.query.filter_by(user_id=current_user.user_id, complaint_id=None)
+        .order_by(Notification.created_at.desc(), Notification.notification_id.desc())
+        .limit(20)
+        .all()
+    )
+    messages = [{"notification": n, "is_new": not n.is_read} for n in records]
+    if mark_read and any(m["is_new"] for m in messages):
+        for record in records:
+            record.is_read = True
+        db.session.commit()
+    return messages
+
+
 @customer_bp.route("/vendor-application", methods=["GET", "POST"])
 @login_required
 @role_required("student")
@@ -1069,11 +1087,14 @@ def vendor_application():
     # A Vendor row existing at all -- pending, approved, rejected, or
     # suspended -- means this account already went through (or is going
     # through) the workflow once; the vendor role itself is only ever
-    # activated by routes/admin.py:vendor_approve, never here.
+    # activated by an admin (routes/admin.py:vendor_approve /
+    # vendor_signup_approve), never here.
     existing = current_user.vendor_profile
 
     if request.method == "POST":
-        if existing is not None:
+        # Only a still-pending application can be changed afterwards -- that's
+        # how an applicant answers an inquiry from the review team.
+        if existing is not None and existing.status != "pending":
             flash("You already have a vendor application on file.", "warning")
             return redirect(url_for("customer_portal.vendor_application"))
 
@@ -1110,22 +1131,41 @@ def vendor_application():
                 flash(error, "danger")
             return render_template(
                 "customer/vendor_application.html",
-                application=None,
+                application=existing,
+                messages=_vendor_review_messages(mark_read=False),
                 areas=Area.query.order_by(Area.area_name).all(),
             ), 400
 
-        vendor = Vendor(
-            user_id=current_user.user_id,
-            business_name=business_name,
-            license_number=license_number,
-            license_expiry_date=license_expiry_date,
-            national_id=national_id,
-            status="pending",
-            requested_stall_name=requested_stall_name,
-            requested_area_id=area.area_id,
-            requested_address=requested_address,
-        )
-        db.session.add(vendor)
+        if existing is not None:
+            existing.business_name = business_name
+            existing.license_number = license_number
+            existing.license_expiry_date = license_expiry_date
+            existing.national_id = national_id
+            existing.requested_stall_name = requested_stall_name
+            existing.requested_area_id = area.area_id
+            existing.requested_address = requested_address
+            success_message = (
+                "Application updated. An administrator will review your "
+                "changes."
+            )
+        else:
+            db.session.add(
+                Vendor(
+                    user_id=current_user.user_id,
+                    business_name=business_name,
+                    license_number=license_number,
+                    license_expiry_date=license_expiry_date,
+                    national_id=national_id,
+                    status="pending",
+                    requested_stall_name=requested_stall_name,
+                    requested_area_id=area.area_id,
+                    requested_address=requested_address,
+                )
+            )
+            success_message = (
+                "Vendor application submitted. An administrator will review "
+                "it shortly -- your account stays a regular user until then."
+            )
         try:
             db.session.commit()
         except IntegrityError:
@@ -1137,15 +1177,12 @@ def vendor_application():
             )
             return redirect(url_for("customer_portal.vendor_application"))
 
-        flash(
-            "Vendor application submitted. An administrator will review "
-            "it shortly -- your account stays a regular user until then.",
-            "success",
-        )
+        flash(success_message, "success")
         return redirect(url_for("customer_portal.vendor_application"))
 
     return render_template(
         "customer/vendor_application.html",
         application=existing,
+        messages=_vendor_review_messages(mark_read=True),
         areas=Area.query.order_by(Area.area_name).all(),
     )

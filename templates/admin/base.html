@@ -729,23 +729,84 @@
 
                     var html = "";
                     if (data.type === "vendor") {
+                        var isImported = (data.email || "").indexOf("imported.vendor.") === 0;
+                        var emailDisplay = isImported ?
+                            '<span class="badge-import-tag"><i class="fa-solid fa-cloud-arrow-down me-1"></i>Imported Profile</span>' :
+                            escapeHtml(data.email);
+                        var statusBadge = (data.account_status === "Active") ?
+                            '<span class="account-status-badge active"><span class="pulse-dot"></span> Active</span>' :
+                            '<span class="account-status-badge inactive"><span class="static-dot"></span> ' + escapeHtml(data.account_status || "Inactive") + '</span>';
+
                         html = (
-                            '<div class="text-center mb-4">' +
-                            '  <div class="avatar-circle-lg mx-auto mb-2" style="background: linear-gradient(135deg, #4f46e5, #8b5cf6); color: white; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 20px; box-shadow: 0 6px 16px rgba(79,70,229,0.25);">' + escapeHtml(data.name.substring(0, 2).toUpperCase()) + '</div>' +
-                            '  <h5 class="fw-bold text-dark mb-1">' + escapeHtml(data.name) + '</h5>' +
-                            '  <span class="badge bg-primary-subtle text-primary border px-3 py-1.5 rounded-pill">' + escapeHtml(data.business) + '</span>' +
-                            '</div>' +
-                            '<div class="card border-0 bg-light p-3 rounded-3 mb-3" style="font-size: 13px;">' +
-                            '  <div class="row g-2">' +
-                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Email</span><strong class="text-dark">' + escapeHtml(data.email) + '</strong></div>' +
-                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Phone</span><strong class="text-dark">' + escapeHtml(data.phone) + '</strong></div>' +
-                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Licence No.</span><strong class="text-dark">' + escapeHtml(data.license) + '</strong></div>' +
-                            '    <div class="col-6"><span class="text-muted d-block" style="font-size: 11px;">Licence Expiry</span><strong class="text-dark">' + escapeHtml(data.license_expiry) + '</strong></div>' +
+                            '<div class="floating-window-content">' +
+                            '  <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-4 border mb-3">' +
+                            '    <div class="vendor-avatar-circle vendor-avatar-grad-2" style="width: 54px; height: 54px; font-size: 18px; border-radius: 16px;">' +
+                                   escapeHtml(data.name.substring(0, 2).toUpperCase()) +
+                            '    </div>' +
+                            '    <div class="flex-grow-1 min-w-0">' +
+                            '      <div class="d-flex align-items-center gap-2 flex-wrap">' +
+                            '        <h4 class="h5 fw-bold text-dark mb-0">' + escapeHtml(data.name) + '</h4>' +
+                            '        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 small fw-semibold"><i class="fa-solid fa-circle-check me-1"></i>' + escapeHtml(data.status) + '</span>' +
+                            '      </div>' +
+                            '      <div class="text-secondary small mt-1 d-flex align-items-center gap-2 flex-wrap">' +
+                            '        <span class="fw-semibold text-dark"><i class="fa-solid fa-store me-1 text-primary"></i>' + escapeHtml(data.business) + '</span>' +
+                            '        <span>&middot;</span>' +
+                            '        <span>' + statusBadge + '</span>' +
+                            '      </div>' +
+                            '    </div>' +
                             '  </div>' +
-                            '</div>' +
-                            '<div class="d-flex justify-content-between align-items-center p-2 border rounded-3 text-muted" style="font-size: 12px;">' +
-                            '  <span><i class="fa-solid fa-shop me-1 text-primary"></i>Active Stalls: <strong>' + data.stalls_count + '</strong></span>' +
-                            '  <span>Status: <strong class="text-success">' + escapeHtml(data.status) + '</strong></span>' +
+
+                            '  <div class="row g-3 mb-3">' +
+                            '    <div class="col-md-6">' +
+                            '      <div class="floating-section-card h-100">' +
+                            '        <h6 class="fw-bold text-dark mb-3 small text-uppercase tracking-wider"><i class="fa-solid fa-address-card me-1 text-primary"></i> Contact & Identity</h6>' +
+                            '        <div class="mb-2.5">' +
+                            '          <span class="floating-field-label">Email Address</span>' +
+                            '          <div class="floating-field-value d-flex align-items-center justify-content-between gap-2">' +
+                            '            <span class="text-truncate" title="' + escapeHtml(data.email) + '">' + emailDisplay + '</span>' +
+                            '            <button type="button" class="btn btn-sm btn-link text-muted p-0" title="Copy Email" onclick="navigator.clipboard.writeText(\'' + escapeHtml(data.email) + '\'); this.innerHTML=\'<i class=\\\'fa-solid fa-check text-success\\\'></i>\'; setTimeout(()=>{this.innerHTML=\'<i class=\\\'fa-regular fa-copy\\\'></i>\'}, 1500);"><i class="fa-regular fa-copy"></i></button>' +
+                            '          </div>' +
+                            '        </div>' +
+                            '        <div class="mb-2.5">' +
+                            '          <span class="floating-field-label">Phone Number</span>' +
+                            '          <div class="floating-field-value">' + escapeHtml(data.phone) + '</div>' +
+                            '        </div>' +
+                            '        <div>' +
+                            '          <span class="floating-field-label">National ID</span>' +
+                            '          <div class="floating-field-value text-monospace">' + escapeHtml(data.national_id) + '</div>' +
+                            '        </div>' +
+                            '      </div>' +
+                            '    </div>' +
+
+                            '    <div class="col-md-6">' +
+                            '      <div class="floating-section-card h-100">' +
+                            '        <h6 class="fw-bold text-dark mb-3 small text-uppercase tracking-wider"><i class="fa-solid fa-shield-halved me-1 text-success"></i> Trade Licence & Stalls</h6>' +
+                            '        <div class="mb-2.5">' +
+                            '          <span class="floating-field-label">Licence Number</span>' +
+                            '          <div class="floating-field-value d-flex align-items-center justify-content-between gap-2">' +
+                            '            <span class="vendor-licence-chip py-1 px-2">' + escapeHtml(data.license) + '</span>' +
+                            '            <button type="button" class="btn btn-sm btn-link text-muted p-0" title="Copy Licence" onclick="navigator.clipboard.writeText(\'' + escapeHtml(data.license) + '\'); this.innerHTML=\'<i class=\\\'fa-solid fa-check text-success\\\'></i>\'; setTimeout(()=>{this.innerHTML=\'<i class=\\\'fa-regular fa-copy\\\'></i>\'}, 1500);"><i class="fa-regular fa-copy"></i></button>' +
+                            '          </div>' +
+                            '        </div>' +
+                            '        <div class="mb-2.5">' +
+                            '          <span class="floating-field-label">Licence Expiry</span>' +
+                            '          <div class="floating-field-value"><i class="fa-regular fa-calendar me-1 text-muted"></i>' + escapeHtml(data.license_expiry) + '</div>' +
+                            '        </div>' +
+                            '        <div>' +
+                            '          <span class="floating-field-label">Active Stalls Assigned</span>' +
+                            '          <div class="floating-field-value d-flex align-items-center gap-2">' +
+                            '            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1"><i class="fa-solid fa-utensils me-1"></i>' + data.stalls_count + ' Stall(s)</span>' +
+                            '            <a href="/admin/stalls?q=' + encodeURIComponent(data.business || data.name) + '" class="small text-decoration-none fw-semibold">View Stalls &rarr;</a>' +
+                            '          </div>' +
+                            '        </div>' +
+                            '      </div>' +
+                            '    </div>' +
+                            '  </div>' +
+
+                            '  <div class="d-flex justify-content-between align-items-center pt-2 text-muted small">' +
+                            '    <span><i class="fa-regular fa-clock me-1"></i>Partner since: <strong>' + escapeHtml(data.created_at) + '</strong></span>' +
+                            '    <span class="text-success fw-semibold"><i class="fa-solid fa-shield-check me-1"></i>Verified Food Business</span>' +
+                            '  </div>' +
                             '</div>'
                         );
                     } else if (data.type === "stall") {
