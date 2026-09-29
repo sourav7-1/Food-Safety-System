@@ -18,44 +18,64 @@
     {% endif %}
 {% endfor %}
 
-<!-- Floating Stats Grid -->
+<!-- Floating Stats Grid (Clickable to open breakdown modals) -->
 <div class="stall-stats-grid mb-4">
-    <div class="stall-stat-card">
+    <div class="stall-stat-card clickable-stat-card" role="button" tabindex="0" onclick="openInspectionMetricModal('total')" title="Click to view all safety audits">
         <div class="stat-icon-wrap stat-icon-primary">
             <i class="fa-solid fa-clipboard-check"></i>
         </div>
-        <div class="stat-content">
-            <span class="stat-label">Total Audits</span>
+        <div class="stat-content flex-grow-1">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-label">Total Audits</span>
+                <span class="badge bg-light text-primary border rounded-pill px-2 py-0.5 card-view-badge">
+                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View
+                </span>
+            </div>
             <div class="stat-number">{{ inspections|length }}</div>
             <span class="stat-subtext text-muted"><i class="fa-solid fa-list-check me-1 text-primary"></i>Logged inspections</span>
         </div>
     </div>
-    <div class="stall-stat-card">
+    <div class="stall-stat-card clickable-stat-card" role="button" tabindex="0" onclick="openInspectionMetricModal('pending')" title="Click to view audits awaiting decision">
         <div class="stat-icon-wrap stat-icon-warning">
             <i class="fa-solid fa-clock-rotate-left"></i>
         </div>
-        <div class="stat-content">
-            <span class="stat-label">Pending Review</span>
+        <div class="stat-content flex-grow-1">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-label">Pending Review</span>
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-0.5 card-view-badge">
+                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View
+                </span>
+            </div>
             <div class="stat-number text-warning">{{ submitted_count }}</div>
             <span class="stat-subtext text-muted"><span class="pulse-dot" style="background:#f59e0b; box-shadow:0 0 0 2px rgba(245, 158, 11, 0.2);"></span> Awaiting decision</span>
         </div>
     </div>
-    <div class="stall-stat-card">
+    <div class="stall-stat-card clickable-stat-card" role="button" tabindex="0" onclick="openInspectionMetricModal('approved')" title="Click to view certified and closed audits">
         <div class="stat-icon-wrap stat-icon-success">
             <i class="fa-solid fa-circle-check"></i>
         </div>
-        <div class="stat-content">
-            <span class="stat-label">Approved Audits</span>
+        <div class="stat-content flex-grow-1">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-label">Approved Audits</span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0.5 card-view-badge">
+                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View
+                </span>
+            </div>
             <div class="stat-number text-success">{{ approved_count }}</div>
             <span class="stat-subtext text-success"><i class="fa-solid fa-shield-check me-1"></i>Certified &amp; closed</span>
         </div>
     </div>
-    <div class="stall-stat-card">
+    <div class="stall-stat-card clickable-stat-card" role="button" tabindex="0" onclick="openInspectionMetricModal('high_risk')" title="Click to view high and critical risk audits">
         <div class="stat-icon-wrap stat-icon-purple">
             <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
-        <div class="stat-content">
-            <span class="stat-label">High Risk Flags</span>
+        <div class="stat-content flex-grow-1">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-label">High Risk Flags</span>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-0.5 card-view-badge">
+                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View
+                </span>
+            </div>
             <div class="stat-number text-danger">{{ high_risk_count.total }}</div>
             <span class="stat-subtext text-muted"><i class="fa-solid fa-triangle-exclamation me-1 text-danger"></i>Requires attention</span>
         </div>
@@ -254,12 +274,294 @@
     <h4 class="h6 fw-bold text-dark">No matching audits found</h4>
     <p class="text-secondary small mb-0">No safety inspections match your selected filter or search keyword.</p>
 </div>
+
+<!-- Inspection Metric Breakdown Floating Window Modal -->
+<div class="modal fade modal-floating-window" id="inspectionMetricModal" tabindex="-1" aria-labelledby="inspectionMetricModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0">
+            <!-- macOS Window Titlebar -->
+            <div class="window-titlebar">
+                <div class="window-traffic-lights">
+                    <span class="window-dot window-dot-red" data-bs-dismiss="modal" role="button" title="Close"></span>
+                    <span class="window-dot window-dot-yellow"></span>
+                    <span class="window-dot window-dot-green"></span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span id="inspectionMetricBadge" class="badge bg-primary-subtle text-primary px-2.5 py-1 rounded-pill fw-bold" style="font-size: 11px;">TOTAL AUDITS</span>
+                    <span class="fw-bold small text-dark" id="inspectionMetricModalLabel">Audits Overview</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Header Toolbar / Mini Search -->
+            <div class="px-4 py-2.5 bg-light-subtle border-bottom d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-secondary fw-semibold" id="inspectionMetricCountText">Showing 0 audits</span>
+                </div>
+                <div style="max-width: 260px; width: 100%;">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass" style="font-size: 11px;"></i></span>
+                        <input type="text" id="inspectionMetricSearch" class="form-control border-start-0 ps-0" placeholder="Filter inside modal..." style="font-size: 12px;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Body List -->
+            <div class="modal-body p-4" style="background: #f8fafc;">
+                <div id="inspectionMetricList" class="d-flex flex-column gap-2" style="max-height: 460px; overflow-y: auto;">
+                    <!-- Items rendered dynamically -->
+                </div>
+                <div id="inspectionMetricEmpty" class="text-center py-5 d-none">
+                    <i class="fa-solid fa-clipboard-check fs-2 text-muted mb-2 d-block"></i>
+                    <h6 class="fw-bold text-dark mb-1">No inspections found</h6>
+                    <p class="text-secondary small mb-0">No records match this metric category.</p>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer border-top px-4 py-2.5 bg-white d-flex justify-content-between align-items-center">
+                <button type="button" class="btn btn-sm btn-outline-primary fw-semibold" id="inspectionMetricFilterTableBtn" style="border-radius: 8px;">
+                    <i class="fa-solid fa-filter me-1"></i>Filter Table Below
+                </button>
+                <button type="button" class="btn btn-sm btn-light px-4 fw-semibold" style="border-radius: 8px;" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Raw Inspections Data for Instant Client Modal -->
+<script id="inspectionsJson" type="application/json">
+[
+    {% for inspection in inspections %}
+    {
+        "id": {{ inspection.inspection_id }},
+        "stall_name": {{ inspection.stall.stall_name|tojson }},
+        "stall_code": {{ inspection.stall.stall_code|tojson }},
+        "stall_area": {{ (inspection.stall.area.area_name if inspection.stall.area else '—')|tojson }},
+        "inspector_name": {{ (inspection.inspector.user.full_name if inspection.inspector and inspection.inspector.user else 'Inspector')|tojson }},
+        "inspector_code": {{ (inspection.inspector.employee_code if inspection.inspector else '—')|tojson }},
+        "date": {{ inspection.inspection_date.strftime('%d %b %Y, %I:%M %p')|tojson }},
+        "date_short": {{ inspection.inspection_date.strftime('%d %b %Y')|tojson }},
+        "score": {{ inspection.overall_score if inspection.overall_score is not none else 'null' }},
+        "risk": {{ (inspection.risk_level or 'unrated')|lower|tojson }},
+        "status": {{ inspection.status|tojson }},
+        "reinspection_date": {{ (inspection.reinspection_date.strftime('%d %b %Y') if inspection.reinspection_date else none)|tojson }},
+        "remarks": {{ (inspection.remarks or '')|tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+]
+</script>
 {% endblock %}
 
 {% block scripts %}
 <script>
 (function () {
     "use strict";
+
+    var metricModalEl = document.getElementById("inspectionMetricModal");
+    var metricModal = null;
+    if (metricModalEl && window.bootstrap) {
+        metricModal = new bootstrap.Modal(metricModalEl);
+    }
+
+    var allInspectionsData = [];
+    try {
+        var raw = document.getElementById("inspectionsJson");
+        if (raw) allInspectionsData = JSON.parse(raw.textContent);
+    } catch (e) {
+        console.error("Failed parsing inspections JSON", e);
+    }
+
+    var currentMetricCategory = "total";
+    var currentFilteredList = [];
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function renderMetricList(items) {
+        var listEl = document.getElementById("inspectionMetricList");
+        var emptyEl = document.getElementById("inspectionMetricEmpty");
+        var countEl = document.getElementById("inspectionMetricCountText");
+
+        if (countEl) {
+            countEl.textContent = "Showing " + items.length + " audit" + (items.length === 1 ? "" : "s");
+        }
+
+        if (!items || items.length === 0) {
+            listEl.innerHTML = "";
+            emptyEl.classList.remove("d-none");
+            return;
+        }
+        emptyEl.classList.add("d-none");
+
+        var html = items.map(function(item) {
+            var scoreVal = item.score !== null ? item.score : null;
+            var scoreText = scoreVal !== null ? scoreVal + "%" : "Unrated";
+            var scoreClass = "bg-light text-muted border";
+            if (scoreVal !== null) {
+                if (scoreVal >= 80) scoreClass = "bg-success-subtle text-success border border-success-subtle";
+                else if (scoreVal >= 60) scoreClass = "bg-warning-subtle text-warning border border-warning-subtle";
+                else scoreClass = "bg-danger-subtle text-danger border border-danger-subtle";
+            }
+
+            var riskTagClass = "text-muted";
+            if (item.risk === "low") riskTagClass = "text-success";
+            else if (item.risk === "medium") riskTagClass = "text-warning";
+            else if (item.risk === "high" || item.risk === "critical") riskTagClass = "text-danger";
+
+            var iconBg = "stat-icon-primary";
+            var iconName = "fa-clipboard-check";
+            if (item.status === "submitted") {
+                iconBg = "stat-icon-warning";
+                iconName = "fa-clock-rotate-left";
+            } else if (item.risk === "high" || item.risk === "critical") {
+                iconBg = "stat-icon-purple";
+                iconName = "fa-triangle-exclamation";
+            } else if (item.status === "approved") {
+                iconBg = "stat-icon-success";
+                iconName = "fa-circle-check";
+            }
+
+            var statusIcon = "";
+            if (item.status === "submitted") statusIcon = '<span class="pulse-dot me-1" style="background:#f59e0b;"></span>';
+            else if (item.status === "approved") statusIcon = '<i class="fa-solid fa-circle-check me-1"></i>';
+            else if (item.status === "rejected") statusIcon = '<i class="fa-solid fa-circle-xmark me-1"></i>';
+
+            return (
+                '<div class="metric-inspection-item p-3 d-flex align-items-center justify-content-between gap-3" ' +
+                'tabindex="0" role="button" title="Click to view inspection details" ' +
+                'onclick="openEntityDetailModal(\'inspection\', ' + item.id + ', true, \'inspectionMetricModal\')">' +
+                '  <div class="d-flex align-items-center gap-3 min-w-0">' +
+                '    <div class="stat-icon-wrap ' + iconBg + '" style="width: 38px; height: 38px; border-radius: 10px; font-size: 14px; flex-shrink: 0;">' +
+                '      <i class="fa-solid ' + iconName + '"></i>' +
+                '    </div>' +
+                '    <div class="min-w-0">' +
+                '      <div class="d-flex align-items-center gap-2 flex-wrap mb-1">' +
+                '        <strong class="text-dark hover-text-primary text-truncate" style="font-size: 13.5px;">' + escapeHtml(item.stall_name) + '</strong>' +
+                '        <span class="stall-code-chip py-0 px-1.5" style="font-size: 10.5px;">' + escapeHtml(item.stall_code) + '</span>' +
+                '        <span class="text-muted small">&middot; ' + escapeHtml(item.stall_area) + '</span>' +
+                '      </div>' +
+                '      <div class="text-secondary d-flex align-items-center gap-2 flex-wrap" style="font-size: 11px;">' +
+                '        <span><i class="fa-regular fa-user me-1 text-muted"></i>' + escapeHtml(item.inspector_name) + '</span>' +
+                '        <span>&middot;</span>' +
+                '        <span><i class="fa-regular fa-calendar me-1 text-muted"></i>' + escapeHtml(item.date_short || item.date) + '</span>' +
+                '      </div>' +
+                '    </div>' +
+                '  </div>' +
+                '  <div class="d-flex align-items-center gap-2.5 flex-shrink-0">' +
+                '    <div class="text-end d-none d-sm-block">' +
+                '      <span class="badge ' + scoreClass + '" style="font-size: 12px; font-weight: 700;">' + scoreText + '</span>' +
+                '      <div class="small ' + riskTagClass + ' fw-bold text-uppercase mt-0.5" style="font-size: 9.5px; letter-spacing: 0.5px;">' + escapeHtml(item.risk) + ' RISK</div>' +
+                '    </div>' +
+                '    <span class="audit-status-badge ' + escapeHtml(item.status) + '" style="font-size: 10.5px;">' +
+                '      ' + statusIcon + escapeHtml(item.status.charAt(0).toUpperCase() + item.status.slice(1)) +
+                '    </span>' +
+                '    <div class="btn btn-sm btn-light border rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">' +
+                '      <i class="fa-solid fa-chevron-right text-muted" style="font-size: 10px;"></i>' +
+                '    </div>' +
+                '  </div>' +
+                '</div>'
+            );
+        }).join("");
+
+        listEl.innerHTML = html;
+    }
+
+    window.openInspectionMetricModal = function(category) {
+        if (!metricModal) return;
+        currentMetricCategory = category || "total";
+        var titleEl = document.getElementById("inspectionMetricModalLabel");
+        var badgeEl = document.getElementById("inspectionMetricBadge");
+        var searchInput = document.getElementById("inspectionMetricSearch");
+        if (searchInput) searchInput.value = "";
+
+        var config = {
+            total: {
+                title: "All Safety Audits",
+                badge: "TOTAL AUDITS",
+                badgeClass: "bg-primary-subtle text-primary border border-primary-subtle",
+                filterTarget: "all",
+                fn: function () { return true; }
+            },
+            pending: {
+                title: "Audits Pending Review",
+                badge: "PENDING DECISION",
+                badgeClass: "bg-warning-subtle text-warning border border-warning-subtle",
+                filterTarget: "submitted",
+                fn: function (item) { return item.status === "submitted"; }
+            },
+            approved: {
+                title: "Approved & Certified Audits",
+                badge: "APPROVED AUDITS",
+                badgeClass: "bg-success-subtle text-success border border-success-subtle",
+                filterTarget: "approved",
+                fn: function (item) { return item.status === "approved"; }
+            },
+            high_risk: {
+                title: "High & Critical Risk Audits",
+                badge: "HIGH RISK FLAGS",
+                badgeClass: "bg-danger-subtle text-danger border border-danger-subtle",
+                filterTarget: "high",
+                fn: function (item) { return item.risk === "high" || item.risk === "critical"; }
+            }
+        };
+
+        var cfg = config[category] || config.total;
+        if (titleEl) titleEl.textContent = cfg.title;
+        if (badgeEl) {
+            badgeEl.textContent = cfg.badge;
+            badgeEl.className = "badge px-2.5 py-1 rounded-pill fw-bold " + cfg.badgeClass;
+        }
+
+        currentFilteredList = allInspectionsData.filter(cfg.fn);
+        renderMetricList(currentFilteredList);
+
+        var filterTableBtn = document.getElementById("inspectionMetricFilterTableBtn");
+        if (filterTableBtn) {
+            filterTableBtn.onclick = function() {
+                metricModal.hide();
+                var targetPill = document.querySelector('#inspectionFilterChips .stall-filter-pill[data-filter="' + cfg.filterTarget + '"]');
+                if (targetPill) {
+                    targetPill.click();
+                    var tableEl = document.getElementById("inspectionDataTable");
+                    if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            };
+        }
+
+        metricModal.show();
+    };
+
+    var modalSearchInput = document.getElementById("inspectionMetricSearch");
+    if (modalSearchInput) {
+        modalSearchInput.addEventListener("input", function() {
+            var query = this.value.trim().toLowerCase();
+            if (!query) {
+                renderMetricList(currentFilteredList);
+                return;
+            }
+            var matches = currentFilteredList.filter(function(item) {
+                var haystack = (item.stall_name + " " + item.stall_code + " " + item.stall_area + " " + item.inspector_name + " " + item.status + " " + item.risk + " " + (item.remarks || "")).toLowerCase();
+                return haystack.indexOf(query) !== -1;
+            });
+            renderMetricList(matches);
+        });
+    }
+
+    document.querySelectorAll(".stall-stat-card.clickable-stat-card").forEach(function(card) {
+        card.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                this.click();
+            }
+        });
+    });
 
     function initInspectionClientFilters() {
         var chips = document.querySelectorAll("#inspectionFilterChips .stall-filter-pill");

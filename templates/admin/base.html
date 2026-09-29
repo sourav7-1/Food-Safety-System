@@ -698,15 +698,19 @@
             document.dispatchEvent(new CustomEvent("admin:content-updated"));
         }
 
-        window.openEntityDetailModal = function (entityType, entityId, fromListModal) {
+        window.openEntityDetailModal = function (entityType, entityId, fromListModal, parentModalId) {
             var detailModalEl = document.getElementById("adminItemDetailModal");
             if (!detailModalEl || !window.bootstrap) return;
             var detailModal = bootstrap.Modal.getInstance(detailModalEl) || new bootstrap.Modal(detailModalEl);
 
-            var listModalEl = document.getElementById("adminDashboardModal");
-            if (fromListModal && listModalEl && window.bootstrap) {
-                var listModal = bootstrap.Modal.getInstance(listModalEl);
-                if (listModal) listModal.hide();
+            window._activeParentListModalId = parentModalId || (fromListModal ? "adminDashboardModal" : null);
+
+            if (fromListModal && window._activeParentListModalId && window.bootstrap) {
+                var listModalEl = document.getElementById(window._activeParentListModalId);
+                if (listModalEl) {
+                    var listModal = bootstrap.Modal.getInstance(listModalEl);
+                    if (listModal) listModal.hide();
+                }
                 var backBtn1 = document.getElementById("adminItemBackBtn");
                 var backBtn2 = document.getElementById("adminItemBackFooterBtn");
                 if (backBtn1) backBtn1.classList.remove("d-none");
@@ -1115,7 +1119,8 @@
                 if (detailModal) detailModal.hide();
             }
 
-            var listModalEl = document.getElementById("adminDashboardModal");
+            var parentId = window._activeParentListModalId || "adminDashboardModal";
+            var listModalEl = document.getElementById(parentId);
             if (listModalEl && window.bootstrap) {
                 var listModal = bootstrap.Modal.getInstance(listModalEl) || new bootstrap.Modal(listModalEl);
                 listModal.show();
