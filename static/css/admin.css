@@ -2684,3 +2684,82 @@ html.sidebar-collapsed .admin-sidebar .sidebar-logout button {
     transform: translateY(0);
 }
 
+/* ==========================================================================
+   Risk Engine Cards & Table Architecture
+   ========================================================================== */
+.risk-stall-card {
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03), 0 1px 2px rgba(15, 23, 42, 0.02);
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.risk-stall-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 32px -4px rgba(15, 23, 42, 0.08);
+    border-color: rgba(99, 102, 241, 0.35);
+}
+
+.risk-stall-card:hover .stall-thumb-img {
+    transform: scale(1.08);
+}
+
+.risk-schedule-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 12px;
+}
+
+.view-toggle-group {
+    display: inline-flex;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 12px;
+    padding: 3px;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-view-toggle {
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.16s ease;
+}
+
+.btn-view-toggle:hover {
+    color: #0f172a;
+}
+
+.btn-view-toggle.active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.risk-table-row {
+    transition: background-color 0.15s ease;
+}
+
+.risk-table-row:hover {
+    background-color: #f8fafc !important;
+}
+
+.hover-primary:hover {
+    color: #2563eb !important;
+}
+

@@ -1,54 +1,519 @@
 {% extends "admin/base.html" %}
 {% block content %}
-<div class="page-actionbar">
+<!-- Page Header -->
+<div class="page-actionbar mb-4">
     <div>
-        <p class="eyebrow mb-1">MYSQL INTELLIGENCE ENGINE</p>
+        <p class="eyebrow mb-1"><i class="fa-solid fa-microchip-ai me-1 text-primary"></i>MYSQL INTELLIGENCE ENGINE</p>
         <h2 class="h3 fw-bold mb-1">Current Stall Risk</h2>
-        <p class="text-secondary mb-0">Database-calculated risk classification, safety metrics, and follow-up schedules across active food stalls.</p>
+        <p class="text-secondary mb-0">Automated risk classification, hygiene safety indicators, and reinspection follow-up tracking across campus stalls.</p>
     </div>
 </div>
 
-<div class="panel-card p-0 overflow-hidden">
+{% set stats = namespace(
+    total=records|length,
+    low=0,
+    medium=0,
+    high_critical=0,
+    reinspection=0,
+    unrated=0
+) %}
+{% for stall, inspection_id, inspection_date, overall_score, risk_level, reinspection_date in records %}
+    {% set rl = (risk_level or 'unrated')|lower %}
+    {% if rl == 'low' %}
+        {% set stats.low = stats.low + 1 %}
+    {% elif rl == 'medium' %}
+        {% set stats.medium = stats.medium + 1 %}
+    {% elif rl in ['high', 'critical'] %}
+        {% set stats.high_critical = stats.high_critical + 1 %}
+    {% else %}
+        {% set stats.unrated = stats.unrated + 1 %}
+    {% endif %}
+    {% if reinspection_date %}
+        {% set stats.reinspection = stats.reinspection + 1 %}
+    {% endif %}
+{% endfor %}
+
+<!-- Floating Stats Grid -->
+<div class="stall-stats-grid">
+    <div class="stall-stat-card clickable-stat-card clickable-risk-stat" data-filter="all" role="button" tabindex="0" title="Click to view all stalls">
+        <div class="stat-icon-wrap stat-icon-primary">
+            <i class="fa-solid fa-shop"></i>
+        </div>
+        <div class="stat-content">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-label">Monitored Stalls</span>
+                <span class="badge bg-light text-secondary border card-view-badge">All</span>
+            </div>
+            <div class="stat-number">{{ stats.total }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-solid fa-store me-1 text-primary"></i>Active food outlets</span>
+        </div>
+    </div>
+
+    <div class="stall-stat-card clickable-stat-card clickable-risk-stat" data-filter="low" role="button" tabindex="0" title="Click to filter low risk stalls">
+        <div class="stat-icon-wrap stat-icon-success">
+            <i class="fa-solid fa-shield-heart"></i>
+        </div>
+        <div class="stat-content">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-label">Low Risk / Safe</span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle card-view-badge">Grade A</span>
+            </div>
+            <div class="stat-number text-success">{{ stats.low }}</div>
+            <span class="stat-subtext text-success"><span class="pulse-dot"></span> Compliant hygiene</span>
+        </div>
+    </div>
+
+    <div class="stall-stat-card clickable-stat-card clickable-risk-stat" data-filter="medium" role="button" tabindex="0" title="Click to filter medium risk stalls">
+        <div class="stat-icon-wrap stat-icon-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="stat-content">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-label">Medium Risk</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle card-view-badge">Watch</span>
+            </div>
+            <div class="stat-number text-warning">{{ stats.medium }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-solid fa-eye me-1 text-warning"></i>Requires attention</span>
+        </div>
+    </div>
+
+    <div class="stall-stat-card clickable-stat-card clickable-risk-stat" data-filter="high_critical" role="button" tabindex="0" title="Click to filter high risk stalls">
+        <div class="stat-icon-wrap" style="background: #fef2f2; color: #dc2626;">
+            <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <div class="stat-content">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-label">High / Critical</span>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle card-view-badge">Urgent</span>
+            </div>
+            <div class="stat-number text-danger">{{ stats.high_critical }}</div>
+            <span class="stat-subtext text-danger"><span class="pulse-dot bg-danger"></span> Follow-up needed</span>
+        </div>
+    </div>
+
+    <div class="stall-stat-card clickable-stat-card clickable-risk-stat" data-filter="reinspection" role="button" tabindex="0" title="Click to filter reinspections due">
+        <div class="stat-icon-wrap stat-icon-purple">
+            <i class="fa-solid fa-calendar-clock"></i>
+        </div>
+        <div class="stat-content">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="stat-label">Reinspection Due</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle card-view-badge">Action</span>
+            </div>
+            <div class="stat-number" style="color: #6366f1;">{{ stats.reinspection }}</div>
+            <span class="stat-subtext text-muted"><i class="fa-regular fa-clock me-1 text-primary"></i>Scheduled audits</span>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toolbar & Quick Filter Pills -->
+<div class="stall-floating-toolbar mb-4">
+    <div class="d-flex align-items-center gap-3 flex-wrap flex-grow-1">
+        <div class="search-bar m-0" style="max-width: 340px; flex-grow: 1;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="riskSearchInput" placeholder="Search stall, code, vendor, area..." aria-label="Search">
+        </div>
+
+        <div class="stall-filter-group" id="riskFilterChips">
+            <button type="button" class="stall-filter-pill risk-filter-pill active" data-filter="all">
+                <i class="fa-solid fa-layer-group me-1"></i>All <span class="badge">{{ stats.total }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill risk-filter-pill" data-filter="low">
+                <span class="pulse-dot me-1"></span>Low <span class="badge">{{ stats.low }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill risk-filter-pill" data-filter="medium">
+                <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i>Medium <span class="badge">{{ stats.medium }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill risk-filter-pill" data-filter="high_critical">
+                <span class="pulse-dot bg-danger me-1"></span>High/Critical <span class="badge">{{ stats.high_critical }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill risk-filter-pill" data-filter="reinspection">
+                <i class="fa-regular fa-calendar-clock me-1 text-primary"></i>Reinspection <span class="badge">{{ stats.reinspection }}</span>
+            </button>
+            <button type="button" class="stall-filter-pill risk-filter-pill" data-filter="unrated">
+                <i class="fa-regular fa-circle me-1"></i>Unrated <span class="badge">{{ stats.unrated }}</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+        <div class="view-toggle-group">
+            <button type="button" class="btn-view-toggle active" id="viewModeCards" title="Card Grid View">
+                <i class="fa-solid fa-table-cells-large me-1.5"></i>Cards
+            </button>
+            <button type="button" class="btn-view-toggle" id="viewModeTable" title="Table View">
+                <i class="fa-solid fa-list me-1.5"></i>Table
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Card Grid View -->
+<div class="row g-4" id="riskGridContainer">
+{% for stall, inspection_id, inspection_date, overall_score, risk_level, reinspection_date in records %}
+{% set risk_name = (risk_level or 'unrated')|lower %}
+<div class="col-12 col-md-6 col-xl-4 risk-card-col"
+     data-risk="{{ risk_name }}"
+     data-has-reinspection="{{ 'true' if reinspection_date else 'false' }}"
+     data-search="{{ stall.stall_name|lower }} {{ stall.stall_code|lower }} {{ stall.vendor.business_name|lower if stall.vendor else '' }} {{ stall.area.area_name|lower if stall.area else '' }} {{ risk_name }} {{ overall_score if overall_score is not none else '' }}">
+    <article
+        class="risk-stall-card"
+        role="button"
+        tabindex="0"
+        aria-label="View {{ stall.stall_name }} Risk Details"
+        onclick="if (!event.target.closest('a, button, form, input, select')) { openEntityDetailModal('stall', {{ stall.stall_id }}); }"
+        onkeydown="if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('a, button, form, input, select')) { event.preventDefault(); openEntityDetailModal('stall', {{ stall.stall_id }}); }"
+    >
+        <!-- Card Top: Thumbnail + Stall Meta -->
+        <div class="stall-card-top">
+            <div class="stall-thumb-wrap">
+                {% if stall.photo_url %}
+                <img src="{{ stall.photo_url }}" alt="{{ stall.stall_name }}" class="stall-thumb-img" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className: 'stall-icon-avatar', innerHTML: '<i class=\'fa-solid fa-shop text-muted\'></i>'}))">
+                {% else %}
+                <div class="stall-icon-avatar">
+                    {% if stall.category == 'food_court' %}
+                    <i class="fa-solid fa-utensils text-primary"></i>
+                    {% elif stall.category == 'hall_canteen' %}
+                    <i class="fa-solid fa-building text-info"></i>
+                    {% else %}
+                    <i class="fa-solid fa-shop text-secondary"></i>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="flex-grow-1 min-w-0">
+                <div class="d-flex align-items-center justify-content-between gap-1 mb-1">
+                    <span class="stall-code-chip">{{ stall.stall_code }}</span>
+                    <span class="status-pill risk-{{ risk_name }}">
+                        {% if risk_name == 'low' %}
+                        <span class="pulse-dot bg-success"></span>
+                        {% elif risk_name == 'medium' %}
+                        <span class="pulse-dot bg-warning"></span>
+                        {% elif risk_name in ['high', 'critical'] %}
+                        <span class="pulse-dot bg-danger"></span>
+                        {% else %}
+                        <span class="static-dot"></span>
+                        {% endif %}
+                        {{ (risk_level or 'unrated')|title }} Risk
+                    </span>
+                </div>
+                <h3 class="stall-card-title-text text-truncate" title="{{ stall.stall_name }}">{{ stall.stall_name }}</h3>
+            </div>
+        </div>
+
+        <!-- Info Stack: Area & Vendor -->
+        <div class="stall-info-stack">
+            <div class="stall-info-item">
+                <span class="stall-info-icon"><i class="fa-solid fa-location-dot text-danger"></i></span>
+                <span class="text-truncate" title="{{ stall.area.area_name if stall.area else 'Campus' }} &middot; {{ stall.address or '' }}">
+                    <strong class="text-dark">{{ stall.area.area_name if stall.area else 'Campus' }}</strong> &middot; {{ stall.address or 'Campus Outlet' }}
+                </span>
+            </div>
+            <div class="stall-info-item">
+                <span class="stall-info-icon"><i class="fa-solid fa-store text-primary"></i></span>
+                <span class="text-truncate text-secondary" title="Vendor: {{ stall.vendor.business_name if stall.vendor else 'Unassigned' }}">
+                    {{ stall.vendor.business_name if stall.vendor else 'Unassigned Vendor' }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Hygiene Score Meter -->
+        <div class="stall-hygiene-meter">
+            <div class="stall-meter-header">
+                <span class="text-muted d-flex align-items-center gap-1">
+                    <i class="fa-solid fa-heart-pulse text-primary"></i>
+                    Hygiene Score
+                    {% if overall_score is not none %}
+                        {% if overall_score >= 90 %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px;">Grade A</span>
+                        {% elif overall_score >= 80 %}
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px;">Grade B</span>
+                        {% elif overall_score >= 70 %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px;">Grade C</span>
+                        {% else %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-0.5 ms-1" style="font-size: 10px;">Grade D</span>
+                        {% endif %}
+                    {% endif %}
+                </span>
+                <span class="fw-bold fs-6 {% if overall_score is none %}text-muted{% elif overall_score >= 80 %}text-success{% elif overall_score >= 70 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ (overall_score ~ '%') if overall_score is not none else 'Unrated' }}
+                </span>
+            </div>
+            <div class="stall-meter-track">
+                <div class="stall-meter-fill fill-{{ risk_name }}" style="width: {{ overall_score if overall_score is not none else 0 }}%;"></div>
+            </div>
+        </div>
+
+        <!-- Reinspection & Last Audit Box -->
+        <div class="risk-schedule-box mb-3">
+            <div class="d-flex align-items-center justify-content-between text-muted small mb-1">
+                <span><i class="fa-regular fa-clock me-1 text-primary"></i>Last Inspected:</span>
+                <span class="fw-semibold text-dark">{{ inspection_date.strftime('%d %b %Y') if inspection_date else 'Never' }}</span>
+            </div>
+            <div class="d-flex align-items-center justify-content-between text-muted small">
+                <span><i class="fa-regular fa-calendar-check me-1 text-warning"></i>Reinspection:</span>
+                {% if reinspection_date %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-0.5 fw-bold">
+                    <i class="fa-solid fa-bell me-1"></i>{{ reinspection_date.strftime('%d %b %Y') }}
+                </span>
+                {% else %}
+                <span class="text-secondary">—</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Card Bottom Action Dock -->
+        <div class="stall-card-bottom">
+            <button type="button" class="btn-stall-preview" title="Open Floating Profile" onclick="openEntityDetailModal('stall', {{ stall.stall_id }})">
+                <i class="fa-solid fa-eye me-1"></i>
+                <span>Quick View</span>
+            </button>
+
+            <div class="d-flex align-items-center gap-1.5">
+                {% if inspection_id %}
+                <button type="button" class="btn-dock-action btn-inspect" title="View Audit Report" onclick="event.stopPropagation(); openEntityDetailModal('inspection', {{ inspection_id }})">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </button>
+                {% endif %}
+                <a href="{{ url_for('admin.stalls', q=stall.stall_code) }}" class="btn-dock-action btn-edit" title="Manage Stall in Directory" onclick="event.stopPropagation()">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+            </div>
+        </div>
+    </article>
+</div>
+{% endfor %}
+</div>
+
+<!-- Table View (Toggleable) -->
+<div class="panel-card p-0 overflow-hidden" id="riskTableContainer" style="display: none;">
     <div class="table-responsive">
-        <table class="table admin-table align-middle mb-0">
+        <table class="table admin-table align-middle mb-0" id="riskTable">
             <thead>
                 <tr>
                     <th>Stall &amp; Code</th>
-                    <th>Campus Area</th>
-                    <th>Latest Hygiene Score</th>
+                    <th>Campus Area &amp; Vendor</th>
+                    <th>Hygiene Score</th>
                     <th>Risk Classification</th>
                     <th>Reinspection Due</th>
                     <th>Last Inspected</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
             {% for stall, inspection_id, inspection_date, overall_score, risk_level, reinspection_date in records %}
-                <tr>
+            {% set risk_name = (risk_level or 'unrated')|lower %}
+                <tr class="risk-table-row"
+                    data-risk="{{ risk_name }}"
+                    data-has-reinspection="{{ 'true' if reinspection_date else 'false' }}"
+                    data-search="{{ stall.stall_name|lower }} {{ stall.stall_code|lower }} {{ stall.vendor.business_name|lower if stall.vendor else '' }} {{ stall.area.area_name|lower if stall.area else '' }} {{ risk_name }} {{ overall_score if overall_score is not none else '' }}"
+                    onclick="if (!event.target.closest('a, button, form, input, select')) { openEntityDetailModal('stall', {{ stall.stall_id }}); }"
+                    style="cursor: pointer;">
                     <td>
-                        <a class="entity-link" href="{{ url_for('admin.stalls', q=stall.stall_code) }}">
-                            <strong class="text-primary">{{ stall.stall_name }}</strong>
-                        </a>
-                        <small class="text-secondary"><i class="fa-solid fa-hashtag me-1"></i>{{ stall.stall_code }}</small>
+                        <div class="d-flex align-items-center gap-2.5">
+                            <div class="stall-thumb-wrap" style="width: 38px; height: 38px; min-width: 38px;">
+                                {% if stall.photo_url %}
+                                <img src="{{ stall.photo_url }}" alt="{{ stall.stall_name }}" class="stall-thumb-img" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'), {className: 'stall-icon-avatar', innerHTML: '<i class=\'fa-solid fa-shop text-muted\'></i>'}))">
+                                {% else %}
+                                <div class="stall-icon-avatar" style="width: 38px; height: 38px; font-size: 14px;">
+                                    <i class="fa-solid fa-shop text-secondary"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="min-w-0">
+                                <span class="fw-bold text-dark d-block text-truncate hover-primary">{{ stall.stall_name }}</span>
+                                <small class="text-secondary text-monospace"><i class="fa-solid fa-hashtag me-0.5"></i>{{ stall.stall_code }}</small>
+                            </div>
+                        </div>
                     </td>
                     <td>
-                        <span class="badge bg-light text-dark border"><i class="fa-solid fa-location-dot text-danger me-1"></i>{{ stall.area.area_name }}</span>
+                        <div>
+                            <span class="badge bg-light text-dark border mb-1 d-inline-block">
+                                <i class="fa-solid fa-location-dot text-danger me-1"></i>{{ stall.area.area_name if stall.area else 'Campus Area' }}
+                            </span>
+                            <div class="small text-secondary text-truncate" style="max-width: 180px;">
+                                <i class="fa-solid fa-store me-1 text-primary"></i>{{ stall.vendor.business_name if stall.vendor else '—' }}
+                            </div>
+                        </div>
                     </td>
                     <td>
                         {% if overall_score is not none %}
-                        <span class="score-value">{{ overall_score }}%</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 60px;">
+                                <div class="stall-meter-track">
+                                    <div class="stall-meter-fill fill-{{ risk_name }}" style="width: {{ overall_score }}%;"></div>
+                                </div>
+                            </div>
+                            <span class="fw-bold text-dark">{{ overall_score }}%</span>
+                        </div>
                         {% else %}
-                        <span class="text-muted small">Not inspected</span>
+                        <span class="text-muted small">Not Inspected</span>
                         {% endif %}
                     </td>
-                    <td><span class="status-pill risk-{{ risk_level or 'unrated' }}">{{ risk_level or 'unrated' }}</span></td>
-                    <td>{{ reinspection_date.strftime('%d %b %Y') if reinspection_date else '—' }}</td>
-                    <td>{{ inspection_date.strftime('%d %b %Y') if inspection_date else '—' }}</td>
+                    <td>
+                        <span class="status-pill risk-{{ risk_name }}">
+                            {% if risk_name == 'low' %}
+                            <span class="pulse-dot bg-success"></span>
+                            {% elif risk_name == 'medium' %}
+                            <span class="pulse-dot bg-warning"></span>
+                            {% elif risk_name in ['high', 'critical'] %}
+                            <span class="pulse-dot bg-danger"></span>
+                            {% else %}
+                            <span class="static-dot"></span>
+                            {% endif %}
+                            {{ (risk_level or 'unrated')|title }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if reinspection_date %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1 fw-semibold">
+                            <i class="fa-regular fa-calendar-clock me-1"></i>{{ reinspection_date.strftime('%d %b %Y') }}
+                        </span>
+                        {% else %}
+                        <span class="text-secondary">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="text-secondary">{{ inspection_date.strftime('%d %b %Y') if inspection_date else '—' }}</span>
+                    </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex align-items-center gap-1.5" onclick="event.stopPropagation()">
+                            <button type="button" class="btn-dock-action btn-inspect" title="Quick View Stall Profile" onclick="openEntityDetailModal('stall', {{ stall.stall_id }})">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            {% if inspection_id %}
+                            <button type="button" class="btn-dock-action btn-inspect" title="View Audit Details" onclick="openEntityDetailModal('inspection', {{ inspection_id }})">
+                                <i class="fa-solid fa-clipboard-check"></i>
+                            </button>
+                            {% endif %}
+                            <a href="{{ url_for('admin.stalls', q=stall.stall_code) }}" class="btn-dock-action btn-edit" title="Manage Stall">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </a>
+                        </div>
+                    </td>
                 </tr>
             {% else %}
-                <tr><td colspan="6" class="empty-state"><i class="fa-solid fa-triangle-exclamation mb-2"></i>No active stalls found.</td></tr>
+                <tr><td colspan="7" class="empty-state"><i class="fa-solid fa-triangle-exclamation mb-2"></i>No active food stalls found in intelligence database.</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- Empty State Filter Feedback -->
+<div id="riskEmptyState" class="panel-card text-center py-5" style="display: none;">
+    <i class="fa-solid fa-triangle-exclamation text-warning fs-1 mb-3"></i>
+    <h4 class="h5 fw-bold text-dark">No Matching Risk Records</h4>
+    <p class="text-secondary mb-0">No active food stalls match your active filter or search keywords.</p>
+</div>
+
+<script>
+(function () {
+    function initRiskEngine() {
+        var searchInput = document.getElementById("riskSearchInput");
+        var chips = document.querySelectorAll(".risk-filter-pill, .clickable-risk-stat");
+        var cards = document.querySelectorAll(".risk-card-col");
+        var tableRows = document.querySelectorAll(".risk-table-row");
+        var gridContainer = document.getElementById("riskGridContainer");
+        var tableContainer = document.getElementById("riskTableContainer");
+        var btnCards = document.getElementById("viewModeCards");
+        var btnTable = document.getElementById("viewModeTable");
+        var emptyState = document.getElementById("riskEmptyState");
+        var activeFilter = "all";
+        var searchQuery = "";
+
+        // View Mode Switcher
+        function setViewMode(mode) {
+            if (mode === "table") {
+                if (gridContainer) gridContainer.style.display = "none";
+                if (tableContainer) tableContainer.style.display = "block";
+                if (btnCards) btnCards.classList.remove("active");
+                if (btnTable) btnTable.classList.add("active");
+                try { localStorage.setItem("adminRiskViewMode", "table"); } catch(e){}
+            } else {
+                if (gridContainer) gridContainer.style.display = "";
+                if (tableContainer) tableContainer.style.display = "none";
+                if (btnCards) btnCards.classList.add("active");
+                if (btnTable) btnTable.classList.remove("active");
+                try { localStorage.setItem("adminRiskViewMode", "cards"); } catch(e){}
+            }
+        }
+
+        if (btnCards && btnTable) {
+            btnCards.addEventListener("click", function () { setViewMode("cards"); });
+            btnTable.addEventListener("click", function () { setViewMode("table"); });
+            try {
+                var savedMode = localStorage.getItem("adminRiskViewMode");
+                if (savedMode === "table") {
+                    setViewMode("table");
+                }
+            } catch(e){}
+        }
+
+        // Filter Logic
+        function applyFilter() {
+            var visibleCount = 0;
+
+            function checkItem(el) {
+                var itemRisk = (el.getAttribute("data-risk") || "").toLowerCase();
+                var hasReinspection = el.getAttribute("data-has-reinspection") === "true";
+                var itemSearch = (el.getAttribute("data-search") || "").toLowerCase();
+
+                var matchesFilter = false;
+                if (activeFilter === "all") {
+                    matchesFilter = true;
+                } else if (activeFilter === "reinspection") {
+                    matchesFilter = hasReinspection;
+                } else if (activeFilter === "high_critical") {
+                    matchesFilter = (itemRisk === "high" || itemRisk === "critical");
+                } else {
+                    matchesFilter = (itemRisk === activeFilter);
+                }
+
+                var matchesSearch = !searchQuery || itemSearch.indexOf(searchQuery) !== -1;
+                var isVisible = matchesFilter && matchesSearch;
+
+                if (isVisible) {
+                    el.style.display = "";
+                    visibleCount++;
+                } else {
+                    el.style.display = "none";
+                }
+            }
+
+            cards.forEach(checkItem);
+            tableRows.forEach(checkItem);
+
+            if (emptyState) {
+                emptyState.style.display = (visibleCount === 0) ? "block" : "none";
+            }
+        }
+
+        chips.forEach(function (chip) {
+            chip.addEventListener("click", function () {
+                var filter = this.getAttribute("data-filter") || "all";
+                activeFilter = filter;
+                document.querySelectorAll(".risk-filter-pill").forEach(function (p) {
+                    if (p.getAttribute("data-filter") === activeFilter) {
+                        p.classList.add("active");
+                    } else {
+                        p.classList.remove("active");
+                    }
+                });
+                applyFilter();
+            });
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener("input", function () {
+                searchQuery = this.value.trim().toLowerCase();
+                applyFilter();
+            });
+        }
+    }
+
+    initRiskEngine();
+})();
+</script>
 {% endblock %}
