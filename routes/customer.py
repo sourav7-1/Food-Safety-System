@@ -42,6 +42,10 @@ from services.evidence import (
     serve_complaint_evidence,
     validate_and_store_complaint_evidence,
 )
+from services.student_dashboard import (
+    get_student_dashboard_data,
+    get_student_calendar_data,
+)
 
 
 customer_bp = Blueprint(
@@ -81,6 +85,22 @@ def _inject_unread_notification_count():
         user_id=current_user.user_id, is_read=False
     ).count()
     return {"unread_notification_count": count}
+
+
+@customer_bp.route("/dashboard")
+@login_required
+@role_required("student")
+def dashboard():
+    data = get_student_dashboard_data(current_user)
+    return render_template("customer/dashboard.html", **data)
+
+
+@customer_bp.route("/api/calendar")
+@login_required
+@role_required("student")
+def api_calendar():
+    month = request.args.get("month", "")
+    return jsonify(get_student_calendar_data(month))
 
 
 def _latest_inspection(stall_id):

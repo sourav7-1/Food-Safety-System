@@ -1,0 +1,510 @@
+{% extends "customer/base.html" %}
+
+{% block title %}Student Dashboard · DIU FoodSafe{% endblock %}
+{% block portal_title %}Dashboard{% endblock %}
+{% block portal_subtitle %}DIU FoodSafe Student Portal & Campus Safety Tracker{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/customer-dashboard.css') }}">
+{% endblock %}
+
+{% block portal_content %}
+<div class="student-dashboard-wrap">
+
+    <!-- 1. Header Hero Card -->
+    <div class="student-hero-card">
+        <div class="student-hero-content">
+            <h1 class="student-hero-title">Welcome back, {{ first_name }}</h1>
+            <p class="student-hero-subtitle">
+                <i class="fa-regular fa-calendar-days text-success"></i>
+                <span>{{ today_str }}</span>
+                <span class="opacity-40">•</span>
+                <span>Daffodil International University</span>
+            </p>
+        </div>
+        <div class="student-hero-actions">
+            <a href="{{ url_for('customer_portal.notifications') }}" class="hero-bell-btn" title="View Notifications" aria-label="Notifications">
+                <i class="fa-regular fa-bell"></i>
+                {% if unread_notification_count > 0 %}
+                <span class="hero-bell-dot"></span>
+                {% endif %}
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. High Risk Alert Banner (Conditional) -->
+    {% if high_risk_flagged_count > 0 %}
+    <div class="risk-alert-banner">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-danger fs-5"></i>
+            <span><strong>{{ high_risk_flagged_count }}</strong> campus {% if high_risk_flagged_count == 1 %}stall is{% else %}stalls are{% endif %} currently flagged with high hygiene risk.</span>
+        </div>
+        <a href="{{ url_for('customer_portal.search_stalls', risk_level='high') }}">
+            View Flagged Stalls <i class="fa-solid fa-arrow-right ms-1"></i>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- 3. Row 1: Profile Card + 4 Stat Cards -->
+    <div class="std-grid-row1">
+        <!-- Profile Card -->
+        <div class="std-card std-profile-card">
+            <div class="std-profile-header">
+                <div class="std-profile-avatar">
+                    {% if profile_photo_url %}
+                    <img src="{{ profile_photo_url }}" alt="{{ full_name }}">
+                    {% else %}
+                    <span>{{ first_name[:1] }}</span>
+                    {% endif %}
+                </div>
+                <div class="overflow-hidden">
+                    <h2 class="std-profile-name text-truncate">{{ full_name }}</h2>
+                    <p class="std-card-subtitle text-truncate mb-1">{{ email }}</p>
+                    <div class="std-profile-badges">
+                        <span class="std-rank-pill">
+                            <i class="fa-solid fa-trophy me-1 text-warning"></i>{{ user_rank }}
+                        </span>
+                        <span class="std-points-pill">
+                            <i class="fa-solid fa-star me-1 text-success"></i>{{ user_points }} pts
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 Round Quick-Action Buttons -->
+            <div class="std-actions-grid">
+                <a href="{{ url_for('customer_portal.search_stalls') }}" class="std-action-btn">
+                    <div class="std-action-icon">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <span class="std-action-label">Find Stalls</span>
+                </a>
+                <a href="{{ url_for('customer_portal.ar_scan') }}" class="std-action-btn">
+                    <div class="std-action-icon">
+                        <i class="fa-solid fa-camera-retro"></i>
+                    </div>
+                    <span class="std-action-label">AR Scan</span>
+                </a>
+                <a href="{{ url_for('customer_portal.search_stalls') }}" class="std-action-btn" title="Choose a stall to report an issue">
+                    <div class="std-action-icon">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <span class="std-action-label">New Report</span>
+                </a>
+                <a href="{{ url_for('customer_portal.nearby_stalls') }}" class="std-action-btn">
+                    <div class="std-action-icon">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                    </div>
+                    <span class="std-action-label">Nearby</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- 4 Stat Cards in 2x2 Grid -->
+        <div class="std-stats-2x2">
+            <div class="std-stat-box">
+                <div class="std-stat-top">
+                    <div class="std-stat-icon stat-icon-reviews">
+                        <i class="fa-solid fa-star-half-stroke"></i>
+                    </div>
+                    <span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small">Activity</span>
+                </div>
+                <div>
+                    <div class="std-stat-value">{{ reviews_count }}</div>
+                    <div class="std-stat-label">My Reviews</div>
+                </div>
+            </div>
+
+            <div class="std-stat-box">
+                <div class="std-stat-top">
+                    <div class="std-stat-icon stat-icon-open">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                    </div>
+                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20 rounded-pill px-2 py-1 small">Pending</span>
+                </div>
+                <div>
+                    <div class="std-stat-value">{{ open_complaints_count }}</div>
+                    <div class="std-stat-label">Open Complaints</div>
+                </div>
+            </div>
+
+            <div class="std-stat-box">
+                <div class="std-stat-top">
+                    <div class="std-stat-icon stat-icon-resolved">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 rounded-pill px-2 py-1 small">Resolved</span>
+                </div>
+                <div>
+                    <div class="std-stat-value">{{ resolved_complaints_count }}</div>
+                    <div class="std-stat-label">Resolved Complaints</div>
+                </div>
+            </div>
+
+            <div class="std-stat-box">
+                <div class="std-stat-top">
+                    <div class="std-stat-icon stat-icon-rank">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <span class="badge bg-purple bg-opacity-10 text-dark border rounded-pill px-2 py-1 small">Leaderboard</span>
+                </div>
+                <div>
+                    <div class="std-stat-value">{{ user_rank }}</div>
+                    <div class="std-stat-label">Campus Rank</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Row 2: Top Safe Stalls (Pastel Cards) -->
+    <div class="mb-4">
+        <div class="std-card-header mb-3">
+            <div>
+                <h3 class="std-card-title">
+                    <i class="fa-solid fa-shield-halved text-success"></i>
+                    Top Safe Stalls
+                </h3>
+                <p class="std-card-subtitle">Verified campus food spots with the highest hygiene scores</p>
+            </div>
+            <a href="{{ url_for('customer_portal.search_stalls') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+                View All Stalls <i class="fa-solid fa-chevron-right ms-1"></i>
+            </a>
+        </div>
+
+        {% if top_safe_stalls %}
+        <div class="std-grid-3">
+            {% for s in top_safe_stalls %}
+            <a href="{{ url_for('customer_portal.stall_detail', stall_id=s.stall_id) }}" class="pastel-stall-card {{ 'pastel-' ~ s.theme.color }}">
+                <div>
+                    <div class="pastel-thumb-wrap">
+                        {% if s.photo_url %}
+                        <img src="{{ s.photo_url }}" alt="{{ s.stall_name }}" class="pastel-thumb-img">
+                        {% else %}
+                        <div class="pastel-thumb-placeholder">
+                            <i class="fa-solid fa-utensils"></i>
+                        </div>
+                        {% endif %}
+
+                        <span class="pastel-grade-pill">
+                            {% if s.is_rated and s.grade %}
+                            Grade {{ s.grade }} ({{ s.score|int }}%)
+                            {% else %}
+                            Awaiting Audit
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <h4 class="pastel-stall-name text-truncate">{{ s.stall_name }}</h4>
+                    <div class="pastel-stall-area text-truncate">
+                        <i class="fa-solid fa-location-dot me-1 opacity-75"></i>{{ s.area_name }}
+                    </div>
+
+                    <div class="pastel-progress-bar-wrap">
+                        <div class="d-flex justify-content-between align-items-center small mb-1" style="font-size: 0.72rem; font-weight: 700;">
+                            <span>Hygiene Rating</span>
+                            <span>{% if s.score is not none %}{{ s.score }}%{% else %}N/A{% endif %}</span>
+                        </div>
+                        <div class="pastel-bar-track">
+                            <div class="pastel-bar-fill" style="width: {{ s.progress_percent }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pastel-stall-footer">
+                    <span class="opacity-85">
+                        <i class="fa-regular fa-clock me-1"></i>{{ s.days_ago }}
+                    </span>
+                    <span class="fw-bold">
+                        Details <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="std-card">
+            <div class="std-empty-state">
+                <div class="std-empty-icon"><i class="fa-solid fa-store-slash"></i></div>
+                <div class="std-empty-title">No Stalls Available</div>
+                <div class="std-empty-text">No active campus food stalls were found at the moment.</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 5. Row 3: Complaints Tracker + Campus Safety Calendar + Alerts Feed -->
+    <div class="std-grid-3">
+        <!-- Widget 1: My Complaints Tracker -->
+        <div class="std-card">
+            <div class="std-card-header">
+                <div>
+                    <h3 class="std-card-title">
+                        <i class="fa-solid fa-list-check text-warning"></i>
+                        My Complaints
+                    </h3>
+                    <p class="std-card-subtitle">Recent reports & live progress</p>
+                </div>
+                <a href="{{ url_for('customer_portal.my_complaints') }}" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 text-secondary fw-bold small">
+                    View all
+                </a>
+            </div>
+
+            {% if my_complaints %}
+            <div class="d-flex flex-column gap-2">
+                {% for c in my_complaints %}
+                <div class="complaint-track-item">
+                    <div class="complaint-track-header">
+                        <div class="overflow-hidden">
+                            <a href="{{ url_for('customer_portal.complaint_detail', complaint_id=c.complaint_id) }}" class="fw-bold text-dark text-truncate text-decoration-none d-block small mb-0.5">
+                                {{ c.stall_name }}
+                            </a>
+                            <span class="text-muted" style="font-size: 0.72rem;">{{ c.date }}</span>
+                        </div>
+                        <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                            {{ c.category }}
+                        </span>
+                    </div>
+
+                    <!-- 3-Step Stepper -->
+                    <div class="stepper-progress">
+                        <!-- Step 1: Submitted -->
+                        <div class="stepper-step {% if c.step_index >= 1 %}is-done{% endif %}">
+                            <div class="step-circle">
+                                {% if c.step_index > 1 %}
+                                <i class="fa-solid fa-check"></i>
+                                {% else %}
+                                1
+                                {% endif %}
+                            </div>
+                            <span class="step-label">Submitted</span>
+                        </div>
+
+                        <!-- Step 2: Under Review -->
+                        <div class="stepper-step {% if c.step_index > 2 %}is-done{% elif c.step_index == 2 %}is-active{% endif %}">
+                            <div class="step-circle">
+                                {% if c.step_index > 2 %}
+                                <i class="fa-solid fa-check"></i>
+                                {% elif c.step_index == 2 %}
+                                <i class="fa-solid fa-ellipsis"></i>
+                                {% else %}
+                                2
+                                {% endif %}
+                            </div>
+                            <span class="step-label">Reviewing</span>
+                        </div>
+
+                        <!-- Step 3: Resolved or Rejected -->
+                        <div class="stepper-step {% if c.step_state == 'rejected' %}is-rejected{% elif c.step_index == 3 %}is-done{% endif %}">
+                            <div class="step-circle">
+                                {% if c.step_state == 'rejected' %}
+                                <i class="fa-solid fa-xmark"></i>
+                                {% elif c.step_index == 3 %}
+                                <i class="fa-solid fa-check"></i>
+                                {% else %}
+                                3
+                                {% endif %}
+                            </div>
+                            <span class="step-label">{% if c.step_state == 'rejected' %}Closed{% else %}Resolved{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="std-empty-state my-auto">
+                <div class="std-empty-icon"><i class="fa-regular fa-circle-check"></i></div>
+                <div class="std-empty-title">No Active Complaints</div>
+                <div class="std-empty-text">You haven't filed any complaints. Notice hygiene concerns? Submit a report!</div>
+                <a href="{{ url_for('customer_portal.search_stalls') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                    Search & Report
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Widget 2: Campus Safety Calendar -->
+        <div class="std-card">
+            <div class="std-card-header">
+                <div>
+                    <h3 class="std-card-title">
+                        <i class="fa-regular fa-calendar-check text-success"></i>
+                        Safety Calendar
+                    </h3>
+                    <p class="std-card-subtitle" id="calendarMonthTitle">Campus Inspections</p>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <button class="btn btn-sm btn-light border rounded-circle p-1" id="calPrevMonthBtn" style="width: 28px; height: 28px;" title="Previous Month" aria-label="Previous Month">
+                        <i class="fa-solid fa-chevron-left small"></i>
+                    </button>
+                    <button class="btn btn-sm btn-light border rounded-pill px-2 py-0.5 small fw-bold" id="calTodayBtn" style="font-size: 11px;">
+                        Today
+                    </button>
+                    <button class="btn btn-sm btn-light border rounded-circle p-1" id="calNextMonthBtn" style="width: 28px; height: 28px;" title="Next Month" aria-label="Next Month">
+                        <i class="fa-solid fa-chevron-right small"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendar Month Grid (Populated via JS) -->
+            <div class="position-relative">
+                <div id="campusCalendarGrid" class="std-calendar-grid">
+                    <!-- Populated via customer-dashboard.js -->
+                </div>
+                <div id="calendarLoading" class="position-absolute inset-0 bg-white bg-opacity-75 d-flex align-items-center justify-content-center d-none" style="inset: 0;">
+                    <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                </div>
+            </div>
+
+            <!-- Calendar Legend -->
+            <div class="d-flex align-items-center justify-content-center gap-3 pt-3 mt-auto border-top" style="font-size: 11px; color: var(--std-text-muted);">
+                <div class="d-flex align-items-center gap-1">
+                    <span class="cal-dot cal-dot-low"></span> Low Risk
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <span class="cal-dot cal-dot-medium"></span> Medium
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <span class="cal-dot cal-dot-high"></span> High Risk
+                </div>
+            </div>
+        </div>
+
+        <!-- Widget 3: Alerts & Notifications Feed -->
+        <div class="std-card">
+            <div class="std-card-header">
+                <div>
+                    <h3 class="std-card-title">
+                        <i class="fa-regular fa-bell text-primary"></i>
+                        Alerts Feed
+                    </h3>
+                    <p class="std-card-subtitle">Recent updates & grade alerts</p>
+                </div>
+                <a href="{{ url_for('customer_portal.notifications') }}" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 text-secondary fw-bold small">
+                    View all
+                </a>
+            </div>
+
+            {% if alerts_feed %}
+            <div class="d-flex flex-column">
+                {% for a in alerts_feed %}
+                <a href="{{ url_for('customer_portal.notifications') }}" class="std-alert-row {% if not a.is_read %}is-unread{% endif %}">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                        {% if not a.is_read %}
+                        <span class="std-alert-dot flex-shrink-0"></span>
+                        {% endif %}
+                        <span class="text-truncate">{{ a.message }}</span>
+                    </div>
+                    <span class="opacity-75 flex-shrink-0 ms-2" style="font-size: 0.72rem;">{{ a.relative_time }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="std-empty-state my-auto">
+                <div class="std-empty-icon"><i class="fa-regular fa-bell-slash"></i></div>
+                <div class="std-empty-title">All Caught Up</div>
+                <div class="std-empty-text">No new safety notifications or complaint replies at this time.</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 6. Row 4: Mini Leaderboard Top 5 + Risk Distribution Doughnut Chart -->
+    <div class="std-grid-row4 mt-4">
+        <!-- Mini Leaderboard (Top 5) -->
+        <div class="std-card">
+            <div class="std-card-header">
+                <div>
+                    <h3 class="std-card-title">
+                        <i class="fa-solid fa-ranking-star text-warning"></i>
+                        Top Student Champions
+                    </h3>
+                    <p class="std-card-subtitle">Active community contributors advocating for food safety</p>
+                </div>
+                <a href="{{ url_for('customer_portal.leaderboard') }}" class="btn btn-sm btn-light border rounded-pill px-3 py-1 text-secondary fw-bold small">
+                    Full Board <i class="fa-solid fa-chevron-right ms-1"></i>
+                </a>
+            </div>
+
+            {% if top_5_leaderboard %}
+            <div class="table-responsive">
+                <table class="table leaderboard-mini-table align-middle">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th style="width: 48px;">Rank</th>
+                            <th>Student</th>
+                            <th class="text-center">Reviews</th>
+                            <th class="text-center">Reports</th>
+                            <th class="text-end">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in top_5_leaderboard %}
+                        <tr class="{% if row.is_current_user %}is-me{% endif %}">
+                            <td>
+                                {% if row.rank == 1 %}
+                                <span class="badge bg-warning text-dark rounded-circle p-1.5" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px;">🥇</span>
+                                {% elif row.rank == 2 %}
+                                <span class="badge bg-secondary text-white rounded-circle p-1.5" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px;">🥈</span>
+                                {% elif row.rank == 3 %}
+                                <span class="badge bg-brown text-white rounded-circle p-1.5" style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; background: #c2410c;">🥉</span>
+                                {% else %}
+                                <span class="fw-bold text-muted ps-1.5">#{{ row.rank }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center fw-bold text-success flex-shrink-0" style="width: 28px; height: 28px; font-size: 12px;">
+                                        {{ row.initial }}
+                                    </div>
+                                    <span class="text-truncate fw-semibold" style="max-width: 140px;">
+                                        {{ row.name }}
+                                        {% if row.is_current_user %}
+                                        <span class="badge bg-success rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 9.5px;">You</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="text-center">{{ row.reviews }}</td>
+                            <td class="text-center">{{ row.complaints }}</td>
+                            <td class="text-end fw-bold text-success">{{ row.points }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="std-empty-state my-auto">
+                <div class="std-empty-icon"><i class="fa-solid fa-trophy"></i></div>
+                <div class="std-empty-title">Leaderboard Empty</div>
+                <div class="std-empty-text">Submit food reviews and complaints to climb the student safety leaderboard!</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Campus Stall Risk Breakdown (Chart.js Doughnut) -->
+        <div class="std-card">
+            <div class="std-card-header">
+                <div>
+                    <h3 class="std-card-title">
+                        <i class="fa-solid fa-chart-pie text-success"></i>
+                        Campus Risk Overview
+                    </h3>
+                    <p class="std-card-subtitle">Safety risk distribution across active food stalls</p>
+                </div>
+            </div>
+
+            <div class="chart-container-wrap my-auto">
+                <canvas id="studentRiskChart" data-risk-counts='{{ risk_counts|tojson }}'></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/customer-dashboard.js') }}"></script>
+{% endblock %}

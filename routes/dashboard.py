@@ -47,4 +47,4 @@ def vendor():
 @login_required
 @role_required("student")
 def customer():
-    return redirect(url_for("customer_portal.search_stalls"))
+    return redirect(url_for("customer_portal.dashboard"))

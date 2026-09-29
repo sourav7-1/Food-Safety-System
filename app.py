@@ -87,6 +87,16 @@ def create_app(config_class=Config):
         from flask import jsonify
         return jsonify(get_calendar_inspections_data(month))
 
+    @app.route("/api/customer/calendar")
+    @login_required
+    def api_customer_calendar_alias():
+        if not (current_user.role_name == "student" or (current_user.role and current_user.role.is_admin_tier)):
+            abort(403)
+        month = request.args.get("month", "")
+        from services.student_dashboard import get_student_calendar_data
+        from flask import jsonify
+        return jsonify(get_student_calendar_data(month))
+
     def csrf_token():
         token = session.get("_csrf_token")
         if token is None:
