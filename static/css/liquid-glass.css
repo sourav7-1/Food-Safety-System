@@ -1,0 +1,660 @@
+/* ==========================================================================
+   DIU FoodSafe — Apple "Liquid Glass" Layer (iOS 26 Style)
+   High-Fidelity Optical Refraction, Specular Rim & Spring Interactions
+   Applies to Navigation, Floating Controls, Badges, Modals, and Action Docks
+   ========================================================================== */
+
+/* -------------------------------------------------------------------------
+   1. Core Liquid Glass Tokens & Base Definition
+   ------------------------------------------------------------------------- */
+:root {
+    --liquid-bg-light: rgba(255, 255, 255, 0.14);
+    --liquid-bg-dark: rgba(20, 24, 30, 0.38);
+    --liquid-bg-green: rgba(31, 122, 77, 0.16);
+    --liquid-bg-sky: rgba(56, 189, 248, 0.16);
+    --liquid-bg-amber: rgba(245, 158, 11, 0.16);
+
+    --liquid-rim-light: inset 1px 1px 0 rgba(255, 255, 255, 0.75), inset -1px -1px 0 rgba(255, 255, 255, 0.25);
+    --liquid-rim-dark: inset 1px 1px 0 rgba(255, 255, 255, 0.35), inset -1px -1px 0 rgba(255, 255, 255, 0.08);
+    --liquid-rim-green: inset 1px 1px 0 rgba(187, 247, 208, 0.8), inset -1px -1px 0 rgba(31, 122, 77, 0.3);
+
+    --liquid-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    --liquid-shadow-hover: 0 10px 28px rgba(0, 0, 0, 0.16);
+    --liquid-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Base .liquid-glass Container */
+.liquid-glass {
+    position: relative !important;
+    isolation: isolate !important;
+    overflow: hidden !important;
+    border-radius: 9999px;
+    background-color: var(--liquid-bg-light) !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: var(--liquid-shadow) !important;
+    transition: transform 0.35s var(--liquid-spring), box-shadow 0.35s var(--liquid-spring), background-color 0.25s ease, border-color 0.25s ease;
+    transform: translateZ(0);
+    -webkit-font-smoothing: subpixel-antialiased;
+}
+
+/* Layer 1: Optical Refraction / Frosted Filter (::before) */
+.liquid-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    /* Universal fallback: high-end standard glass */
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    transition: backdrop-filter 0.3s ease, -webkit-backdrop-filter 0.3s ease;
+}
+
+/* Active Chromium Liquid Refraction Filter */
+html.supports-liquid .liquid-glass::before {
+    backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+    -webkit-backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+}
+
+/* Layer 3: Specular Rim & Dynamic Cursor Follower Highlight (::after) */
+.liquid-glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: var(--liquid-rim-light);
+    background: radial-gradient(
+        circle 75px at calc(var(--mx, 30) * 1%) calc(var(--my, 30) * 1%),
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(255, 255, 255, 0.12) 40%,
+        transparent 75%
+    );
+    opacity: 0.9;
+    transition: opacity 0.3s ease;
+}
+
+/* -------------------------------------------------------------------------
+   2. Style Variants (.liquid-glass--dark, --tint-green, --tint-sky)
+   ------------------------------------------------------------------------- */
+
+/* Dark Liquid Variant (Sidebar Active Items, Dark Controls & Photo Badges) */
+.liquid-glass--dark {
+    background-color: var(--liquid-bg-dark) !important;
+    border-color: rgba(255, 255, 255, 0.16) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28) !important;
+}
+
+.liquid-glass--dark::after {
+    box-shadow: var(--liquid-rim-dark);
+    background: radial-gradient(
+        circle 85px at calc(var(--mx, 30) * 1%) calc(var(--my, 30) * 1%),
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 255, 255, 0.05) 45%,
+        transparent 75%
+    );
+}
+
+/* Brand Green Tint Variant (Primary Actions, Verified Badges) */
+.liquid-glass--tint-green {
+    background-color: var(--liquid-bg-green) !important;
+    border-color: rgba(31, 122, 77, 0.35) !important;
+    color: #166534 !important;
+}
+
+.liquid-glass--tint-green::after {
+    box-shadow: var(--liquid-rim-green);
+    background: radial-gradient(
+        circle 75px at calc(var(--mx, 30) * 1%) calc(var(--my, 30) * 1%),
+        rgba(255, 255, 255, 0.5) 0%,
+        rgba(187, 247, 208, 0.2) 40%,
+        transparent 75%
+    );
+}
+
+/* Sky Blue Tint Variant (Admin Highlights) */
+.liquid-glass--tint-sky {
+    background-color: var(--liquid-bg-sky) !important;
+    border-color: rgba(56, 189, 248, 0.35) !important;
+    color: #0369a1 !important;
+}
+
+/* Amber Tint Variant (Pending / Warning Badges) */
+.liquid-glass--tint-amber {
+    background-color: var(--liquid-bg-amber) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+    color: #b45309 !important;
+}
+
+/* -------------------------------------------------------------------------
+   3. Interactive Micro-Motion (Hover Spring & Active Squish)
+   ------------------------------------------------------------------------- */
+a.liquid-glass,
+button.liquid-glass,
+.liquid-interactive,
+.sidebar-collapse-toggle,
+.topbar-icon-btn,
+.topbar-back-btn,
+.dashboard-notification-btn,
+.nav-user-dropdown,
+.std-action-icon,
+.round-action-btn,
+.topbar-nav-pill,
+.filter-chip,
+.quick-risk-chip,
+.portal-nav-link {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Spring Hover */
+a.liquid-glass:hover,
+button.liquid-glass:hover,
+.liquid-interactive:hover,
+.sidebar-collapse-toggle:hover,
+.dashboard-notification-btn:hover,
+.topbar-icon-btn:hover,
+.topbar-back-btn:hover,
+.nav-user-dropdown:hover,
+.std-action-icon:hover,
+.round-action-btn:hover {
+    transform: scale(1.035) translateZ(0);
+    box-shadow: var(--liquid-shadow-hover) !important;
+}
+
+/* Tactile Squish on Press */
+a.liquid-glass:active,
+button.liquid-glass:active,
+.liquid-interactive:active,
+.sidebar-collapse-toggle:active,
+.dashboard-notification-btn:active,
+.topbar-icon-btn:active,
+.topbar-back-btn:active,
+.nav-user-dropdown:active,
+.std-action-icon:active,
+.round-action-btn:active {
+    transform: scale(0.96, 0.93) translateZ(0) !important;
+    transition-duration: 0.08s !important;
+}
+
+/* -------------------------------------------------------------------------
+   4. Targeted Application to Navigation & Control Layers
+   ------------------------------------------------------------------------- */
+
+/* A. Sidebar Active Items (Pill Layer across Admin, Student, Inspector, Vendor) */
+.admin-link.active,
+.sidebar-link.active,
+.dashboard-link.active,
+.ins-nav-link.active,
+.portal-nav-link.active {
+    position: relative !important;
+    isolation: isolate !important;
+    overflow: hidden !important;
+    background-color: var(--liquid-bg-dark) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22) !important;
+    color: #ffffff !important;
+    transition: transform 0.35s var(--liquid-spring), box-shadow 0.35s var(--liquid-spring);
+}
+
+.admin-link.active::before,
+.sidebar-link.active::before,
+.dashboard-link.active::before,
+.ins-nav-link.active::before,
+.portal-nav-link.active::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+html.supports-liquid .admin-link.active::before,
+html.supports-liquid .sidebar-link.active::before,
+html.supports-liquid .dashboard-link.active::before,
+html.supports-liquid .ins-nav-link.active::before,
+html.supports-liquid .portal-nav-link.active::before {
+    backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+    -webkit-backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+}
+
+.admin-link.active::after,
+.sidebar-link.active::after,
+.dashboard-link.active::after,
+.ins-nav-link.active::after,
+.portal-nav-link.active::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: var(--liquid-rim-dark);
+    background: radial-gradient(
+        circle 70px at calc(var(--mx, 30) * 1%) calc(var(--my, 30) * 1%),
+        rgba(255, 255, 255, 0.25) 0%,
+        transparent 70%
+    );
+}
+
+/* B. Sidebar Collapse Toggle Button */
+.sidebar-collapse-toggle {
+    position: fixed !important;
+    isolation: isolate !important;
+    overflow: hidden !important;
+    background-color: var(--liquid-bg-dark) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+    color: #ffffff !important;
+    border-radius: 50% !important;
+    transition: transform 0.35s var(--liquid-spring), box-shadow 0.35s var(--liquid-spring), background-color 0.2s ease;
+}
+
+.sidebar-collapse-toggle::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+}
+
+html.supports-liquid .sidebar-collapse-toggle::before {
+    backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+    -webkit-backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+}
+
+.sidebar-collapse-toggle::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: var(--liquid-rim-dark);
+}
+
+/* C. Top Navbar / Header Controls & Capsule Tab Bars */
+.topbar-icon-btn,
+.topbar-back-btn,
+.dashboard-notification-btn,
+.nav-user-dropdown {
+    position: relative !important;
+    isolation: isolate !important;
+    overflow: hidden !important;
+    background-color: rgba(255, 255, 255, 0.22) !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    transition: transform 0.35s var(--liquid-spring), box-shadow 0.35s var(--liquid-spring), background-color 0.2s ease;
+}
+
+.topbar-icon-btn::before,
+.topbar-back-btn::before,
+.dashboard-notification-btn::before,
+.nav-user-dropdown::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+html.supports-liquid .topbar-icon-btn::before,
+html.supports-liquid .topbar-back-btn::before,
+html.supports-liquid .dashboard-notification-btn::before,
+html.supports-liquid .nav-user-dropdown::before {
+    backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+    -webkit-backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+}
+
+.topbar-icon-btn::after,
+.topbar-back-btn::after,
+.dashboard-notification-btn::after,
+.nav-user-dropdown::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: var(--liquid-rim-light);
+    background: radial-gradient(
+        circle 50px at calc(var(--mx, 30) * 1%) calc(var(--my, 30) * 1%),
+        rgba(255, 255, 255, 0.5) 0%,
+        transparent 70%
+    );
+}
+
+/* Floating Capsule Tab Bars (Admin Center Nav, Vendor Nav, Filter Groups) */
+.topbar-nav-pill-group,
+.portal-nav-bar,
+.quick-risk-filters,
+.chip-group {
+    position: relative !important;
+    isolation: isolate !important;
+    overflow: hidden !important;
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06) !important;
+    padding: 4px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+.topbar-nav-pill-group::before,
+.portal-nav-bar::before,
+.quick-risk-filters::before,
+.chip-group::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+html.supports-liquid .topbar-nav-pill-group::before,
+html.supports-liquid .portal-nav-bar::before,
+html.supports-liquid .quick-risk-filters::before,
+html.supports-liquid .chip-group::before {
+    backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+    -webkit-backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+}
+
+.topbar-nav-pill-group::after,
+.portal-nav-bar::after,
+.quick-risk-filters::after,
+.chip-group::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: var(--liquid-rim-light);
+}
+
+.topbar-nav-pill.active,
+.portal-nav-link.active,
+.filter-chip.active,
+.quick-risk-chip.active {
+    background-color: var(--brand-primary) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 10px rgba(31, 122, 77, 0.35) !important;
+    border-radius: 9999px !important;
+}
+
+/* D. Round Quick-Action Buttons on Dashboards */
+.std-action-icon,
+.round-action-btn,
+.btn-circle-action {
+    position: relative !important;
+    isolation: isolate !important;
+    overflow: hidden !important;
+    border-radius: 50% !important;
+    background-color: rgba(255, 255, 255, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.7) !important;
+    box-shadow: 0 4px 14px rgba(31, 122, 77, 0.1) !important;
+    transition: transform 0.35s var(--liquid-spring), box-shadow 0.35s var(--liquid-spring), background-color 0.25s ease, color 0.25s ease;
+}
+
+.std-action-icon::before,
+.round-action-btn::before,
+.btn-circle-action::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+}
+
+html.supports-liquid .std-action-icon::before,
+html.supports-liquid .round-action-btn::before,
+html.supports-liquid .btn-circle-action::before {
+    backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+    -webkit-backdrop-filter: blur(3px) saturate(180%) url("#liquid-distort");
+}
+
+.std-action-icon::after,
+.round-action-btn::after,
+.btn-circle-action::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: var(--liquid-rim-light);
+    background: radial-gradient(
+        circle 40px at calc(var(--mx, 30) * 1%) calc(var(--my, 30) * 1%),
+        rgba(255, 255, 255, 0.6) 0%,
+        transparent 70%
+    );
+}
+
+/* E. Badges on Stall Photos ("Unrated Risk", Grade Pills, Floating Badges) */
+.pastel-grade-pill,
+.floating-risk-badge,
+.stall-badge-glass,
+.badge-overlay-liquid {
+    position: absolute !important;
+    isolation: isolate !important;
+    overflow: hidden !important;
+    border-radius: 9999px !important;
+    background-color: rgba(20, 24, 30, 0.55) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    font-weight: 700 !important;
+}
+
+.pastel-grade-pill::before,
+.floating-risk-badge::before,
+.stall-badge-glass::before,
+.badge-overlay-liquid::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+}
+
+html.supports-liquid .pastel-grade-pill::before,
+html.supports-liquid .floating-risk-badge::before,
+html.supports-liquid .stall-badge-glass::before,
+html.supports-liquid .badge-overlay-liquid::before {
+    backdrop-filter: blur(2.5px) saturate(180%) url("#liquid-distort");
+    -webkit-backdrop-filter: blur(2.5px) saturate(180%) url("#liquid-distort");
+}
+
+.pastel-grade-pill::after,
+.floating-risk-badge::after,
+.stall-badge-glass::after,
+.badge-overlay-liquid::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: var(--liquid-rim-dark);
+}
+
+/* F. Modals, Dropdown Menus, and Toasts */
+.modal-content,
+.dropdown-menu,
+.toast {
+    position: relative !important;
+    isolation: isolate !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    border: 1px solid rgba(255, 255, 255, 0.65) !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+    backdrop-filter: blur(24px) saturate(170%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(170%) !important;
+}
+
+html.supports-liquid .modal-content,
+html.supports-liquid .dropdown-menu,
+html.supports-liquid .toast {
+    backdrop-filter: blur(18px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
+}
+
+.modal-content::after,
+.dropdown-menu::after,
+.toast::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8), inset -1px -1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.dropdown-menu {
+    border-radius: 18px !important;
+    padding: 8px !important;
+}
+
+.dropdown-item {
+    border-radius: 10px !important;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(31, 122, 77, 0.1) !important;
+    transform: translateX(2px);
+}
+
+/* -------------------------------------------------------------------------
+   5. Dynamic Topbar Scroll Transformation (Compact Capsule State)
+   ------------------------------------------------------------------------- */
+.admin-topbar,
+.dashboard-topbar,
+.site-navbar.sticky-top {
+    transition: padding 0.3s var(--liquid-spring), background-color 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+.admin-topbar.topbar-condensed,
+.dashboard-topbar.topbar-condensed,
+.site-navbar.navbar-scrolled {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    box-shadow: 0 8px 32px rgba(31, 122, 77, 0.1) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.6) !important;
+}
+
+/* -------------------------------------------------------------------------
+   6. Fallbacks, Reduced Motion & Mobile Optimization
+   ------------------------------------------------------------------------- */
+
+/* High Contrast & Reduced Transparency Fallback */
+@media (prefers-reduced-transparency: reduce) {
+    .liquid-glass,
+    .liquid-glass--dark,
+    .liquid-glass--tint-green,
+    .modal-content,
+    .dropdown-menu,
+    .toast,
+    .admin-link.active,
+    .dashboard-link.active,
+    .topbar-icon-btn,
+    .dashboard-notification-btn {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background-color: #ffffff !important;
+        color: #192128 !important;
+    }
+
+    .liquid-glass--dark,
+    .admin-link.active,
+    .dashboard-link.active {
+        background-color: #1b1f24 !important;
+        color: #ffffff !important;
+    }
+
+    .liquid-glass::before,
+    .liquid-glass::after,
+    .admin-link.active::before,
+    .admin-link.active::after {
+        display: none !important;
+    }
+}
+
+/* Reduced Motion Fallback */
+@media (prefers-reduced-motion: reduce) {
+    .liquid-glass,
+    a.liquid-glass,
+    button.liquid-glass,
+    .sidebar-collapse-toggle,
+    .topbar-icon-btn,
+    .dashboard-notification-btn,
+    .std-action-icon,
+    .round-action-btn,
+    .topbar-nav-pill,
+    .admin-topbar,
+    .dashboard-topbar,
+    .site-navbar {
+        transition: none !important;
+        transform: none !important;
+    }
+
+    a.liquid-glass:hover,
+    button.liquid-glass:hover,
+    a.liquid-glass:active,
+    button.liquid-glass:active,
+    .std-action-icon:hover,
+    .std-action-icon:active {
+        transform: none !important;
+    }
+}
+
+/* Mobile Devices (<576px) Performance Guard: Simple Glass without heavy displacement map */
+@media (max-width: 575.98px) {
+    html.supports-liquid .liquid-glass::before,
+    html.supports-liquid .admin-link.active::before,
+    html.supports-liquid .sidebar-link.active::before,
+    html.supports-liquid .dashboard-link.active::before,
+    html.supports-liquid .ins-nav-link.active::before,
+    html.supports-liquid .portal-nav-link.active::before,
+    html.supports-liquid .sidebar-collapse-toggle::before,
+    html.supports-liquid .topbar-icon-btn::before,
+    html.supports-liquid .topbar-back-btn::before,
+    html.supports-liquid .dashboard-notification-btn::before,
+    html.supports-liquid .nav-user-dropdown::before,
+    html.supports-liquid .std-action-icon::before,
+    html.supports-liquid .round-action-btn::before,
+    html.supports-liquid .pastel-grade-pill::before,
+    html.supports-liquid .floating-risk-badge::before {
+        backdrop-filter: blur(12px) saturate(140%) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+    }
+}

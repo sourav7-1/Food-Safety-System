@@ -13,9 +13,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/glass-theme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
+    {% include "partials/_liquid_glass_filter.html" %}
     <div class="site-progress-bar" id="siteProgressBar" aria-hidden="true"></div>
     <a class="visually-hidden-focusable skip-link" href="#main-content">Skip to main content</a>
     {% block navbar %}
@@ -612,5 +614,6 @@
             document.addEventListener("admin:content-updated", function () { enhanceImageFades(); });
         })();
     </script>
+    <script src="{{ url_for('static', filename='js/liquid-glass.js') }}"></script>
 </body>
 </html>
