@@ -80,7 +80,7 @@ class PasswordResetServiceTests(unittest.TestCase):
         with self.app.app_context():
             user = db.session.get(User, self.user_id)
             token = generate_reset_token(user)
-            tampered = token[:-1] + ("a" if token[-1] != "a" else "b")
+            tampered = token[:-4] + "xxxx"
             with self.assertRaises(ResetTokenInvalid):
                 decode_reset_token(tampered)
 

@@ -4,44 +4,44 @@
    ========================================================================== */
 
 .customer-shell {
-    --cf-canvas: #f8fafc;
+    --cf-canvas: #dce7db;
     --cf-surface: #ffffff;
     --cf-border: #e2e8f0;
     --cf-border-light: #f1f5f9;
     
-    --cf-ink: #0f172a;
-    --cf-ink-secondary: #475569;
-    --cf-ink-tertiary: #64748b;
+    --cf-ink: #192128;
+    --cf-ink-secondary: #4a5568;
+    --cf-ink-tertiary: #718096;
     
-    --cf-green: #059669;
-    --cf-green-soft: #ecfdf5;
-    --cf-green-border: #a7f3d0;
+    --cf-green: #15803d;
+    --cf-green-soft: #eef8f2;
+    --cf-green-border: #bbf7d0;
     
     --cf-amber: #d97706;
-    --cf-amber-soft: #fffbeb;
-    --cf-amber-border: #fde68a;
+    --cf-amber-soft: #fef7ec;
+    --cf-amber-border: #fee2be;
     
     --cf-orange: #ea580c;
     --cf-orange-soft: #fff7ed;
     --cf-orange-border: #ffedd5;
     
     --cf-red: #dc2626;
-    --cf-red-soft: #fef2f2;
-    --cf-red-border: #fecaca;
+    --cf-red-soft: #fdf2f4;
+    --cf-red-border: #fecdd3;
     
     --radius-pill: 9999px;
-    --radius-card: 18px;
+    --radius-card: 22px;
     --radius-card-sm: 14px;
-    --radius-card-lg: 22px;
-    --radius-control: 12px;
+    --radius-card-lg: 24px;
+    --radius-control: 9999px;
 
-    --cf-surface-glass: rgba(255, 255, 255, 0.85);
+    --cf-surface-glass: rgba(255, 255, 255, 0.9);
     --cf-border-glass: rgba(255, 255, 255, 0.6);
 
-    --cf-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
-    --cf-shadow-md: 0 4px 14px -1px rgba(15, 23, 42, 0.08);
-    --cf-shadow-lg: 0 12px 30px -4px rgba(15, 23, 42, 0.1);
-    --cf-shadow-hover: 0 20px 40px -8px rgba(15, 23, 42, 0.14);
+    --cf-shadow-sm: 0 1px 3px rgba(28, 43, 31, 0.04);
+    --cf-shadow-md: 0 4px 20px -2px rgba(28, 43, 31, 0.05);
+    --cf-shadow-lg: 0 12px 30px -4px rgba(28, 43, 31, 0.08);
+    --cf-shadow-hover: 0 16px 36px -4px rgba(28, 43, 31, 0.12);
 }
 
 /* ---------- Sleek Titlebar Header ---------- */
@@ -52,9 +52,9 @@
     justify-content: space-between;
     gap: 1.5rem;
     padding: 2.25rem 2.5rem;
-    border-radius: var(--radius-card);
-    background: radial-gradient(circle at 100% 0%, rgba(5, 150, 105, 0.35) 0%, transparent 60%), linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
-    box-shadow: var(--cf-shadow-lg);
+    border-radius: 24px;
+    background: radial-gradient(circle at 100% 0%, rgba(21, 128, 61, 0.35) 0%, transparent 60%), linear-gradient(135deg, #181e24 0%, #232c35 100%);
+    box-shadow: 0 12px 32px -4px rgba(24, 30, 36, 0.2);
     color: #ffffff;
     margin-bottom: 2rem;
     overflow: hidden;

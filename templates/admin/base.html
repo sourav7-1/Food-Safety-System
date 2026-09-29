@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-theme.css') }}">
     <script>
     // Applied synchronously, before the sidebar paints, so a returning
     // visitor with the sidebar collapsed never sees it flash open first.
@@ -44,31 +45,85 @@
 
         <div class="admin-main">
             <header class="admin-topbar">
-                <div class="d-flex align-items-center gap-3">
-                    <button class="btn btn-light d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-label="Open navigation">
+                <div class="topbar-title-group">
+                    <button class="btn btn-light d-lg-none rounded-circle" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-label="Open navigation" style="width: 38px; height: 38px; padding: 0; display: grid; place-items: center;">
                         <i class="fa-solid fa-bars"></i>
                     </button>
+                    <a href="javascript:history.back()" class="topbar-back-btn d-none d-sm-flex" title="Go back" aria-label="Go back">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
                     <div>
-                        <h1 class="h4 fw-bold mb-0">{{ page_title }}</h1>
-                        <p class="small text-secondary mb-0 d-none d-sm-block">Food safety operations center</p>
+                        <h1 class="h5 fw-bold mb-0 text-dark">{{ page_title }}</h1>
+                        <p class="small text-secondary mb-0 d-none d-md-block" style="font-size: 11px;">Food safety operations center</p>
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-3">
-                    <button class="notification-button" type="button" aria-label="Notifications">
-                        <i class="fa-regular fa-bell"></i>
-                        <span></span>
-                    </button>
-                    <a class="admin-profile" href="{{ url_for('profile.view') }}">
-                        {% if current_user.profile_photo_url %}
-                        <div class="profile-avatar profile-avatar-photo"><img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}"></div>
-                        {% else %}
-                        <div class="profile-avatar">{{ current_user.full_name[:1] | upper }}</div>
-                        {% endif %}
-                        <div class="d-none d-md-block">
-                            <div class="small fw-semibold">{{ current_user.full_name }}</div>
-                            <div class="profile-role">{{ 'Super Admin' if current_user.is_super_admin else (current_user.role.role_name|title if current_user.role else 'Administrator') }}</div>
-                        </div>
+
+                <!-- Center Topbar Capsule Tabs -->
+                <nav class="topbar-nav-pill-group d-none d-xl-flex align-items-center">
+                    <a href="{{ url_for('dashboard.admin') }}" class="topbar-nav-pill {{ 'active' if request.endpoint == 'dashboard.admin' }}">
+                        <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
                     </a>
+                    {% if current_user.has_permission('vendors.view') %}
+                    <a href="{{ url_for('admin.vendors') }}" class="topbar-nav-pill {{ 'active' if request.endpoint and request.endpoint.startswith('admin.vendor') }}">
+                        <i class="fa-solid fa-store"></i><span>Vendors</span>
+                    </a>
+                    {% endif %}
+                    {% if current_user.has_permission('inspections.view') %}
+                    <a href="{{ url_for('admin.inspections') }}" class="topbar-nav-pill {{ 'active' if request.endpoint == 'admin.inspections' }}">
+                        <i class="fa-solid fa-clipboard-check"></i><span>Inspections</span>
+                    </a>
+                    {% endif %}
+                    {% if current_user.has_permission('reports.view') %}
+                    <a href="{{ url_for('reports.dashboard') }}" class="topbar-nav-pill {{ 'active' if request.endpoint and request.endpoint.startswith('reports.') }}">
+                        <i class="fa-solid fa-chart-line"></i><span>Reports</span>
+                    </a>
+                    {% endif %}
+                </nav>
+
+                <div class="topbar-actions">
+                    <button class="topbar-icon-btn" id="topbarSearchBtn" type="button" aria-label="Search" title="Search stalls or vendors">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                    {% if current_user.has_permission('complaints.view') %}
+                    <a class="topbar-icon-btn" href="{{ url_for('admin.complaints') }}" title="Complaints & Risk Alerts">
+                        <i class="fa-solid fa-envelope"></i>
+                    </a>
+                    {% endif %}
+                    <a class="topbar-icon-btn" href="{{ url_for('admin.risk_engine') if current_user.has_permission('risk_engine.view') else url_for('dashboard.admin') }}" title="Risk Alerts">
+                        <i class="fa-solid fa-bell"></i>
+                        {% if unresolved_risk_alerts_count %}
+                        <span class="topbar-badge-dot"></span>
+                        <span class="topbar-count-badge">{{ unresolved_risk_alerts_count }}</span>
+                        {% endif %}
+                    </a>
+                    
+                    <!-- Avatar Dropdown -->
+                    <div class="dropdown">
+                        <button class="admin-avatar-btn dropdown-toggle border-0" type="button" id="adminUserDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if current_user.profile_photo_url %}
+                            <div class="topbar-avatar-circle"><img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}"></div>
+                            {% else %}
+                            <div class="topbar-avatar-circle">{{ current_user.full_name[:1] | upper }}</div>
+                            {% endif %}
+                            <div class="d-none d-md-block text-start pe-1">
+                                <div class="small fw-bold text-dark lh-sm">{{ current_user.full_name }}</div>
+                                <div class="text-secondary" style="font-size: 10px; font-weight: 600;">{{ 'Super Admin' if current_user.is_super_admin else (current_user.role.role_name|title if current_user.role else 'Administrator') }}</div>
+                            </div>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 py-2" aria-labelledby="adminUserDropdown" style="border-radius: 16px; min-width: 200px;">
+                            <li><a class="dropdown-item py-2 px-3 fw-semibold small" href="{{ url_for('profile.view') }}"><i class="fa-solid fa-id-card me-2 text-primary"></i>My Profile</a></li>
+                            {% if current_user.has_permission('settings.view') %}
+                            <li><a class="dropdown-item py-2 px-3 fw-semibold small" href="{{ url_for('admin.settings') }}"><i class="fa-solid fa-gear me-2 text-secondary"></i>Settings</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <form action="{{ url_for('auth.logout') }}" method="post" data-no-ajax class="px-2">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="dropdown-item py-2 px-2 fw-semibold small text-danger rounded-3"><i class="fa-solid fa-right-from-bracket me-2"></i>Sign Out</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </header>
 
@@ -1363,6 +1418,7 @@
             document.addEventListener("admin:content-updated", function () { enhanceImageFades(); });
         })();
     </script>
+    <script src="{{ url_for('static', filename='js/admin-theme.js') }}"></script>
     {% include "partials/_offline_game.html" %}
     {% block scripts %}{% endblock %}
 </body>

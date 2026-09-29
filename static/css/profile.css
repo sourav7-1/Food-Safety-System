@@ -4,26 +4,26 @@
    ========================================================================== */
 
 :root {
-    --prof-primary: #059669;
-    --prof-primary-hover: #047857;
-    --prof-primary-light: #ecfdf5;
-    --prof-primary-glow: rgba(5, 150, 105, 0.2);
+    --prof-primary: #15803d;
+    --prof-primary-hover: #166534;
+    --prof-primary-light: #eef8f2;
+    --prof-primary-glow: rgba(21, 128, 61, 0.2);
     
     --prof-border: #e2e8f0;
-    --prof-border-focus: #059669;
-    --prof-text-main: #0f172a;
-    --prof-text-muted: #475569;
-    --prof-text-subtle: #64748b;
+    --prof-border-focus: #15803d;
+    --prof-text-main: #192128;
+    --prof-text-muted: #4a5568;
+    --prof-text-subtle: #718096;
     
-    --prof-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
-    --prof-shadow-md: 0 4px 14px -1px rgba(15, 23, 42, 0.08);
-    --prof-shadow-lg: 0 12px 30px -4px rgba(15, 23, 42, 0.1);
-    --prof-radius: 18px;
-    --prof-radius-sm: 12px;
+    --prof-shadow-sm: 0 1px 3px rgba(28, 43, 31, 0.04);
+    --prof-shadow-md: 0 4px 20px -2px rgba(28, 43, 31, 0.05);
+    --prof-shadow-lg: 0 12px 32px -4px rgba(28, 43, 31, 0.09);
+    --prof-radius: 22px;
+    --prof-radius-sm: 14px;
 
     --prof-bg-card: #ffffff;
     --prof-danger: #dc2626;
-    --prof-success: #059669;
+    --prof-success: #15803d;
     --prof-warning: #d97706;
 }
 
@@ -40,18 +40,18 @@
 
 .admin-profile-hero {
     position: relative;
-    background: radial-gradient(circle at 100% 0%, rgba(5, 150, 105, 0.35) 0%, transparent 60%), linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    border-radius: var(--prof-radius);
+    background: radial-gradient(circle at 100% 0%, rgba(21, 128, 61, 0.35) 0%, transparent 60%), linear-gradient(135deg, #181e24 0%, #232c35 100%);
+    border-radius: 24px;
     padding: 2.25rem 2.5rem;
     color: #ffffff;
     margin-bottom: 2rem;
-    box-shadow: var(--prof-shadow-lg);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 32px -4px rgba(24, 30, 36, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     overflow: hidden;
 }
 
 .admin-profile-hero.hero-student {
-    background: radial-gradient(circle at 100% 0%, rgba(5, 150, 105, 0.4) 0%, transparent 60%), linear-gradient(135deg, #064e3b 0%, #047857 55%, #064e3b 100%);
+    background: radial-gradient(circle at 100% 0%, rgba(21, 128, 61, 0.4) 0%, transparent 60%), linear-gradient(135deg, #181e24 0%, #1c3829 55%, #181e24 100%);
 }
 
 .admin-hero-content {

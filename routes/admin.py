@@ -214,17 +214,37 @@ def _pending_vendor_count():
 
 
 @admin_bp.app_context_processor
-def _inject_pending_vendor_count():
-    """Feeds the Vendors badge in the admin sidebar (templates/admin/
-    sidebar.html). Cheap guard first so non-admin pages run no query."""
+def _inject_admin_portal_counts():
+    """Feeds the Vendors badge and Unresolved Risk Alerts in the admin sidebar & topbar."""
     if (
         not current_user.is_authenticated
         or not current_user.role
         or not current_user.role.is_admin_tier
-        or not current_user.has_permission("vendors.view")
     ):
         return {}
-    return {"pending_vendor_count": _pending_vendor_count()}
+    
+    unresolved_count = 0
+    try:
+        unresolved_count = Complaint.query.filter(
+            Complaint.status.in_(("submitted", "under_review", "investigation", "action_required"))
+        ).count()
+    except Exception:
+        unresolved_count = 0
+
+    pending_v = _pending_vendor_count() if current_user.has_permission("vendors.view") else 0
+    return {
+        "pending_vendor_count": pending_v,
+        "unresolved_risk_alerts_count": unresolved_count,
+    }
+
+
+@admin_bp.route("/api/calendar")
+@login_required
+@admin_tier_required
+def api_admin_calendar():
+    month = request.args.get("month", "")
+    from services.admin_dashboard import get_calendar_inspections_data
+    return jsonify(get_calendar_inspections_data(month))
 
 
 def _render_vendors_list(search="", reopen_modal=None, status_code=200):

@@ -13,7 +13,7 @@ from flask import (
     url_for,
     
 )
-from flask_login import current_user, logout_user
+from flask_login import current_user, login_required, logout_user
 
 from config import Config
 from extensions import db, limiter, login_manager, mail, oauth
@@ -76,6 +76,16 @@ def create_app(config_class=Config):
     app.register_blueprint(reports_bp)
     app.register_blueprint(vendor_bp)
     app.register_blueprint(access_requests_bp)
+
+    @app.route("/api/admin/calendar")
+    @login_required
+    def api_admin_calendar_alias():
+        if not (current_user.role and current_user.role.is_admin_tier):
+            abort(403)
+        month = request.args.get("month", "")
+        from services.admin_dashboard import get_calendar_inspections_data
+        from flask import jsonify
+        return jsonify(get_calendar_inspections_data(month))
 
     def csrf_token():
         token = session.get("_csrf_token")
