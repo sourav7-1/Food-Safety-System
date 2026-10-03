@@ -24,11 +24,16 @@
             </p>
         </div>
         <div class="student-hero-actions">
-            <a href="{{ url_for('customer_portal.notifications') }}" class="hero-bell-btn" title="View Notifications" aria-label="Notifications">
-                <i class="fa-regular fa-bell"></i>
-                {% if unread_notification_count > 0 %}
-                <span class="hero-bell-dot"></span>
-                {% endif %}
+            <span class="hero-status-pill d-none d-md-inline-flex align-items-center gap-2">
+                <span class="hero-status-dot"></span> Live Safety Monitor
+            </span>
+            <a href="{{ url_for('customer_portal.ar_scan') }}" class="hero-action-btn" title="Scan Stall with Camera">
+                <i class="fa-solid fa-camera"></i>
+                <span>AR Scan</span>
+            </a>
+            <a href="{{ url_for('customer_portal.search_stalls') }}" class="hero-action-btn hero-action-btn--light" title="Explore Safe Food Stalls">
+                <i class="fa-solid fa-utensils"></i>
+                <span>Find Food</span>
             </a>
         </div>
     </div>

@@ -334,6 +334,21 @@ html.supports-liquid .dashboard-notification-btn::before {
     );
 }
 
+.notification-indicator-dot,
+.topbar-badge-dot {
+    position: absolute !important;
+    top: 7px !important;
+    right: 8px !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
+    background: #ef4444 !important;
+    border: 1.5px solid #ffffff !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.8) !important;
+    z-index: 5 !important;
+    pointer-events: none !important;
+}
+
 /* Nav User Pill Capsule (Navbar Avatar Trigger) */
 .nav-user-dropdown,
 .admin-avatar-btn {
