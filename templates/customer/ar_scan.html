@@ -8,97 +8,150 @@
 
 <div id="arStatusBanner" class="alert ar-status-banner d-none" role="status"></div>
 
-<div id="arIntro" class="portal-card ar-intro-card">
-    <i class="fa-solid fa-camera ar-intro-icon"></i>
-    <h2 class="ar-intro-title">Scan a stall</h2>
+<div id="arIntro" class="portal-card ar-intro-card glass">
+    <div class="ar-intro-icon-wrap">
+        <i class="fa-solid fa-camera ar-intro-icon"></i>
+    </div>
+    <h2 class="ar-intro-title">Scan a Food Stall</h2>
     <p class="ar-intro-text">
-        Point your phone's camera at a food stall and AR Scan will match it
-        against nearby registered stalls using your location, the direction
-        you're facing, and any signboard text it can read -- then show its
-        hygiene grade right on screen.
+        Point your camera at any campus food stall or signboard. AR Scan uses your location,
+        the direction you are facing, and real-time signboard text recognition to display
+        its official hygiene grade and safety audit score.
     </p>
-    <p class="ar-intro-privacy">
-        <i class="fa-solid fa-lock"></i>
-        Camera frames are processed on your device and are never uploaded --
-        only the text your camera reads and your location/compass heading
-        are sent to check nearby stalls.
-    </p>
-    <button type="button" class="btn btn-success btn-lg" id="arStartBtn">
-        <i class="fa-solid fa-camera me-1"></i>Start AR Scan
-    </button>
-    <a class="ar-intro-fallback-link" href="{{ url_for('customer_portal.nearby_stalls') }}">
-        Prefer the map instead?
-    </a>
+    <div class="ar-intro-privacy">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>
+            <strong>Privacy Protected:</strong> Camera frames are processed entirely on your device
+            and are never saved or uploaded to the server.
+        </span>
+    </div>
+    <div class="d-flex flex-column align-items-center gap-2 mt-3">
+        <button type="button" class="btn btn-success btn-lg px-4 py-2.5 rounded-pill shadow-sm" id="arStartBtn">
+            <i class="fa-solid fa-camera me-2"></i>Start AR Scan
+        </button>
+        <a class="ar-intro-fallback-link" href="{{ url_for('customer_portal.nearby_stalls') }}">
+            <i class="fa-solid fa-map-location-dot me-1"></i>Prefer the interactive map instead?
+        </a>
+    </div>
 </div>
 
 <div id="arView" class="ar-view d-none">
     <video id="arVideo" class="ar-video" playsinline autoplay muted></video>
     <canvas id="arOcrCanvas" class="d-none"></canvas>
 
+    <!-- Visual Scanning Reticle Frame -->
+    <div class="ar-scanner-frame" aria-hidden="true">
+        <div class="ar-scanner-corner top-left"></div>
+        <div class="ar-scanner-corner top-right"></div>
+        <div class="ar-scanner-corner bottom-left"></div>
+        <div class="ar-scanner-corner bottom-right"></div>
+        <div class="ar-scanner-laser"></div>
+    </div>
+
     <div id="arOverlay" class="ar-overlay">
-        <div id="arCard" class="ar-card d-none"></div>
-        <div id="arCandidateList" class="ar-candidate-list d-none"></div>
-        <div id="arLowConfidence" class="ar-low-confidence d-none">
+        <!-- Floating Match Card -->
+        <div id="arCard" class="ar-card liquid-glass d-none"></div>
+
+        <!-- Multiple Candidate Selector -->
+        <div id="arCandidateList" class="ar-candidate-list liquid-glass d-none"></div>
+
+        <!-- Low Confidence Notice -->
+        <div id="arLowConfidence" class="ar-low-confidence liquid-glass--dark d-none">
+            <i class="fa-solid fa-circle-question me-1 text-warning"></i>
             No clear match nearby yet.
             <a href="{{ url_for('customer_portal.nearby_stalls') }}">Try Map mode</a>
         </div>
-        <div id="arCompassHint" class="ar-compass-hint d-none"></div>
+
+        <!-- Compass Direction Status -->
+        <div id="arCompassHint" class="ar-compass-hint liquid-glass--dark d-none">
+            <i class="fa-solid fa-compass me-1"></i>
+            <span id="arCompassText">Calibrating orientation...</span>
+        </div>
     </div>
 
-    <button type="button" class="btn btn-outline-light ar-stop-btn" id="arStopBtn">
+    <button type="button" class="btn btn-dark ar-stop-btn shadow" id="arStopBtn" title="Close AR Camera" aria-label="Close AR Camera">
         <i class="fa-solid fa-xmark"></i>
     </button>
 </div>
 
 <style>
-.ar-status-banner { margin-bottom: 14px; }
+.ar-status-banner {
+    margin-bottom: 16px;
+    border-radius: 14px;
+    font-size: 0.92rem;
+}
 .ar-status-banner .btn { margin-left: 10px; }
-.ar-status-banner a { color: inherit; text-decoration: underline; }
+.ar-status-banner a { color: inherit; text-decoration: underline; font-weight: 700; }
 
 .ar-intro-card {
-    max-width: 520px;
-    margin: 24px auto;
+    max-width: 540px;
+    margin: 20px auto;
     text-align: center;
-    padding: 32px 24px;
+    padding: 36px 28px;
+    border-radius: 24px;
+}
+.ar-intro-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(31, 122, 77, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
 }
 .ar-intro-icon {
-    font-size: 2.4rem;
+    font-size: 2rem;
     color: #1f7a4d;
-    margin-bottom: 12px;
 }
-.ar-intro-title { font-weight: 800; margin-bottom: 8px; }
+.ar-intro-title { font-weight: 800; font-size: 1.45rem; margin-bottom: 8px; color: #1e293b; }
 .ar-intro-text {
     color: #475569;
-    font-size: 0.92rem;
-    margin-bottom: 14px;
-}
-.ar-intro-privacy {
-    background: #f4fdf8;
-    border: 1px solid #d7f0e2;
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 0.8rem;
-    color: #1f7a4d;
-    text-align: left;
+    font-size: 0.95rem;
+    line-height: 1.55;
     margin-bottom: 18px;
 }
-.ar-intro-privacy i { margin-right: 6px; }
-.ar-intro-fallback-link {
-    display: block;
-    margin-top: 14px;
+.ar-intro-privacy {
+    background: rgba(31, 122, 77, 0.08);
+    border: 1px solid rgba(31, 122, 77, 0.2);
+    border-radius: 12px;
+    padding: 12px 16px;
     font-size: 0.82rem;
-    color: #64748b;
+    color: #166534;
+    text-align: left;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.ar-intro-privacy i {
+    font-size: 1.1rem;
+    margin-top: 2px;
+}
+.ar-intro-fallback-link {
+    display: inline-block;
+    font-size: 0.86rem;
+    color: #475569;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.15s ease;
+}
+.ar-intro-fallback-link:hover {
+    color: #1f7a4d;
+    text-decoration: underline;
 }
 
+/* AR Viewport Container */
 .ar-view {
     position: relative;
     width: 100%;
     max-width: 640px;
     margin: 0 auto;
-    border-radius: 16px;
+    border-radius: 24px;
     overflow: hidden;
-    background: #000;
+    background: #090d12;
     aspect-ratio: 3 / 4;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 .ar-video {
     width: 100%;
@@ -106,43 +159,87 @@
     object-fit: cover;
     display: block;
 }
+
+/* Scanner Frame Overlay */
+.ar-scanner-frame {
+    position: absolute;
+    inset: 40px;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 18px;
+    box-sizing: border-box;
+}
+.ar-scanner-corner {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-color: #38bdf8;
+    border-style: solid;
+    border-width: 0;
+}
+.ar-scanner-corner.top-left { top: -2px; left: -2px; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 12px; }
+.ar-scanner-corner.top-right { top: -2px; right: -2px; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 12px; }
+.ar-scanner-corner.bottom-left { bottom: -2px; left: -2px; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 12px; }
+.ar-scanner-corner.bottom-right { bottom: -2px; right: -2px; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 12px; }
+
+.ar-scanner-laser {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+    box-shadow: 0 0 10px #38bdf8;
+    animation: scanLaser 2.8s ease-in-out infinite alternate;
+}
+@keyframes scanLaser {
+    0% { top: 5%; opacity: 0.2; }
+    50% { opacity: 0.8; }
+    100% { top: 95%; opacity: 0.2; }
+}
+
 .ar-overlay {
     position: absolute;
     inset: 0;
     pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px;
 }
+
 .ar-card {
     position: absolute;
     left: 50%;
-    bottom: 16px;
+    bottom: 20px;
     transform: translateX(-50%);
-    width: min(90%, 320px);
-    background: #fff;
-    border-radius: 14px;
-    padding: 14px 16px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    width: min(92%, 350px);
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-radius: 20px;
+    padding: 16px 18px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
     pointer-events: auto;
+    z-index: 10;
 }
-.ar-card h6 { font-weight: 800; margin-bottom: 4px; }
-.ar-card p { margin: 0 0 4px; font-size: 0.82rem; color: #475569; }
+.ar-card h6 { font-weight: 800; margin-bottom: 2px; font-size: 1.05rem; color: #0f172a; }
+.ar-card p { margin: 0 0 6px; font-size: 0.84rem; color: #475569; }
 .ar-card .grade-badge-sm { display: inline-block; margin-bottom: 6px; }
-.ar-card a.btn { margin-top: 6px; }
 .ar-card-confirm { display: flex; gap: 8px; margin-top: 8px; }
 
 .ar-candidate-list {
     position: absolute;
     left: 50%;
-    bottom: 16px;
+    bottom: 20px;
     transform: translateX(-50%);
-    width: min(92%, 360px);
-    background: #fff;
-    border-radius: 14px;
-    padding: 10px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    width: min(94%, 380px);
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-radius: 20px;
+    padding: 12px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
     pointer-events: auto;
+    z-index: 10;
 }
 .ar-candidate-list-title {
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #475569;
     padding: 4px 8px;
@@ -153,54 +250,73 @@
     text-align: left;
     border: none;
     background: none;
-    padding: 8px;
-    border-radius: 8px;
-    font-size: 0.85rem;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 0.88rem;
     color: #1e293b;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
 }
-.ar-candidate-item:hover { background: #f4fdf8; }
-.ar-candidate-item .text-muted { font-size: 0.75rem; }
+.ar-candidate-item:hover {
+    background: rgba(31, 122, 77, 0.1);
+    color: #166534;
+}
+.ar-candidate-item .text-muted { font-size: 0.76rem; }
 
 .ar-low-confidence {
     position: absolute;
     left: 50%;
-    bottom: 16px;
+    bottom: 20px;
     transform: translateX(-50%);
-    width: min(90%, 320px);
-    background: rgba(15, 23, 42, 0.85);
+    width: min(90%, 330px);
+    background: rgba(15, 23, 42, 0.88) !important;
     color: #fff;
-    border-radius: 12px;
-    padding: 10px 16px;
+    border-radius: 9999px;
+    padding: 10px 18px;
     text-align: center;
     font-size: 0.85rem;
+    font-weight: 600;
     pointer-events: auto;
+    z-index: 10;
 }
-.ar-low-confidence a { color: #7dd3aa; font-weight: 700; margin-left: 4px; }
+.ar-low-confidence a { color: #86efac; font-weight: 700; margin-left: 6px; text-decoration: underline; }
 
 .ar-compass-hint {
     position: absolute;
-    top: 16px;
+    top: 18px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(15, 23, 42, 0.7);
-    color: #fff;
-    border-radius: 999px;
-    padding: 6px 14px;
-    font-size: 0.78rem;
+    background: rgba(15, 23, 42, 0.75) !important;
+    color: #f8fafc;
+    border-radius: 9999px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 10;
+    pointer-events: none;
 }
 
 .ar-stop-btn {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 36px;
-    height: 36px;
+    top: 14px;
+    right: 14px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
+    z-index: 20;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.ar-stop-btn:hover {
+    transform: scale(1.1);
+    background: #dc2626;
+    color: #fff;
 }
 </style>
 {% endblock %}
@@ -229,6 +345,7 @@
     var candidateListEl = document.getElementById("arCandidateList");
     var lowConfidenceEl = document.getElementById("arLowConfidence");
     var compassHintEl = document.getElementById("arCompassHint");
+    var compassTextEl = document.getElementById("arCompassText");
 
     var mediaStream = null;
     var watchId = null;
@@ -248,13 +365,11 @@
     }
 
     function showStatus(message, variant) {
-        // Callers only ever pass hardcoded app copy (optionally with a
-        // link built from a Flask url_for() output), never user input, so
-        // innerHTML here is safe and lets the Map-mode fallback link work.
         statusBanner.className = "alert ar-status-banner alert-" + variant;
         statusBanner.innerHTML = message;
         statusBanner.classList.remove("d-none");
     }
+
     function hideStatus() {
         statusBanner.classList.add("d-none");
     }
@@ -265,18 +380,12 @@
         lowConfidenceEl.classList.add("d-none");
     }
 
-    // Hard capability check -- if the browser lacks any of these APIs
-    // outright, AR Scan can never work here at all, so it silently steps
-    // aside to Map mode rather than showing a broken camera screen (per
-    // the feature's mandatory fallback-chain rule).
-    function hardUnsupported() {
-        return (
-            !("mediaDevices" in navigator) ||
-            !navigator.mediaDevices ||
-            typeof navigator.mediaDevices.getUserMedia !== "function" ||
-            !("geolocation" in navigator) ||
-            typeof DeviceOrientationEvent === "undefined"
-        );
+    function isMediaSupported() {
+        return !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function");
+    }
+
+    function isGeoSupported() {
+        return !!("geolocation" in navigator);
     }
 
     function stopScanning(keepStatus) {
@@ -295,35 +404,47 @@
         currentLatLng = null;
         currentHeading = null;
         latestOcrText = "";
+        ocrBusy = false;
     }
 
     function onOrientation(event) {
-        // iOS Safari exposes an absolute compass heading directly.
-        // Android Chrome's `alpha` is the device's rotation around Z, not
-        // a calibrated compass -- it's the closest signal available
-        // without extra sensor fusion, and the heading score's +/-60deg
-        // tolerance is meant to absorb some of that imprecision.
-        if (typeof event.webkitCompassHeading === "number") {
-            currentHeading = event.webkitCompassHeading;
-        } else if (event.alpha !== null && event.alpha !== undefined) {
-            currentHeading = (360 - event.alpha) % 360;
+        var h = null;
+        // iOS Safari gives absolute compass heading directly in webkitCompassHeading
+        if (typeof event.webkitCompassHeading === "number" && !isNaN(event.webkitCompassHeading)) {
+            h = event.webkitCompassHeading;
+        } else if (event.alpha !== null && event.alpha !== undefined && !isNaN(event.alpha)) {
+            h = 360 - event.alpha;
+        }
+
+        if (h !== null) {
+            // Strictly normalize into [0, 360) for backend API boundary
+            h = ((h % 360) + 360) % 360;
+            if (h >= 359.99) { h = 0; }
+            currentHeading = Math.round(h * 10) / 10;
+            if (compassHintEl) {
+                compassHintEl.classList.add("d-none");
+            }
         }
     }
 
     function onPosition(position) {
-        currentLatLng = { lat: position.coords.latitude, lng: position.coords.longitude };
+        if (position && position.coords) {
+            currentLatLng = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+        }
     }
 
-    function onPositionError() {
-        showStatus(
-            "Location access was declined -- AR Scan needs it to find nearby stalls. " +
-            'Try <a href="' + MAP_MODE_URL + '">Map mode</a> instead.',
-            "warning"
-        );
+    function onPositionError(err) {
+        var msg = "Location access was declined or timed out -- AR Scan needs GPS coordinates to match stalls nearby. " +
+                  'Try <a href="' + MAP_MODE_URL + '">Map mode</a> instead.';
+        showStatus(msg, "warning");
         stopScanning(true);
     }
 
     function downscaleFrameToCanvas() {
+        if (!videoEl || videoEl.readyState < 2) { return null; }
         var vw = videoEl.videoWidth, vh = videoEl.videoHeight;
         if (!vw || !vh) { return null; }
         var scale = Math.min(1, OCR_MAX_WIDTH / vw);
@@ -335,7 +456,7 @@
     }
 
     function runOcrCycle() {
-        if (ocrBusy || !window.Tesseract || !mediaStream) { return; }
+        if (ocrBusy || typeof window.Tesseract === "undefined" || !mediaStream) { return; }
         var canvas = downscaleFrameToCanvas();
         if (!canvas) { return; }
         ocrBusy = true;
@@ -344,27 +465,33 @@
                 latestOcrText = (result && result.data && result.data.text || "").trim();
             })
             .catch(function () {
-                // OCR failing this cycle just means that signal scores 0 --
-                // never surfaced as an error to the user.
+                // OCR error this cycle scores 0 without crashing
             })
-            .then(function () { ocrBusy = false; });
+            .then(function () {
+                ocrBusy = false;
+            });
     }
 
     function renderCard(candidate, showConfirm) {
         var gradeBlock = candidate.hygiene_grade
             ? '<span class="grade-badge-sm grade-' + escapeHtml(candidate.hygiene_grade.toLowerCase()) + '">Grade ' + escapeHtml(candidate.hygiene_grade) + '</span>'
             : '<span class="text-secondary small">Not yet inspected</span>';
+        var scoreText = candidate.overall_score != null ? ' (' + Math.round(candidate.overall_score) + '%)' : '';
         var dateText = candidate.inspection_date ? escapeHtml(candidate.inspection_date) : "Not yet inspected";
         var confirmBlock = showConfirm
-            ? '<div class="ar-card-confirm"><button type="button" class="btn btn-sm btn-outline-secondary" id="arCardDismiss">Not this one</button></div>'
+            ? '<div class="ar-card-confirm"><button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" id="arCardDismiss">Not this one</button></div>'
             : "";
+
         cardEl.innerHTML =
-            '<h6>' + escapeHtml(candidate.name) + '</h6>' +
-            '<p class="text-uppercase small text-muted">' + escapeHtml(candidate.category_label) + '</p>' +
+            '<div class="d-flex align-items-center justify-content-between mb-1">' +
+            '<h6 class="text-truncate me-2">' + escapeHtml(candidate.name) + '</h6>' +
             gradeBlock +
-            '<p>' + candidate.distance_m.toFixed(0) + ' m away &middot; Inspected: ' + dateText + '</p>' +
-            '<a class="btn btn-sm btn-success" href="' + escapeHtml(candidate.detail_url) + '">View stall</a>' +
+            '</div>' +
+            '<p class="text-uppercase small text-muted mb-1">' + escapeHtml(candidate.category_label) + scoreText + '</p>' +
+            '<p class="small text-secondary mb-2"><i class="fa-solid fa-location-arrow me-1 text-success"></i>' + candidate.distance_m.toFixed(0) + ' m away &middot; Inspected: ' + dateText + '</p>' +
+            '<a class="btn btn-sm btn-success rounded-pill px-3 fw-bold w-100" href="' + escapeHtml(candidate.detail_url) + '">View Stall Details <i class="fa-solid fa-arrow-right ms-1"></i></a>' +
             confirmBlock;
+
         cardEl.classList.remove("d-none");
         var dismissBtn = document.getElementById("arCardDismiss");
         if (dismissBtn) {
@@ -373,12 +500,18 @@
     }
 
     function renderCandidateList(candidates) {
-        var html = '<div class="ar-candidate-list-title">A few stalls nearby match -- tap the one you\'re at:</div>';
+        var html = '<div class="ar-candidate-list-title"><i class="fa-solid fa-list-ul me-1 text-success"></i>Multiple stalls match nearby -- tap yours:</div>';
         candidates.slice(0, 3).forEach(function (candidate) {
+            var gradeBadge = candidate.hygiene_grade
+                ? '<span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2 py-0.5 ms-auto small">Grade ' + escapeHtml(candidate.hygiene_grade) + '</span>'
+                : '';
             html +=
-                '<a class="ar-candidate-item" href="' + escapeHtml(candidate.detail_url) + '">' +
+                '<a class="ar-candidate-item d-flex align-items-center" href="' + escapeHtml(candidate.detail_url) + '">' +
+                '<div class="min-w-0 flex-grow-1">' +
                 '<strong>' + escapeHtml(candidate.name) + '</strong><br>' +
                 '<span class="text-muted">' + candidate.distance_m.toFixed(0) + ' m &middot; ' + escapeHtml(candidate.category_label) + '</span>' +
+                '</div>' +
+                gradeBadge +
                 '</a>';
         });
         candidateListEl.innerHTML = html;
@@ -401,7 +534,13 @@
     }
 
     function fetchMatch() {
-        if (!currentLatLng) { return; }
+        if (!currentLatLng) {
+            if (compassHintEl) {
+                compassHintEl.classList.remove("d-none");
+                if (compassTextEl) { compassTextEl.textContent = "Acquiring GPS location..."; }
+            }
+            return;
+        }
         var seq = ++fetchSeq;
         if (fetchController) { fetchController.abort(); }
         fetchController = ("AbortController" in window) ? new AbortController() : null;
@@ -409,12 +548,15 @@
         var url = API_URL + "?lat=" + encodeURIComponent(currentLatLng.lat) +
             "&lng=" + encodeURIComponent(currentLatLng.lng) +
             "&ocr_text=" + encodeURIComponent(latestOcrText);
+
         if (currentHeading !== null) {
             url += "&heading=" + encodeURIComponent(currentHeading);
-            compassHintEl.classList.add("d-none");
+            if (compassHintEl) { compassHintEl.classList.add("d-none"); }
         } else {
-            compassHintEl.textContent = "Turn on your compass for a more accurate match";
-            compassHintEl.classList.remove("d-none");
+            if (compassHintEl) {
+                compassHintEl.classList.remove("d-none");
+                if (compassTextEl) { compassTextEl.textContent = "Turn on compass for precision direction match"; }
+            }
         }
 
         fetch(url, { headers: { Accept: "application/json" }, signal: fetchController ? fetchController.signal : undefined })
@@ -429,30 +571,58 @@
             })
             .catch(function (error) {
                 if (seq !== fetchSeq || (error && error.name === "AbortError")) { return; }
-                showStatus("Couldn't check nearby stalls -- retrying...", "danger");
+                // Network hiccups silently retry on next interval
             });
     }
 
-    function startCameraAndSensors() {
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(function (stream) {
-                mediaStream = stream;
-                videoEl.srcObject = stream;
-                introEl.classList.add("d-none");
-                viewEl.classList.remove("d-none");
-                hideStatus();
+    function startCameraStream(stream) {
+        mediaStream = stream;
+        videoEl.srcObject = stream;
+        videoEl.setAttribute("playsinline", "true");
+        videoEl.play().catch(function () {});
 
-                watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, {
-                    enableHighAccuracy: true,
-                    maximumAge: 5000,
-                    timeout: 10000,
-                });
-                matchTimer = window.setInterval(fetchMatch, MATCH_FETCH_INTERVAL_MS);
-                ocrTimer = window.setInterval(runOcrCycle, OCR_INTERVAL_MS);
-            })
+        introEl.classList.add("d-none");
+        viewEl.classList.remove("d-none");
+        hideStatus();
+
+        // Immediate GPS fix followed by continuous watch
+        navigator.geolocation.getCurrentPosition(onPosition, onPositionError, {
+            enableHighAccuracy: true,
+            maximumAge: 3000,
+            timeout: 8000,
+        });
+
+        watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, {
+            enableHighAccuracy: true,
+            maximumAge: 5000,
+            timeout: 10000,
+        });
+
+        matchTimer = window.setInterval(fetchMatch, MATCH_FETCH_INTERVAL_MS);
+        ocrTimer = window.setInterval(runOcrCycle, OCR_INTERVAL_MS);
+    }
+
+    function startCameraAndSensors() {
+        if (!isMediaSupported() || !isGeoSupported()) {
+            showStatus(
+                "Your browser or connection (requires HTTPS or localhost) does not support camera or geolocation. " +
+                'Please switch to <a href="' + MAP_MODE_URL + '">Map mode</a> to browse nearby stalls.',
+                "warning"
+            );
+            return;
+        }
+
+        // Try environment camera first with fallback to generic video
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } } })
+            .then(startCameraStream)
             .catch(function () {
+                // Fallback attempt with generic video constraint
+                return navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(startCameraStream);
+            })
+            .catch(function (err) {
                 showStatus(
-                    "Camera access is needed for AR Scan -- allow it in your browser, or switch to " +
+                    "Camera access is required for AR Scan. Please allow camera permissions in your browser or switch to " +
                     '<a href="' + MAP_MODE_URL + '">Map mode</a>.',
                     "warning"
                 );
@@ -468,9 +638,6 @@
             ? DeviceOrientationEvent.requestPermission()
             : Promise.resolve("granted");
 
-        // Must be called synchronously from the click handler (see below)
-        // so the permission prompt still counts as a direct response to a
-        // user gesture -- iOS Safari silently ignores it otherwise.
         permissionPromise
             .then(function (state) {
                 if (state === "granted") {
@@ -478,25 +645,18 @@
                 }
             })
             .catch(function () {
-                // Orientation permission denied/unavailable -- heading
-                // signal just stays null and contributes 0 to scoring.
+                // Compass permission denied/unavailable -- heading contributes 0 to scoring gracefully
             })
             .then(startCameraAndSensors);
     }
 
     startBtn.addEventListener("click", function () {
-        if (hardUnsupported()) {
-            window.location.href = MAP_MODE_URL;
-            return;
-        }
         requestOrientationThenStart();
     });
 
-    stopBtn.addEventListener("click", stopScanning);
-
-    if (hardUnsupported()) {
-        window.location.href = MAP_MODE_URL;
-    }
+    stopBtn.addEventListener("click", function () {
+        stopScanning();
+    });
 })();
 </script>
 {% endblock %}
