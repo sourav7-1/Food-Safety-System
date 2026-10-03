@@ -268,7 +268,7 @@ def create_app(config_class=Config):
             status="active",
             # Created via trusted CLI access, not public registration, so
             # it does not need to go through email verification.
-            email_verified_at=datetime.now(timezone.utc),
+            email_verified_at = datetime.now(timezone.utc),
             # The CLI-created bootstrap admin is always a super admin, so
             # a fresh install has one usable account that can configure
             # roles and permissions from the start.

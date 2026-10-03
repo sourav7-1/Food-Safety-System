@@ -1,11 +1,9 @@
 import math
+import re
 from difflib import SequenceMatcher
 
 
-# Confidence-score weights (must sum to 100). Visual/image matching is out
-# of scope for the web-only MVP, so the original 4-signal split collapses
-# to these 3 -- see the AR Scan feature plan for why 40/30/30 rather than
-# the original 40/30/15/15.
+# Confidence-score weights (must sum to 100).
 GPS_WEIGHT = 40
 OCR_WEIGHT = 30
 HEADING_WEIGHT = 30
@@ -47,16 +45,70 @@ def gps_score(distance_m):
     return GPS_WEIGHT * max(0.0, 1 - distance_m / GPS_MAX_DISTANCE_M)
 
 
+def _normalize_name(name):
+    if not name:
+        return ""
+    cleaned = re.sub(r"[^\w\s]", " ", name.lower())
+    return " ".join(cleaned.split())
+
+
 def ocr_score(ocr_text, stall_name):
     """Fuzzy match ratio between OCR'd signboard text and the stall's
-    registered name. Empty/missing OCR text scores 0 -- a stall with no
-    readable sign shouldn't get a free pass on this signal."""
+    registered name. Enhanced with substring sliding window and token overlap
+    to accurately recognize signboards containing extra words or banners."""
     if not ocr_text or not ocr_text.strip():
         return 0.0
-    ratio = SequenceMatcher(
-        None, ocr_text.strip().lower(), stall_name.strip().lower()
-    ).ratio()
-    return OCR_WEIGHT * ratio
+    if not stall_name or not stall_name.strip():
+        return 0.0
+
+    ocr_clean = _normalize_name(ocr_text)
+    stall_clean = _normalize_name(stall_name)
+
+    if not ocr_clean or not stall_clean:
+        return 0.0
+
+    # 1. Exact or whole-string normalized match
+    if ocr_clean == stall_clean:
+        return float(OCR_WEIGHT)
+
+    whole_ratio = SequenceMatcher(None, ocr_clean, stall_clean).ratio()
+
+    # 2. Sliding window match over OCR text
+    stall_len = len(stall_clean)
+    best_window_ratio = whole_ratio
+    if len(ocr_clean) > stall_len:
+        step = max(1, stall_len // 4)
+        for start in range(0, len(ocr_clean) - stall_len + 1, step):
+            window = ocr_clean[start : start + stall_len + 2].strip()
+            r = SequenceMatcher(None, window, stall_clean).ratio()
+            if r > best_window_ratio:
+                best_window_ratio = r
+                if best_window_ratio >= 0.98:
+                    break
+
+    # 3. Token-level set overlap
+    stall_tokens = stall_clean.split()
+    ocr_tokens = ocr_clean.split()
+    if stall_tokens and ocr_tokens:
+        tok_matches = 0.0
+        for s_tok in stall_tokens:
+            best_t = 0.0
+            for o_tok in ocr_tokens:
+                if s_tok == o_tok:
+                    best_t = 1.0
+                    break
+                sim = SequenceMatcher(None, s_tok, o_tok).ratio()
+                if sim > best_t:
+                    best_t = sim
+            tok_matches += best_t
+        token_ratio = tok_matches / len(stall_tokens)
+    else:
+        token_ratio = 0.0
+
+    final_ratio = max(whole_ratio, best_window_ratio, token_ratio * 0.90)
+    final_ratio = max(0.0, min(1.0, final_ratio))
+
+    return OCR_WEIGHT * final_ratio
 
 
 def heading_score(user_heading_deg, bearing_deg):
