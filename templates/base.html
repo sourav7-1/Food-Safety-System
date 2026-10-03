@@ -43,7 +43,7 @@
                     {% block navbar_actions %}
                     {% if current_user.is_authenticated %}
                         <div class="dropdown">
-                            <a class="nav-user-dropdown d-flex align-items-center gap-2 text-decoration-none text-white" href="#" role="button" id="userNavbarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-user-dropdown d-flex align-items-center gap-2 text-decoration-none text-white" href="javascript:void(0);" role="button" id="userNavbarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 {% if current_user.profile_photo_url %}
                                 <img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}" class="navbar-avatar rounded-circle">
                                 {% else %}

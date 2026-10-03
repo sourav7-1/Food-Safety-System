@@ -299,10 +299,13 @@ p {
 .nav-user-dropdown {
     display: inline-flex;
     align-items: center;
+    height: 38px;
+    line-height: 1;
     gap: 8px;
-    padding: 4px 14px 4px 5px;
+    padding: 3px 14px 3px 4px;
     border-radius: 9999px;
     text-decoration: none;
+    box-sizing: border-box;
 }
 
 .navbar-avatar {

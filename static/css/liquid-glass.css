@@ -174,7 +174,6 @@ button.liquid-glass:active,
 .dashboard-notification-btn:active,
 .topbar-icon-btn:active,
 .topbar-back-btn:active,
-.nav-user-dropdown:active,
 .std-action-icon:active,
 .round-action-btn:active {
     transform: scale(0.96, 0.93) translateZ(0) !important;
@@ -343,15 +342,19 @@ html.supports-liquid .dashboard-notification-btn::before {
     overflow: hidden !important;
     display: inline-flex !important;
     align-items: center !important;
+    height: 38px !important;
+    line-height: 1 !important;
     gap: 8px !important;
-    padding: 4px 14px 4px 5px !important;
+    padding: 3px 14px 3px 4px !important;
     border-radius: 9999px !important;
     background-color: rgba(255, 255, 255, 0.12) !important;
     border: 1px solid rgba(255, 255, 255, 0.22) !important;
     color: #ffffff !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     text-decoration: none !important;
-    transition: transform 0.35s var(--liquid-spring), box-shadow 0.35s var(--liquid-spring), background-color 0.2s ease, border-color 0.2s ease;
+    box-sizing: border-box !important;
+    transform-origin: center center !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
 }
 
 .nav-user-dropdown::before,
@@ -397,13 +400,14 @@ html.supports-liquid .admin-avatar-btn::before {
     background-color: rgba(255, 255, 255, 0.2) !important;
     border-color: rgba(255, 255, 255, 0.35) !important;
     color: #ffffff !important;
-    transform: scale(1.03) translateZ(0);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24) !important;
+    transform: scale(1.02) translateZ(0) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.24) !important;
 }
 
 .nav-user-dropdown:active,
 .admin-avatar-btn:active {
-    transform: scale(0.97, 0.94) translateZ(0) !important;
+    transform: scale(0.98) translateZ(0) !important;
+    transition-duration: 0.08s !important;
 }
 
 /* Floating Capsule Tab Bars (Admin Center Nav, Vendor Nav, Filter Groups) */
@@ -635,19 +639,29 @@ html.supports-liquid .toast {
 .admin-topbar,
 .dashboard-topbar,
 .site-navbar.sticky-top {
-    transition: padding 0.3s var(--liquid-spring), background-color 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease;
+    transition: padding 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease, backdrop-filter 0.25s ease !important;
 }
 
 .admin-topbar.topbar-condensed,
-.dashboard-topbar.topbar-condensed,
-.site-navbar.navbar-scrolled {
+.dashboard-topbar.topbar-condensed {
     padding-top: 8px !important;
     padding-bottom: 8px !important;
-    background: rgba(255, 255, 255, 0.78) !important;
+    background: rgba(255, 255, 255, 0.85) !important;
     backdrop-filter: blur(20px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
     box-shadow: 0 8px 32px rgba(31, 122, 77, 0.1) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.6) !important;
+}
+
+.site-navbar.topbar-condensed,
+.site-navbar.navbar-scrolled {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    background: rgba(18, 24, 30, 0.96) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 /* -------------------------------------------------------------------------
