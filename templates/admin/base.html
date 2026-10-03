@@ -102,7 +102,7 @@
                     
                     <!-- Avatar Dropdown -->
                     <div class="dropdown">
-                        <button class="admin-avatar-btn dropdown-toggle border-0" type="button" id="adminUserDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="admin-avatar-btn border-0" type="button" id="adminUserDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             {% if current_user.profile_photo_url %}
                             <div class="topbar-avatar-circle"><img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}"></div>
                             {% else %}

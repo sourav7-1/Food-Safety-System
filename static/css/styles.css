@@ -296,16 +296,26 @@ p {
 }
 
 /* User Avatar & Dropdown */
+.nav-user-dropdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 14px 4px 5px;
+    border-radius: 9999px;
+    text-decoration: none;
+}
+
 .navbar-avatar {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     object-fit: cover;
+    border-radius: 50%;
     border: 2px solid rgba(255, 255, 255, 0.6);
 }
 
 .navbar-avatar-placeholder {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: linear-gradient(135deg, #059669, #10b981);
     color: #ffffff;

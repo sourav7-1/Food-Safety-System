@@ -43,13 +43,14 @@
                     {% block navbar_actions %}
                     {% if current_user.is_authenticated %}
                         <div class="dropdown">
-                            <a class="nav-user-dropdown dropdown-toggle d-flex align-items-center gap-2 text-decoration-none text-white" href="#" role="button" id="userNavbarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-user-dropdown d-flex align-items-center gap-2 text-decoration-none text-white" href="#" role="button" id="userNavbarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 {% if current_user.profile_photo_url %}
                                 <img src="{{ current_user.profile_photo_url }}" alt="{{ current_user.full_name }}" class="navbar-avatar rounded-circle">
                                 {% else %}
                                 <span class="navbar-avatar-placeholder">{{ current_user.full_name[:1]|upper }}</span>
                                 {% endif %}
                                 <span class="d-none d-sm-inline fw-semibold text-white">{{ current_user.full_name }}</span>
+                                <i class="fa-solid fa-chevron-down ms-1 text-white-50" style="font-size: 10px;"></i>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="userNavbarDropdown">
                                 <li>
