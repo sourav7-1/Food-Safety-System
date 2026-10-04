@@ -20,9 +20,6 @@
         <a class="dashboard-link {{ 'active' if request.endpoint in ('customer_portal.dashboard', 'dashboard.customer') }}" href="{{ url_for('customer_portal.dashboard') }}">
             <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
         </a>
-        <a class="dashboard-link {{ 'active' if request.endpoint == 'home' }}" href="{{ url_for('home') }}">
-            <i class="fa-solid fa-house"></i><span>Home</span>
-        </a>
         <a class="dashboard-link {{ 'active' if request.endpoint in ('customer_portal.search_stalls', 'customer_portal.stall_detail') }}" href="{{ url_for('customer_portal.search_stalls') }}">
             <i class="fa-solid fa-magnifying-glass"></i><span>Find Stalls</span>
         </a>

@@ -36,7 +36,7 @@
     </div>
 </div>
 
-<div class="row g-4 mt-1">
+<div class="row g-3 g-md-4 mt-1">
     <div class="col-lg-6">
         <section class="dashboard-card board-high">
             <div class="dashboard-card-header clickable-header" onclick="openRiskModal('high')">
@@ -46,7 +46,7 @@
             <p class="dashboard-card-caption">Ranked worst first &mdash; critical stalls before high-risk ones.</p>
             <div class="table-responsive">
                 <table class="table dashboard-table mb-0">
-                    <thead><tr><th>#</th><th>Stall</th><th>Area</th><th class="text-center">Score</th><th class="text-center">Grade</th><th class="text-center">Risk</th></tr></thead>
+                    <thead><tr><th style="width: 28px;">#</th><th>Stall</th><th class="col-area-desktop">Area</th><th class="text-center col-score">Score</th><th class="text-center col-grade">Grade</th><th class="text-center col-risk-desktop">Risk</th></tr></thead>
                     <tbody id="highRiskBoardBody">{{ render_leaderboard_rows(high_risk, "No high-risk stalls right now.") }}</tbody>
                 </table>
             </div>
@@ -61,7 +61,7 @@
             <p class="dashboard-card-caption">Ranked best first &mdash; highest hygiene score leads.</p>
             <div class="table-responsive">
                 <table class="table dashboard-table mb-0">
-                    <thead><tr><th>#</th><th>Stall</th><th>Area</th><th class="text-center">Score</th><th class="text-center">Grade</th><th class="text-center">Risk</th></tr></thead>
+                    <thead><tr><th style="width: 28px;">#</th><th>Stall</th><th class="col-area-desktop">Area</th><th class="text-center col-score">Score</th><th class="text-center col-grade">Grade</th><th class="text-center col-risk-desktop">Risk</th></tr></thead>
                     <tbody id="lowRiskBoardBody">{{ render_leaderboard_rows(low_risk, "No low-risk stalls have been inspected yet.") }}</tbody>
                 </table>
             </div>
@@ -69,12 +69,12 @@
     </div>
 </div>
 
-<div class="row g-4 mt-1">
+<div class="row g-3 g-md-4 mt-1">
     <div class="col-12">
         <section class="dashboard-card">
-            <div class="dashboard-card-header">
+            <div class="dashboard-card-header flex-wrap gap-2">
                 <h3><i class="fa-solid fa-chart-pie"></i> Risk Distribution</h3>
-                <span class="dashboard-card-note">Live count across all active, inspected stalls</span>
+                <span class="dashboard-card-note">Live count across active stalls</span>
             </div>
             <div class="chart-wrap"><canvas id="riskDistributionChart"></canvas></div>
         </section>
@@ -168,14 +168,18 @@
         var score = entry.overall_score != null ? entry.overall_score + "%" : "—";
         var grade = entry.hygiene_grade || "—";
         var risk = entry.risk_level || "unrated";
+        var area = escapeHtml(entry.area_name) + (entry.city ? ', ' + escapeHtml(entry.city) : '');
         return (
             '<tr>' +
-            '<td class="dashboard-rank">' + entry.rank + '</td>' +
-            '<td><a href="' + entry.detail_url + '">' + escapeHtml(entry.stall_name) + '</a></td>' +
-            '<td>' + escapeHtml(entry.area_name) + (entry.city ? ', ' + escapeHtml(entry.city) : '') + '</td>' +
-            '<td class="text-center">' + escapeHtml(score) + '</td>' +
-            '<td class="text-center"><span class="grade-chip grade-' + escapeHtml(String(grade).toLowerCase()) + '">' + escapeHtml(grade) + '</span></td>' +
-            '<td class="text-center"><span class="risk-badge risk-' + escapeHtml(risk) + '">' + escapeHtml(risk) + '</span></td>' +
+            '<td class="leaderboard-rank">' + entry.rank + '</td>' +
+            '<td class="col-stall">' +
+            '  <a class="stall-link text-decoration-none" href="' + entry.detail_url + '">' + escapeHtml(entry.stall_name) + '</a>' +
+            '  <div class="stall-sub-area text-muted">' + area + '</div>' +
+            '</td>' +
+            '<td class="col-area-desktop">' + area + '</td>' +
+            '<td class="text-center col-score fw-bold">' + escapeHtml(score) + '</td>' +
+            '<td class="text-center col-grade"><span class="grade-chip grade-' + escapeHtml(String(grade).toLowerCase()) + '">' + escapeHtml(grade) + '</span></td>' +
+            '<td class="text-center col-risk-desktop"><span class="risk-badge risk-' + escapeHtml(risk) + '">' + escapeHtml(risk) + '</span></td>' +
             '</tr>'
         );
     }
@@ -208,14 +212,25 @@
                     data: [initial.low, initial.medium, initial.high, initial.critical],
                     backgroundColor: ["#059669", "#d97706", "#ea580c", "#dc2626"],
                     borderWidth: 0,
-                    spacing: 3
+                    spacing: 2
                 }],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: "70%",
-                plugins: { legend: { position: "bottom", labels: { usePointStyle: true, padding: 14 } } },
+                cutout: "68%",
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: "circle",
+                            boxWidth: 8,
+                            padding: 10,
+                            font: { size: 11 }
+                        }
+                    }
+                },
                 onClick: function (event, activeElements) {
                     if (activeElements && activeElements.length > 0) {
                         var index = activeElements[0].index;
