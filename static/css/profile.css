@@ -1,29 +1,31 @@
 /* ==========================================================================
    DIU Food Safety System — Profile & Account Workspace
-   Modern, Accessible, Multi-Role Identity & Security Hub
+   Unified Emerald, Mint & Charcoal Design Language (Apple Liquid Glass Style)
    ========================================================================== */
 
 :root {
-    --prof-primary: #15803d;
+    --prof-primary: #1f7a4d;
     --prof-primary-hover: #166534;
     --prof-primary-light: #eef8f2;
-    --prof-primary-glow: rgba(21, 128, 61, 0.2);
-    
-    --prof-border: #e2e8f0;
-    --prof-border-focus: #15803d;
-    --prof-text-main: #192128;
-    --prof-text-muted: #4a5568;
-    --prof-text-subtle: #718096;
-    
-    --prof-shadow-sm: 0 1px 3px rgba(28, 43, 31, 0.04);
-    --prof-shadow-md: 0 4px 20px -2px rgba(28, 43, 31, 0.05);
-    --prof-shadow-lg: 0 12px 32px -4px rgba(28, 43, 31, 0.09);
-    --prof-radius: 22px;
-    --prof-radius-sm: 14px;
+    --prof-primary-glow: rgba(31, 122, 77, 0.22);
+    --prof-accent-emerald: #10b981;
+    --prof-accent-mint: #34d399;
 
-    --prof-bg-card: #ffffff;
+    --prof-border: rgba(226, 232, 240, 0.85);
+    --prof-border-focus: #1f7a4d;
+    --prof-text-main: #141f19;
+    --prof-text-muted: #526159;
+    --prof-text-subtle: #7a8c82;
+
+    --prof-shadow-sm: 0 1px 3px rgba(28, 43, 31, 0.04);
+    --prof-shadow-md: 0 8px 24px -2px rgba(31, 122, 77, 0.07);
+    --prof-shadow-lg: 0 14px 36px -4px rgba(31, 122, 77, 0.12);
+    --prof-radius: 20px;
+    --prof-radius-sm: 12px;
+
+    --prof-bg-card: rgba(255, 255, 255, 0.9);
     --prof-danger: #dc2626;
-    --prof-success: #15803d;
+    --prof-success: #10b981;
     --prof-warning: #d97706;
 }
 
@@ -35,295 +37,51 @@
 }
 
 /* ==========================================================================
-   Executive Profile Hero Banner
+   Executive Profile Hero Banner (Deep Charcoal + Ambient Emerald)
    ========================================================================== */
 
 .admin-profile-hero {
     position: relative;
-    background: radial-gradient(circle at 100% 0%, rgba(21, 128, 61, 0.35) 0%, transparent 60%), linear-gradient(135deg, #181e24 0%, #232c35 100%);
+    background: 
+        radial-gradient(circle at 92% 15%, rgba(31, 122, 77, 0.38) 0%, transparent 55%),
+        radial-gradient(circle at 10% 85%, rgba(16, 185, 129, 0.15) 0%, transparent 50%),
+        linear-gradient(135deg, #181e24 0%, #1f2a24 55%, #151d18 100%);
     border-radius: 24px;
     padding: 2.25rem 2.5rem;
     color: #ffffff;
-    margin-bottom: 2rem;
-    box-shadow: 0 12px 32px -4px rgba(24, 30, 36, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 1.75rem;
+    box-shadow: 0 16px 36px -6px rgba(18, 28, 22, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     overflow: hidden;
 }
 
 .admin-profile-hero.hero-student {
-    background: radial-gradient(circle at 100% 0%, rgba(21, 128, 61, 0.4) 0%, transparent 60%), linear-gradient(135deg, #181e24 0%, #1c3829 55%, #181e24 100%);
+    background: 
+        radial-gradient(circle at 92% 15%, rgba(31, 122, 77, 0.45) 0%, transparent 60%),
+        radial-gradient(circle at 15% 85%, rgba(16, 185, 129, 0.2) 0%, transparent 50%),
+        linear-gradient(135deg, #161e19 0%, #1c3326 55%, #141c17 100%);
 }
-
-.admin-hero-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
-    position: relative;
-    z-index: 1;
-}
-
-.admin-hero-identity {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.admin-avatar-wrapper {
-    position: relative;
-    flex-shrink: 0;
-}
-
-.admin-avatar-img {
-    width: 84px;
-    height: 84px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid rgba(255, 255, 255, 0.85);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-    background: #ffffff;
-}
-
-.admin-avatar-placeholder {
-    width: 84px;
-    height: 84px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    color: #ffffff;
-    font-family: "Plus Jakarta Sans", sans-serif;
-    font-size: 2rem;
-    font-weight: 800;
-    display: grid;
-    place-items: center;
-    border: 3px solid rgba(255, 255, 255, 0.85);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-}
-
-.admin-hero-title-group h1 {
-    font-family: "Plus Jakarta Sans", sans-serif;
-    font-size: clamp(1.6rem, 2.6vw, 2.1rem);
-    font-weight: 800;
-    color: #ffffff;
-    margin: 0 0 0.35rem;
-    letter-spacing: -0.03em;
-}
-
-.admin-hero-badges {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.role-badge-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.85rem;
-    border-radius: 9999px;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: #ffffff;
-}
-
-.role-badge-pill.active {
-    background: #ecfdf5;
-    color: #059669;
-    border-color: #a7f3d0;
-}
-
-/* Hero Metrics Box */
-.admin-hero-metrics {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-}
-
-.hero-metric-box {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 14px;
-    padding: 0.85rem 1.25rem;
-    text-align: center;
-    min-width: 110px;
-}
-
-.hero-metric-box small {
-    display: block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #cbd5e1;
-    margin-bottom: 0.2rem;
-}
-
-.hero-metric-box strong {
-    font-family: "Plus Jakarta Sans", sans-serif;
-    font-size: 1.45rem;
-    font-weight: 800;
-    color: #ffffff;
-    line-height: 1.1;
-}
-
-/* ==========================================================================
-   Profile Navigation Tabs
-   ========================================================================== */
-
-.profile-tabs-wrapper {
-    display: flex;
-    gap: 0.35rem;
-    background: #ffffff;
-    border: 1px solid var(--prof-border);
-    border-radius: 9999px;
-    padding: 0.35rem;
-    box-shadow: var(--prof-shadow-sm);
-    margin-bottom: 2rem;
-    overflow-x: auto;
-}
-
-.profile-tab-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.35rem;
-    border-radius: 9999px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--prof-text-muted);
-    text-decoration: none;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.18s ease;
-}
-
-.profile-tab-btn:hover {
-    color: var(--prof-text-main);
-    background: #f1f5f9;
-}
-
-.profile-tab-btn.active {
-    background: var(--prof-primary);
-    color: #ffffff !important;
-    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
-}
-
-/* ==========================================================================
-   Profile Cards & Content Panes
-   ========================================================================== */
-
-.admin-profile-card {
-    background: #ffffff;
-    border: 1px solid var(--prof-border);
-    border-radius: var(--prof-radius);
-    padding: 2rem;
-    box-shadow: var(--prof-shadow-sm);
-    margin-bottom: 2rem;
-}
-
-.admin-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.admin-card-header h3 {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--prof-text-main);
-    margin: 0;
-}
-
-.admin-card-header p {
-    font-size: 0.85rem;
-    color: var(--prof-text-muted);
-    margin: 0.2rem 0 0;
-}
-
-/* Form Controls */
-.admin-form-control {
-    width: 100%;
-    min-height: 44px;
-    padding: 0.65rem 1rem;
-    border-radius: var(--prof-radius-sm);
-    border: 1px solid var(--prof-border);
-    background: #ffffff;
-    color: var(--prof-text-main);
-    font-size: 0.925rem;
-    font-weight: 500;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    transition: all 0.18s ease;
-}
-
-.admin-form-control:focus {
-    border-color: var(--prof-primary);
-    box-shadow: 0 0 0 3px var(--prof-primary-glow);
-    outline: none;
-}
-
-.admin-form-control:disabled,
-.admin-form-control[readonly] {
-    background-color: #f8fafc;
-    color: var(--prof-text-subtle);
-    cursor: not-allowed;
-}
-
-/* Password Strength Meter */
-.password-meter-bar {
-    height: 5px;
-    border-radius: 9999px;
-    background: #e2e8f0;
-    overflow: hidden;
-    margin-top: 0.5rem;
-}
-
-.password-meter-fill {
-    height: 100%;
-    width: 0%;
-    border-radius: 9999px;
-    transition: width 0.3s ease, background-color 0.3s ease;
-}
-
-.password-meter-fill.weak { width: 30%; background: #ef4444; }
-.password-meter-fill.medium { width: 65%; background: #f59e0b; }
-.password-meter-fill.strong { width: 100%; background: #10b981; }
-
-@media (max-width: 991.98px) {
-    .admin-profile-hero {
-        padding: 1.75rem;
-    }
-    .admin-hero-content {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .admin-hero-metrics {
-        width: 100%;
-    }
-}
-
 
 .admin-profile-hero.hero-vendor {
-    background: linear-gradient(135deg, #134e4a 0%, #0f766e 55%, #047857 100%);
-    box-shadow: 0 14px 36px rgba(15, 118, 110, 0.25);
+    background: 
+        radial-gradient(circle at 92% 15%, rgba(245, 158, 11, 0.35) 0%, transparent 60%),
+        radial-gradient(circle at 15% 85%, rgba(31, 122, 77, 0.2) 0%, transparent 50%),
+        linear-gradient(135deg, #1c1d18 0%, #282a1e 55%, #171a16 100%);
 }
 
 .admin-profile-hero.hero-inspector {
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #312e81 100%);
-    box-shadow: 0 14px 36px rgba(49, 46, 129, 0.25);
+    background: 
+        radial-gradient(circle at 92% 15%, rgba(16, 185, 129, 0.4) 0%, transparent 60%),
+        radial-gradient(circle at 15% 85%, rgba(6, 95, 70, 0.25) 0%, transparent 50%),
+        linear-gradient(135deg, #15201b 0%, #1a3529 55%, #131d18 100%);
 }
 
+.admin-profile-hero.hero-admin,
 .admin-profile-hero.hero-default {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
+    background: 
+        radial-gradient(circle at 92% 15%, rgba(31, 122, 77, 0.38) 0%, transparent 60%),
+        radial-gradient(circle at 15% 85%, rgba(52, 211, 153, 0.15) 0%, transparent 50%),
+        linear-gradient(135deg, #181e24 0%, #202b25 55%, #151c18 100%);
 }
 
 .admin-profile-hero::before {
@@ -333,7 +91,7 @@
     right: -10%;
     width: 450px;
     height: 450px;
-    background: radial-gradient(circle, rgba(0, 113, 227, 0.35) 0%, rgba(139, 92, 246, 0.15) 50%, transparent 70%);
+    background: radial-gradient(circle, rgba(31, 122, 77, 0.28) 0%, rgba(16, 185, 129, 0.12) 50%, transparent 70%);
     border-radius: 50%;
     filter: blur(40px);
     pointer-events: none;
@@ -346,7 +104,7 @@
     left: 20%;
     width: 320px;
     height: 320px;
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(52, 211, 153, 0.16) 0%, transparent 70%);
     border-radius: 50%;
     filter: blur(40px);
     pointer-events: none;
@@ -369,7 +127,10 @@
     flex-wrap: wrap;
 }
 
-/* Avatar System */
+/* ==========================================================================
+   Avatar System (Harmonious Emerald Gradient)
+   ========================================================================== */
+
 .admin-avatar-wrapper {
     position: relative;
     width: 92px;
@@ -382,8 +143,8 @@
     height: 100%;
     border-radius: 50%;
     padding: 3px;
-    background: linear-gradient(135deg, #0071e3, #8b5cf6);
-    box-shadow: 0 8px 24px rgba(0, 113, 227, 0.35);
+    background: linear-gradient(135deg, #10b981 0%, #1f7a4d 50%, #34d399 100%);
+    box-shadow: 0 8px 24px rgba(31, 122, 77, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -393,12 +154,12 @@
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background: #1e293b;
+    background: #181e24;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid #0f172a;
+    border: 2px solid #141c18;
 }
 
 .admin-avatar-inner img {
@@ -411,13 +172,15 @@
     font-size: 34px;
     font-weight: 800;
     color: #ffffff;
-    background: linear-gradient(135deg, #0071e3, #3898ff);
+    background: linear-gradient(135deg, #1f7a4d 0%, #10b981 100%);
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    letter-spacing: -0.5px;
 }
 
 .admin-avatar-status {
@@ -427,19 +190,19 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    border: 3px solid #0f172a;
+    border: 3px solid #141c18;
     background: var(--prof-success);
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
 }
 
 .admin-avatar-status.status-inactive {
     background: var(--prof-warning);
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
 }
 
 .admin-avatar-status.status-suspended {
     background: var(--prof-danger);
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
 }
 
 .admin-hero-title-group h1 {
@@ -462,6 +225,10 @@
     margin-top: 4px;
 }
 
+/* ==========================================================================
+   Hero Chips & Badges
+   ========================================================================== */
+
 .hero-chip {
     display: inline-flex;
     align-items: center;
@@ -472,34 +239,47 @@
     font-weight: 700;
     letter-spacing: 0.2px;
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9;
 }
 
 .hero-chip-role {
-    background: rgba(0, 113, 227, 0.25);
-    color: #93c5fd;
-    border-color: rgba(147, 197, 253, 0.3);
+    background: rgba(31, 122, 77, 0.35);
+    color: #a7f3d0;
+    border-color: rgba(167, 243, 208, 0.4);
+    box-shadow: 0 2px 8px rgba(31, 122, 77, 0.25);
 }
 
 .hero-chip-super {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(236, 72, 153, 0.3));
-    color: #fbcfe8;
-    border-color: rgba(244, 114, 182, 0.4);
-    box-shadow: 0 0 14px rgba(236, 72, 153, 0.25);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(217, 119, 6, 0.38));
+    color: #fde68a;
+    border-color: rgba(251, 191, 36, 0.45);
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.2);
 }
 
 .hero-chip-status {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.22);
     color: #6ee7b7;
-    border-color: rgba(110, 231, 183, 0.3);
+    border-color: rgba(110, 231, 183, 0.35);
 }
 
 .hero-chip-email {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
-/* Quick Metrics Row in Hero */
+.hero-chip-verified,
+.hero-chip .text-info {
+    color: #34d399 !important;
+}
+
+/* ==========================================================================
+   Quick Metrics Row in Hero
+   ========================================================================== */
+
 .admin-hero-metrics {
     display: flex;
     align-items: center;
@@ -510,6 +290,7 @@
 .hero-metric-box {
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--prof-radius-sm);
     padding: 10px 16px;
@@ -520,14 +301,15 @@
 
 .hero-metric-box:hover {
     background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.22);
     transform: translateY(-2px);
 }
 
 .hero-metric-label {
-    font-size: 10px;
-    font-weight: 800;
+    font-size: 10.5px;
+    font-weight: 700;
     color: #94a3b8;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.6px;
     text-transform: uppercase;
     margin-bottom: 2px;
     display: flex;
@@ -543,18 +325,21 @@
 }
 
 /* ==========================================================================
-   Modern Apple Segmented Navigation Tabs
+   Segmented Navigation Tabs (Apple Glass Bar)
    ========================================================================== */
+
 .admin-profile-nav {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #ffffff;
-    border: 1px solid var(--prof-border);
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(31, 122, 77, 0.14);
     border-radius: var(--prof-radius-sm);
-    padding: 6px;
+    padding: 5px;
     margin-bottom: 1.75rem;
-    box-shadow: var(--prof-shadow-sm);
+    box-shadow: 0 4px 16px rgba(31, 122, 77, 0.06);
     overflow-x: auto;
     scrollbar-width: none;
 }
@@ -567,10 +352,10 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 18px;
+    padding: 9px 18px;
     border-radius: 10px;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--prof-text-muted);
     border: 0;
     background: transparent;
@@ -586,8 +371,8 @@
 }
 
 .admin-profile-tab:hover {
-    color: var(--prof-text-main);
-    background: #f1f5f9;
+    color: var(--prof-primary);
+    background: var(--prof-primary-light);
 }
 
 .admin-profile-tab:hover i {
@@ -595,22 +380,39 @@
 }
 
 .admin-profile-tab.active {
-    background: var(--prof-primary);
+    background: linear-gradient(135deg, #1f7a4d 0%, #166534 100%);
     color: #ffffff !important;
-    box-shadow: 0 4px 14px var(--prof-primary-glow);
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(31, 122, 77, 0.32);
 }
 
 /* ==========================================================================
    Elevated Profile Cards & Sections
    ========================================================================== */
+
 .admin-profile-card {
     background: var(--prof-bg-card);
-    border: 1px solid var(--prof-border);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.75);
     border-radius: var(--prof-radius);
     padding: 24px 28px;
     box-shadow: var(--prof-shadow-md);
-    transition: box-shadow 0.28s ease, border-color 0.28s ease;
-    height: 100%;
+    transition: box-shadow 0.28s ease, border-color 0.28s ease, transform 0.2s ease;
+}
+
+/* admin-theme.css reuses .admin-profile-card for a dashboard tile (flex + height:100%
+   + space-between). Undo that here, and only equalise heights for a lone card in a
+   side-by-side column — stacked cards at height:100% overlap the next column. */
+.admin-profile-workspace .admin-profile-card {
+    display: block;
+    height: auto;
+}
+
+@media (min-width: 992px) {
+    .admin-profile-workspace .row > [class*="col-"] > .admin-profile-card:only-child {
+        height: 100%;
+    }
 }
 
 .admin-profile-card:hover {
@@ -624,13 +426,30 @@
     gap: 12px;
     margin-bottom: 22px;
     padding-bottom: 14px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(31, 122, 77, 0.08);
 }
 
 .card-title-group {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
+}
+
+/* Hero chips are tuned for the dark hero; on a white card they need light-surface colours */
+.admin-profile-card-header .hero-chip {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    background: var(--prof-primary-light);
+    color: var(--prof-primary);
+    border-color: rgba(31, 122, 77, 0.2);
+}
+
+.admin-profile-card-header .hero-chip-super {
+    background: #fffbeb;
+    color: #92400e;
+    border-color: #fde68a;
 }
 
 .card-icon-badge {
@@ -644,11 +463,27 @@
     flex: 0 0 38px;
 }
 
-.card-icon-blue { background: #eff6ff; color: #0071e3; }
-.card-icon-green { background: #ecfdf5; color: #10b981; }
-.card-icon-purple { background: #f5f3ff; color: #8b5cf6; }
-.card-icon-orange { background: #fff7ed; color: #ea580c; }
-.card-icon-red { background: #fef2f2; color: #ef4444; }
+.card-icon-green,
+.card-icon-blue { 
+    background: #ecfdf5; 
+    color: #10b981; 
+}
+
+.card-icon-purple,
+.card-icon-slate { 
+    background: #f1f5f9; 
+    color: #475569; 
+}
+
+.card-icon-orange { 
+    background: #fffbeb; 
+    color: #d97706; 
+}
+
+.card-icon-red { 
+    background: #fef2f2; 
+    color: #dc2626; 
+}
 
 .admin-profile-card-header h2,
 .admin-profile-card-header h3 {
@@ -668,6 +503,7 @@
 /* ==========================================================================
    Photo Upload Dropzone & Avatar Manager
    ========================================================================== */
+
 .avatar-manager-box {
     display: flex;
     flex-direction: column;
@@ -690,7 +526,7 @@
     overflow: hidden;
     background: #f1f5f9;
     border: 3px solid #ffffff;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px rgba(31, 122, 77, 0.15), 0 2px 8px rgba(0, 0, 0, 0.06);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -707,18 +543,20 @@
     font-size: 42px;
     font-weight: 800;
     color: #ffffff;
-    background: linear-gradient(135deg, #0071e3, #6366f1);
+    background: linear-gradient(135deg, #1f7a4d 0%, #10b981 100%);
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
 }
 
 .avatar-dropzone {
     width: 100%;
-    border: 2px dashed rgba(0, 113, 227, 0.25);
-    background: #f8fafc;
+    border: 2px dashed rgba(31, 122, 77, 0.28);
+    background: #fbfdfc;
     border-radius: var(--prof-radius-sm);
     padding: 16px;
     cursor: pointer;
@@ -764,6 +602,7 @@
 /* ==========================================================================
    Refined Form Inputs & Icons
    ========================================================================== */
+
 .admin-form-group {
     margin-bottom: 18px;
 }
@@ -771,12 +610,17 @@
 .admin-form-label {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 8px;
     font-size: 11.5px;
     font-weight: 700;
-    color: #475569;
+    color: #3d4f45;
     margin-bottom: 7px;
     letter-spacing: 0.2px;
+}
+
+/* Secondary hint (Verified, char counter) sits on the right */
+.admin-form-label > span + span {
+    margin-left: auto;
 }
 
 .admin-form-label span.required {
@@ -793,7 +637,7 @@
 .admin-input-icon {
     position: absolute;
     left: 14px;
-    color: #94a3b8;
+    color: #8c9e94;
     font-size: 13.5px;
     pointer-events: none;
     z-index: 4;
@@ -807,8 +651,8 @@
     font-size: 13.5px;
     font-weight: 500;
     color: var(--prof-text-main);
-    background-color: #fcfcfd;
-    border: 1px solid #e2e8f0;
+    background-color: #fcfdfc;
+    border: 1px solid #dce4df;
     border-radius: var(--prof-radius-sm);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
@@ -826,6 +670,13 @@
     color: var(--prof-primary);
 }
 
+.admin-form-control:disabled,
+.admin-form-control[readonly] {
+    background-color: #f4f7f5;
+    color: var(--prof-text-subtle);
+    cursor: not-allowed;
+}
+
 textarea.admin-form-control {
     height: auto;
     min-height: 86px;
@@ -836,7 +687,7 @@ textarea.admin-form-control {
 select.admin-form-control {
     padding-right: 32px;
     cursor: pointer;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%231f7a4d' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 12px center;
     background-size: 14px 10px;
@@ -845,25 +696,43 @@ select.admin-form-control {
 
 .password-toggle-btn {
     position: absolute;
-    right: 12px;
+    right: 0;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
     background: transparent;
     border: 0;
-    color: #94a3b8;
+    border-radius: var(--prof-radius-sm);
+    color: #8c9e94;
     cursor: pointer;
-    padding: 6px;
+    padding: 0;
     font-size: 13.5px;
     z-index: 5;
     transition: color 0.15s ease;
+}
+
+.password-toggle-btn:focus-visible {
+    outline: 2px solid var(--prof-primary);
+    outline-offset: -4px;
+}
+
+/* Keep typed text clear of the eye button */
+.admin-input-group:has(.password-toggle-btn) .admin-form-control {
+    padding-right: 44px;
 }
 
 .password-toggle-btn:hover {
     color: var(--prof-text-main);
 }
 
-/* Security Callout Box */
+/* ==========================================================================
+   Security Notice Callout Box
+   ========================================================================== */
+
 .security-notice-box {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
     border-left: 4px solid var(--prof-primary);
     border-radius: var(--prof-radius-sm);
     padding: 14px 16px;
@@ -876,7 +745,7 @@ select.admin-form-control {
     gap: 8px;
     font-size: 12.5px;
     font-weight: 800;
-    color: #1e293b;
+    color: #14532d;
     margin-bottom: 4px;
 }
 
@@ -938,8 +807,9 @@ select.admin-form-control {
 /* ==========================================================================
    Modern Buttons with Micro-Interactions
    ========================================================================== */
+
 .btn-prof-primary {
-    background: var(--prof-primary);
+    background: linear-gradient(135deg, #1f7a4d 0%, #166534 100%);
     color: #ffffff;
     font-size: 13.5px;
     font-weight: 700;
@@ -949,17 +819,17 @@ select.admin-form-control {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 4px 12px var(--prof-primary-glow);
+    box-shadow: 0 4px 14px var(--prof-primary-glow);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     cursor: pointer;
     text-decoration: none;
 }
 
 .btn-prof-primary:hover {
-    background: var(--prof-primary-hover);
+    background: linear-gradient(135deg, #166534 0%, #14532d 100%);
     color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px var(--prof-primary-glow);
+    box-shadow: 0 6px 18px rgba(31, 122, 77, 0.35);
 }
 
 .btn-prof-danger {
@@ -982,12 +852,13 @@ select.admin-form-control {
     background: var(--prof-danger);
     color: #ffffff;
     border-color: var(--prof-danger);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
 }
 
 /* ==========================================================================
    Permissions Matrix & Grid
    ========================================================================== */
+
 .permissions-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -1008,16 +879,16 @@ select.admin-form-control {
 
 .permission-card-chip:hover {
     background: #ffffff;
-    border-color: #cbd5e1;
+    border-color: #86efac;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 14px rgba(31, 122, 77, 0.08);
 }
 
 .permission-icon {
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    background: #eff6ff;
+    background: #eef8f2;
     color: var(--prof-primary);
     display: flex;
     align-items: center;
@@ -1043,10 +914,11 @@ select.admin-form-control {
 /* ==========================================================================
    Activity & Audit Logs Table
    ========================================================================== */
+
 .prof-table-wrap {
     overflow-x: auto;
     border-radius: var(--prof-radius-sm);
-    border: 1px solid #f1f5f9;
+    border: 1px solid #e8f0ec;
 }
 
 .prof-table {
@@ -1057,20 +929,20 @@ select.admin-form-control {
 }
 
 .prof-table th {
-    background: #f8fafc;
-    color: #64748b;
+    background: #f4f8f5;
+    color: #4a5d52;
     font-size: 0.72rem;
     font-weight: 800;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     padding: 12px 16px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #dce6df;
     text-align: left;
 }
 
 .prof-table td {
     padding: 13px 16px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid #edf2ee;
     color: var(--prof-text-main);
     vertical-align: middle;
 }
@@ -1080,7 +952,7 @@ select.admin-form-control {
 }
 
 .prof-table tr:hover td {
-    background: #f8fafc;
+    background: #f8fbf9;
 }
 
 .event-pill {
@@ -1121,8 +993,9 @@ select.admin-form-control {
 }
 
 /* ==========================================================================
-   Shared / Legacy Portal Styles (Preserves Student, Vendor, Inspector pages)
+   Shared / Legacy Profile Fallback Classes
    ========================================================================== */
+
 .profile-header {
     display: flex;
     align-items: center;
@@ -1131,7 +1004,7 @@ select.admin-form-control {
 }
 
 .profile-header .eyebrow {
-    color: #0071e3;
+    color: var(--prof-primary);
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 1.5px;
@@ -1142,7 +1015,7 @@ select.admin-form-control {
     font-weight: 800;
     letter-spacing: -0.6px;
     margin: 4px 0 3px;
-    color: #122033;
+    color: var(--prof-text-main);
 }
 
 .profile-avatar-lg {
@@ -1153,11 +1026,11 @@ select.admin-form-control {
     overflow: hidden;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, #0071e3, #6366f1);
+    background: linear-gradient(135deg, #1f7a4d 0%, #10b981 100%);
     color: #fff;
     font-size: 32px;
     font-weight: 800;
-    box-shadow: 0 10px 26px rgba(0, 113, 227, 0.2);
+    box-shadow: 0 10px 26px rgba(31, 122, 77, 0.25);
 }
 
 .profile-avatar-lg img {
@@ -1193,6 +1066,7 @@ select.admin-form-control {
 /* ==========================================================================
    Responsive Adaptations
    ========================================================================== */
+
 @media (max-width: 991.98px) {
     .admin-profile-hero {
         padding: 1.75rem;
@@ -1209,24 +1083,192 @@ select.admin-form-control {
     }
 }
 
+/* Summary rows: keep label and value apart, let long values wrap */
+.admin-profile-card li.d-flex {
+    gap: 12px;
+}
+
+.admin-profile-card li.d-flex > span:last-child {
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+/* Touch screens have no hover — don't leave elements stuck mid-lift */
+@media (hover: none) {
+    .hero-metric-box:hover,
+    .permission-card-chip:hover,
+    .btn-prof-primary:hover,
+    .admin-profile-tab:hover i {
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-profile-workspace *,
+    .admin-profile-workspace *::before,
+    .admin-profile-workspace *::after {
+        transition: none !important;
+    }
+}
+
 @media (max-width: 575.98px) {
+    .profile-page,
+    .admin-profile-workspace {
+        padding: 0 0 32px;
+    }
+
+    /* Hero: avatar beside the name, chips below, metrics as a 2×2 grid */
     .admin-profile-hero {
-        padding: 1.25rem;
+        padding: 20px 16px;
+        border-radius: 20px;
+        margin-bottom: 16px;
+    }
+    .admin-hero-content {
+        gap: 20px;
     }
     .admin-hero-identity {
-        flex-direction: column;
+        flex-wrap: nowrap;
         align-items: flex-start;
-        gap: 1rem;
+        gap: 16px;
+        width: 100%;
+    }
+    .admin-hero-title-group {
+        flex: 1;
+        min-width: 0;
+    }
+    .admin-avatar-wrapper {
+        width: 64px;
+        height: 64px;
+        flex-basis: 64px;
+    }
+    .admin-avatar-initials {
+        font-size: 24px;
+    }
+    .admin-avatar-status {
+        width: 16px;
+        height: 16px;
+        border-width: 2px;
     }
     .admin-hero-title-group h1 {
-        font-size: 1.4rem;
+        font-size: 20px;
+        letter-spacing: -0.02em;
+        margin-bottom: 8px;
+        overflow-wrap: anywhere;
+    }
+    .hero-chip {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+    .admin-hero-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
     }
     .hero-metric-box {
-        flex: 1 1 100%;
+        min-width: 0;
+        padding: 10px 12px;
     }
+    .hero-metric-label {
+        font-size: 11px;
+        letter-spacing: 0.3px;
+    }
+    .hero-metric-label,
+    .hero-metric-value {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Tabs: equal-width segmented control, icon over label, no sideways scroll */
+    .admin-profile-nav {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        gap: 4px;
+        padding: 4px;
+        margin-bottom: 16px;
+        overflow: visible;
+    }
+    .admin-profile-tab {
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+        min-height: 52px;
+        padding: 8px 4px;
+        font-size: 11.5px;
+        line-height: 1.2;
+        text-align: center;
+        white-space: normal;
+    }
+
+    /* Cards */
     .admin-profile-card {
-        padding: 18px 16px;
+        padding: 20px 16px;
+        border-radius: 16px;
     }
+    .admin-profile-card-header {
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+    }
+    .avatar-preview-container {
+        width: 96px;
+        height: 96px;
+    }
+    .avatar-preview-initials {
+        font-size: 34px;
+    }
+
+    /* Forms: one full-width primary action */
+    .admin-profile-card form > .d-flex.justify-content-end {
+        margin-top: 16px !important;
+    }
+    .admin-profile-card form > .d-flex.justify-content-end > .btn-prof-primary {
+        width: 100%;
+        justify-content: center;
+    }
+    .btn-prof-primary,
+    .btn-prof-danger {
+        min-height: 48px;
+    }
+    .admin-form-control {
+        font-size: 16px; /* below 16px iOS zooms the page on focus */
+    }
+    .security-notice-box .admin-input-group {
+        max-width: none !important;
+    }
+
+    /* Tables become stacked rows instead of a sideways-scrolling grid */
+    .prof-table thead {
+        display: none;
+    }
+    .prof-table,
+    .prof-table tbody {
+        display: block;
+    }
+    .prof-table tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+        padding: 12px 14px;
+        border-bottom: 1px solid #edf2ee;
+    }
+    .prof-table tr:last-child {
+        border-bottom: 0;
+    }
+    .prof-table td {
+        display: block;
+        padding: 0;
+        border: 0;
+    }
+    .prof-table td:first-child {
+        flex: 1 0 100%;
+    }
+    .prof-table tr:hover td {
+        background: none;
+    }
+
     .permissions-grid {
         grid-template-columns: 1fr;
     }

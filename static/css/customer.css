@@ -828,9 +828,32 @@
     border-radius: var(--radius-card-sm);
     padding: 0.85rem 1.15rem;
     display: flex;
+    flex-wrap: wrap; /* the "View ·" badge drops below on narrow cards instead of spilling out */
     align-items: center;
-    gap: 0.85rem;
+    gap: 0.5rem 0.85rem;
     transition: all 0.2s ease;
+}
+
+.notif-stat-card > .flex-grow-1 {
+    min-width: 0;
+}
+
+.notif-stat-card .notif-stat-icon {
+    flex-shrink: 0;
+}
+
+/* Two tiles per row on phones: one consistent stacked layout for all four */
+@media (max-width: 575.98px) {
+    .notif-stat-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .notif-stat-card > .flex-grow-1 {
+        width: 100%;
+    }
+    .notif-stat-card .notif-stat-action-indicator {
+        margin-left: 0;
+    }
 }
 
 .notif-stat-card.is-clickable {

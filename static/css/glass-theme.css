@@ -304,6 +304,11 @@ body::before {
     overflow: hidden;
 }
 
+/* Tables must keep Bootstrap's sideways scroll; auto still clips the corners */
+.table-responsive {
+    overflow-x: auto;
+}
+
 .modern-table,
 .table {
     --bs-table-bg: transparent !important;
@@ -324,10 +329,13 @@ body::before {
 .form-control,
 .form-select,
 textarea.form-control {
-    background: rgba(255, 255, 255, 0.82) !important;
+    /* background-color, not the shorthand: the shorthand also erased the
+       chevron image Bootstrap draws on .form-select */
+    background-color: rgba(255, 255, 255, 0.82) !important;
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
-    border: 1px solid var(--glass-border) !important;
+    /* --glass-border is translucent white, which made fields vanish on white cards */
+    border: 1px solid rgba(15, 23, 42, 0.16) !important;
     border-radius: 12px;
     color: var(--text-main, #192128);
     transition: all 0.2s ease;
@@ -336,7 +344,7 @@ textarea.form-control {
 .form-control:focus,
 .form-select:focus,
 textarea.form-control:focus {
-    background: #ffffff !important;
+    background-color: #ffffff !important;
     border-color: var(--brand-primary) !important;
     box-shadow: 0 0 0 4px rgba(31, 122, 77, 0.15) !important;
 }

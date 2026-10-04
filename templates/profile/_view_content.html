@@ -38,7 +38,7 @@
                         <span class="hero-chip hero-chip-status"><i class="fa-solid fa-circle-check"></i> {{ current_user.status | title }}</span>
                         <span class="hero-chip hero-chip-email"><i class="fa-regular fa-envelope"></i> {{ current_user.email }}</span>
                         {% if current_user.email_verified_at %}
-                        <span class="hero-chip hero-chip-email"><i class="fa-solid fa-certificate text-info"></i> Verified</span>
+                        <span class="hero-chip hero-chip-verified"><i class="fa-solid fa-certificate"></i> Verified</span>
                         {% else %}
                         <span class="hero-chip hero-chip-email text-warning"><i class="fa-solid fa-triangle-exclamation"></i> Unverified</span>
                         {% endif %}
@@ -62,7 +62,7 @@
                 </div>
                 {% if current_user.role_name == 'student' %}
                 <div class="hero-metric-box">
-                    <div class="hero-metric-label"><i class="fa-solid fa-star"></i> Reviews / Complaints</div>
+                    <div class="hero-metric-label"><i class="fa-solid fa-star"></i> Submissions</div>
                     <div class="hero-metric-value">{{ (reviews|length if reviews else 0) + (complaints|length if complaints else 0) }}</div>
                 </div>
                 {% elif current_user.role_name == 'vendor' and current_user.vendor_profile %}
@@ -121,7 +121,7 @@
                     <div class="admin-profile-card mb-4">
                         <div class="admin-profile-card-header">
                             <div class="card-title-group">
-                                <div class="card-icon-badge card-icon-blue"><i class="fa-solid fa-camera"></i></div>
+                                <div class="card-icon-badge card-icon-green"><i class="fa-solid fa-camera"></i></div>
                                 <div>
                                     <h2>Profile Photo</h2>
                                     <p>Your public avatar in the portal</p>
@@ -430,7 +430,7 @@
                     <div class="admin-profile-card">
                         <div class="admin-profile-card-header">
                             <div class="card-title-group">
-                                <div class="card-icon-badge card-icon-blue"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                                <div class="card-icon-badge card-icon-green"><i class="fa-solid fa-clock-rotate-left"></i></div>
                                 <div>
                                     <h2>Recent Sign-In Sessions</h2>
                                     <p>Security and authentication history for your account</p>
@@ -724,16 +724,22 @@ function checkPortalPasswordStrength(password) {
     if (/[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password)) score += 1;
 
     bar.className = 'password-meter-fill';
-    if (password.length === 0) {
-        bar.style.width = '0%';
-    } else if (score <= 1) {
-        bar.classList.add('weak');
-    } else if (score === 2) {
-        bar.classList.add('medium');
-    } else {
-        bar.classList.add('strong');
+    if (password.length > 0) {
+        bar.classList.add(score <= 1 ? 'weak' : score === 2 ? 'medium' : 'strong');
     }
     checkPortalPasswordMatch();
+}
+
+function togglePasswordVisibility(fieldId, btn) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    const show = field.type === 'password';
+    field.type = show ? 'text' : 'password';
+    const icon = btn.querySelector('i');
+    if (icon) {
+        icon.classList.toggle('fa-eye', !show);
+        icon.classList.toggle('fa-eye-slash', show);
+    }
 }
 
 function checkPortalPasswordMatch() {

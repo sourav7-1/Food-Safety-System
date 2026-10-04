@@ -442,6 +442,38 @@ html.supports-liquid .admin-avatar-btn::before {
     align-items: center !important;
 }
 
+/* Nav/chip bars hold more items than fit on a phone: scroll them sideways
+   (auto still clips the glass layers) instead of cutting the last item off. */
+.portal-nav-bar,
+.chip-group {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    max-width: 100%;
+    scrollbar-width: none;
+}
+
+.portal-nav-bar > *,
+.chip-group > * {
+    flex-shrink: 0;
+}
+
+.portal-nav-bar::-webkit-scrollbar,
+.chip-group::-webkit-scrollbar {
+    display: none;
+}
+
+/* The !important display above beats Bootstrap's d-none; restore the
+   desktop-only breakpoint used on the admin topbar quick links. */
+.topbar-nav-pill-group.d-none {
+    display: none !important;
+}
+
+@media (min-width: 1200px) {
+    .topbar-nav-pill-group.d-none.d-xl-flex {
+        display: inline-flex !important;
+    }
+}
+
 .topbar-nav-pill-group::before,
 .portal-nav-bar::before,
 .quick-risk-filters::before,

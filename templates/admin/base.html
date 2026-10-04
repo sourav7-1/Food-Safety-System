@@ -41,6 +41,7 @@
         </button>
 
         <div class="offcanvas offcanvas-start admin-offcanvas" tabindex="-1" id="adminSidebar">
+            <button type="button" class="btn-close btn-close-white drawer-close" data-bs-dismiss="offcanvas" aria-label="Close navigation"></button>
             <div class="offcanvas-body p-0">
                 {% include "admin/sidebar.html" %}
             </div>
@@ -88,7 +89,7 @@
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                     {% if current_user.has_permission('complaints.view') %}
-                    <a class="topbar-icon-btn" href="{{ url_for('admin.complaints') }}" title="Complaints & Risk Alerts">
+                    <a class="topbar-icon-btn d-none d-sm-flex" href="{{ url_for('admin.complaints') }}" title="Complaints & Risk Alerts" aria-label="Complaints">
                         <i class="fa-solid fa-envelope"></i>
                     </a>
                     {% endif %}

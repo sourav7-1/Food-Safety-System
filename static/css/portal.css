@@ -86,7 +86,8 @@
     color: #6ee7b7;
 }
 
-.portal-hero-title {
+.portal-hero-title,
+.portal-hero-title-group h1 {
     font-size: clamp(1.85rem, 3vw, 2.4rem);
     font-weight: 800;
     letter-spacing: -0.03em;
@@ -95,7 +96,8 @@
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.portal-hero-subtitle {
+.portal-hero-subtitle,
+.portal-hero-title-group p {
     color: #d1fae5;
     font-size: 1rem;
     margin: 0;
@@ -397,6 +399,21 @@
 
 .stall-card-banner.risk-medium {
     background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
+}
+
+/* The global .risk-low / .risk-unrated badge colours (pale backgrounds) come
+   later in this file and were overriding the banner, leaving white text on
+   near-white. Keep the banner dark for every risk level. */
+.stall-card-banner.risk-low {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+    color: #ffffff;
+    border: 0;
+}
+
+.stall-card-banner.risk-unrated {
+    background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+    color: #ffffff;
+    border: 0;
 }
 
 .stall-card-banner .stall-code-tag {
@@ -908,6 +925,11 @@
     font-weight: 500;
 }
 
+/* The vendor nav sits below the banner on the light page, not inside it */
+.portal-shell > .portal-nav-bar a {
+    color: #334155;
+}
+
 @media (max-width: 991.98px) {
     .portal-hero-banner {
         padding: 1.75rem 1.5rem;
@@ -923,5 +945,40 @@
     }
     .stall-metrics-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 575.98px) {
+    /* The page .container already provides a 12px gutter */
+    .portal-shell {
+        padding: 0.5rem 0.25rem 2.5rem;
+    }
+    .portal-hero-banner {
+        padding: 1.25rem 1rem;
+        border-radius: 20px;
+        margin-bottom: 1rem;
+    }
+    .portal-hero-top {
+        margin-bottom: 0.75rem;
+    }
+    .portal-hero-title-group h1 {
+        font-size: 1.5rem;
+    }
+    .portal-hero-title-group p {
+        font-size: 0.9rem;
+    }
+    .portal-nav-bar {
+        margin-top: 0;
+        margin-bottom: 1rem;
+    }
+}
+
+/* Narrow KPI tiles (half width on phones, quarter width on tablets): icon
+   above the figures, so labels like "Total feedback" get the full tile width */
+@media (max-width: 991.98px) {
+    .portal-kpi {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
     }
 }

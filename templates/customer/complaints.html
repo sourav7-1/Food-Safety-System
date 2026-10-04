@@ -34,8 +34,8 @@
         <div class="col-12 col-lg-6">
             <article class="portal-card h-100 d-flex flex-column" style="transition: transform 0.25s ease, box-shadow 0.25s ease; border-radius: var(--radius-card);">
                 <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-                    <div>
-                        <span class="badge bg-light text-secondary border px-2.5 py-1 small fw-semibold">
+                    <div class="min-w-0">
+                        <span class="badge bg-light text-secondary border px-2.5 py-1 small fw-semibold text-wrap text-start">
                             <i class="fa-solid fa-hashtag text-success me-0.5"></i>CMP-{{ complaint.complaint_id }} &middot; {{ complaint.complaint_type.type_name }}
                         </span>
                         <h3 class="h5 fw-bold text-dark mt-2 mb-1">{{ complaint.title }}</h3>
@@ -44,7 +44,7 @@
                             &middot; Filed {{ complaint.submitted_at.strftime('%d %b %Y') }}
                         </p>
                     </div>
-                    <span class="risk-badge status-{{ complaint.status }} shadow-sm">
+                    <span class="risk-badge status-{{ complaint.status }} shadow-sm flex-shrink-0 text-nowrap">
                         {{ complaint.status|replace('_',' ')|title }}
                     </span>
                 </div>

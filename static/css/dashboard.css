@@ -433,13 +433,23 @@
 @media (max-width: 991.98px) {
     .dashboard-sidebar { display: none; }
     .dashboard-topbar { padding: 14px 18px; }
-    .dashboard-content { padding: 20px 18px 36px; }
+    /* .dashboard-main already provides the side gutter */
+    .dashboard-content { padding: 4px 0 36px; }
+    /* Title group yields space so the bell stays on the same row */
+    .dashboard-topbar > :first-child { flex: 1 1 0; min-width: 0; }
+    .dashboard-topbar > :first-child > div { min-width: 0; }
+    .dashboard-topbar h1,
+    .dashboard-subtitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 575.98px) {
     .stat-grid { grid-template-columns: 1fr; }
-    .dashboard-content { padding: 16px 14px 30px; }
+    .dashboard-main { padding: 10px 16px 24px; }
+    .dashboard-content { padding: 0 0 30px; }
+    .dashboard-topbar { padding: 10px 12px; top: 10px; margin-bottom: 16px; border-radius: 16px; }
+    .dashboard-topbar > :first-child { gap: 12px !important; }
+    .dashboard-subtitle { display: none; }
     .chart-wrap { height: 240px; }
 }
 
@@ -474,6 +484,7 @@
 .dashboard-notification-btn {
     width: 38px;
     height: 38px;
+    flex-shrink: 0; /* stays round instead of being squeezed by the title */
     border-radius: 50%;
     background: #ffffff;
     border: 1px solid rgba(0, 0, 0, 0.08);

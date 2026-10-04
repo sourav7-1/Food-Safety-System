@@ -29,38 +29,38 @@
     <form class="row g-3 align-items-end" method="post" action="{{ url_for('vendor_portal.food_item_create', stall_id=stall.stall_id) }}">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         
-        <div class="col-12 col-md-4">
-            <label class="form-label small fw-bold text-dark">Item Name</label>
-            <input class="form-control" name="item_name" placeholder="e.g. Chicken Biryani, Samosa..." required maxlength="150">
+        <div class="col-12 col-md-6 col-lg-4">
+            <label class="form-label small fw-bold text-dark" for="newItemName">Item Name</label>
+            <input class="form-control" id="newItemName" name="item_name" placeholder="e.g. Chicken Biryani, Samosa..." required maxlength="150">
         </div>
         
-        <div class="col-12 col-md-3">
-            <label class="form-label small fw-bold text-dark">Category</label>
-            <select class="form-select" name="category_id" required>
+        <div class="col-12 col-md-6 col-lg-3">
+            <label class="form-label small fw-bold text-dark" for="newItemCategory">Category</label>
+            <select class="form-select" id="newItemCategory" name="category_id" required>
                 {% for category in categories %}
                 <option value="{{ category.category_id }}">{{ category.category_name }}</option>
                 {% endfor %}
             </select>
         </div>
         
-        <div class="col-12 col-md-2">
-            <label class="form-label small fw-bold text-dark">Price (৳)</label>
+        <div class="col-12 col-md-4 col-lg-2">
+            <label class="form-label small fw-bold text-dark" for="newItemPrice">Price (৳)</label>
             <div class="input-group">
                 <span class="input-group-text bg-light text-secondary fw-bold">৳</span>
-                <input class="form-control" name="price" type="number" min="0" step=".01" placeholder="0.00">
+                <input class="form-control" id="newItemPrice" name="price" type="number" min="0" step=".01" placeholder="0.00">
             </div>
         </div>
         
-        <div class="col-12 col-md-2">
+        <div class="col-6 col-md-4 col-lg-2">
             <div class="form-check form-switch pt-2">
                 <input class="form-check-input" type="checkbox" name="is_available" id="availableNew" checked role="switch">
                 <label class="form-check-label small fw-bold text-dark" for="availableNew">Available</label>
             </div>
         </div>
         
-        <div class="col-12 col-md-1">
-            <button class="btn btn-success w-100 fw-bold shadow-sm" title="Add Food Item">
-                <i class="fa-solid fa-plus"></i>
+        <div class="col-6 col-md-4 col-lg-1">
+            <button class="btn btn-success w-100 fw-bold shadow-sm" title="Add Food Item" aria-label="Add food item">
+                <i class="fa-solid fa-plus"></i><span class="d-lg-none ms-1">Add item</span>
             </button>
         </div>
     </form>

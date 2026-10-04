@@ -693,9 +693,41 @@ p {
     padding: 1rem 1.5rem;
 }
 
+/* Close button for the mobile navigation drawers (the sidebar itself is shared
+   with desktop, so the button lives on the drawer wrapper) */
+.drawer-close {
+    position: absolute;
+    top: 18px;
+    right: 10px;
+    z-index: 2;
+    padding: 0.75rem; /* ~40px tap target around the 1em icon */
+}
+
+/* Long modal titles were squeezing the close button below its ~32px tap size */
+.modal-header .btn-close {
+    flex-shrink: 0;
+}
+
+/* Empty tables on narrow screens: the header row set a width wider than the card, so
+   the "nothing here yet" message (one full-width cell) was cut off. With no
+   rows the headers say nothing; drop them and let the message wrap. */
+@media (max-width: 1199.98px) {
+    .table-responsive table:has(> tbody > tr:only-child > td[colspan]) > thead {
+        display: none;
+    }
+}
+
+/* Templates use this Tailwind-style utility, but Bootstrap 5.3 doesn't ship it.
+   Without it, flex children with long (nowrap) names push cards past the screen. */
+.min-w-0 {
+    min-width: 0 !important;
+}
+
 .table-responsive {
     border-radius: var(--radius-md);
-    overflow: hidden;
+    /* auto (not hidden) still clips the rounded corners but keeps Bootstrap's
+       sideways scroll, so wide tables stay readable on phones */
+    overflow-x: auto;
 }
 
 .table {
@@ -1560,6 +1592,10 @@ p {
     .login-role-panel,
     .login-form-panel {
         padding: 2.25rem 1.5rem;
+    }
+    /* On one column the sign-in form leads; the role explainer follows it */
+    .login-form-panel {
+        order: -1;
     }
 }
 

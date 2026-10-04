@@ -1009,9 +1009,16 @@ body.admin-body {
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 4px;
     text-align: center;
+}
+
+/* min-height + aspect-ratio forced 38px-wide cells: 7 of them overflow a 320px phone */
+@media (max-width: 400px) {
+    .calendar-grid .calendar-cell {
+        min-height: 0;
+    }
 }
 
 .calendar-day-header {
@@ -1115,7 +1122,7 @@ body.admin-body {
 
 .table-responsive {
     border-radius: 18px;
-    overflow: hidden;
+    overflow-x: auto; /* clips corners, keeps sideways scroll on narrow screens */
 }
 
 .table.admin-table {

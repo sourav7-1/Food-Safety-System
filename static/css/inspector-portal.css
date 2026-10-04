@@ -302,5 +302,5 @@
     .ins-card-grid { grid-template-columns: 1fr; }
     .ins-detail-list > div { flex-direction: column; gap: 2px; }
     .ins-detail-list dt { flex-basis: auto; }
-    .dashboard-content { padding: 18px 14px 36px; }
+    .dashboard-content { padding: 0 0 36px; } /* .dashboard-main provides the gutter */
 }
