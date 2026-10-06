@@ -1,0 +1,511 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Food Safety System — Runtime Architecture (complaint path)",
+    "output": ".archify/architecture-complaint-runtime-20261005-211025/food-safety-runtime.html",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "repository": {
+      "url": "https://github.com/sourav7-1/Food-Safety-System.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "613d7faa69ec24397cc7ec1e675d4d8d50763217"
+    }
+  },
+  "components": [
+    {
+      "id": "google",
+      "type": "external",
+      "label": "Google OIDC",
+      "sublabel": "optional, if configured",
+      "pos": [
+        87,
+        50
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "app.py",
+          "line": 36,
+          "end_line": 43,
+          "label": "registered only if configured"
+        }
+      ]
+    },
+    {
+      "id": "turnstile",
+      "type": "external",
+      "label": "Cloudflare Turnstile",
+      "sublabel": "siteverify (sign-up)",
+      "pos": [
+        257,
+        50
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "services/turnstile.py",
+          "line": 5,
+          "end_line": 8,
+          "label": "siteverify URL"
+        }
+      ]
+    },
+    {
+      "id": "smtp",
+      "type": "external",
+      "label": "SMTP server",
+      "sublabel": "Flask-Mail, optional",
+      "pos": [
+        427,
+        50
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "config.py",
+          "line": 87,
+          "end_line": 93,
+          "label": "MAIL_* settings"
+        },
+        {
+          "path": "services/email_verification.py",
+          "line": 50,
+          "end_line": 83,
+          "label": "mail.send"
+        }
+      ]
+    },
+    {
+      "id": "auth",
+      "type": "security",
+      "label": "Auth & sign-up",
+      "sublabel": "Flask-Login sessions",
+      "tag": "rate-limited",
+      "pos": [
+        257,
+        190
+      ],
+      "size": [
+        140,
+        76
+      ],
+      "sources": [
+        {
+          "path": "routes/auth.py",
+          "line": 109,
+          "end_line": 168,
+          "label": "login + login_user"
+        },
+        {
+          "path": "routes/auth.py",
+          "line": 182,
+          "end_line": 215,
+          "label": "Google login/callback"
+        },
+        {
+          "path": "routes/auth.py",
+          "line": 413,
+          "end_line": 414,
+          "label": "Turnstile on register"
+        }
+      ]
+    },
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser",
+      "sublabel": "student / inspector",
+      "pos": [
+        10,
+        360
+      ],
+      "size": [
+        116,
+        64
+      ],
+      "sources": [
+        {
+          "path": "templates/customer/stall_detail.html",
+          "line": 271,
+          "label": "multipart complaint form"
+        }
+      ]
+    },
+    {
+      "id": "guards",
+      "type": "security",
+      "label": "Request guards",
+      "sublabel": "CSRF · session · CSP",
+      "pos": [
+        257,
+        360
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "app.py",
+          "line": 119,
+          "end_line": 141,
+          "label": "before_request CSRF check"
+        },
+        {
+          "path": "app.py",
+          "line": 155,
+          "end_line": 196,
+          "label": "security headers + CSP"
+        },
+        {
+          "path": "routes/__init__.py",
+          "line": 7,
+          "end_line": 19,
+          "label": "role_required"
+        }
+      ]
+    },
+    {
+      "id": "complaintRoute",
+      "type": "backend",
+      "label": "Customer portal",
+      "sublabel": "submit_complaint",
+      "pos": [
+        515,
+        360
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "routes/customer.py",
+          "line": 858,
+          "end_line": 864,
+          "label": "student role, 10/hour"
+        },
+        {
+          "path": "routes/customer.py",
+          "line": 878,
+          "end_line": 931,
+          "label": "store files, commit rows"
+        }
+      ]
+    },
+    {
+      "id": "evidenceSvc",
+      "type": "backend",
+      "label": "Evidence service",
+      "sublabel": "sniff · SHA-256 · size",
+      "pos": [
+        783,
+        360
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "services/evidence.py",
+          "line": 164,
+          "end_line": 200,
+          "label": "validate_and_store"
+        },
+        {
+          "path": "services/evidence.py",
+          "line": 122,
+          "end_line": 140,
+          "label": "atomic _save_stream"
+        }
+      ]
+    },
+    {
+      "id": "evidenceFiles",
+      "type": "database",
+      "label": "Evidence files",
+      "sublabel": "instance/evidence",
+      "pos": [
+        1022,
+        360
+      ],
+      "size": [
+        130,
+        64
+      ],
+      "sources": [
+        {
+          "path": "config.py",
+          "line": 48,
+          "end_line": 54,
+          "label": "private, never served"
+        }
+      ]
+    },
+    {
+      "id": "inspectorReview",
+      "type": "backend",
+      "label": "Inspector review",
+      "sublabel": "complaint_manage",
+      "pos": [
+        257,
+        520
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "routes/inspector.py",
+          "line": 380,
+          "end_line": 383,
+          "label": "inspector role"
+        },
+        {
+          "path": "routes/inspector.py",
+          "line": 441,
+          "end_line": 443,
+          "label": "risk refresh + notify"
+        }
+      ]
+    },
+    {
+      "id": "complaintSvc",
+      "type": "backend",
+      "label": "Complaint service",
+      "sublabel": "risk refresh · notify",
+      "pos": [
+        257,
+        680
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "sources": [
+        {
+          "path": "services/complaints.py",
+          "line": 46,
+          "end_line": 70,
+          "label": "Notification rows"
+        },
+        {
+          "path": "services/complaints.py",
+          "line": 81,
+          "end_line": 112,
+          "label": "CALL calculate_stall_risk"
+        }
+      ]
+    },
+    {
+      "id": "mysql",
+      "type": "database",
+      "label": "MySQL",
+      "sublabel": "PyMySQL · :3306",
+      "pos": [
+        515,
+        850
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "sources": [
+        {
+          "path": "config.py",
+          "line": 127,
+          "end_line": 135,
+          "label": "mysql+pymysql URI"
+        },
+        {
+          "path": "database/procedures.sql",
+          "line": 10,
+          "label": "calculate_stall_risk"
+        },
+        {
+          "path": "database/triggers.sql",
+          "line": 27,
+          "end_line": 94,
+          "label": "validation triggers"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Third-party services",
+      "wraps": [
+        "google",
+        "turnstile",
+        "smtp"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Flask app process · authenticated + role-checked",
+      "wraps": [
+        "auth",
+        "guards",
+        "complaintRoute",
+        "evidenceSvc",
+        "inspectorReview",
+        "complaintSvc"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Private disk",
+      "wraps": [
+        "evidenceFiles"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Database server",
+      "wraps": [
+        "mysql"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "post-complaint",
+      "from": "browser",
+      "to": "guards",
+      "label": "HTTPS POST + CSRF",
+      "variant": "emphasis"
+    },
+    {
+      "id": "role-gate",
+      "from": "guards",
+      "to": "complaintRoute",
+      "label": "student · 10/hr",
+      "variant": "emphasis"
+    },
+    {
+      "id": "validate-files",
+      "from": "complaintRoute",
+      "to": "evidenceSvc",
+      "label": "validate + hash",
+      "variant": "emphasis"
+    },
+    {
+      "id": "write-files",
+      "from": "evidenceSvc",
+      "to": "evidenceFiles",
+      "label": "atomic write",
+      "variant": "emphasis"
+    },
+    {
+      "id": "insert-complaint",
+      "from": "complaintRoute",
+      "to": "mysql",
+      "label": "INSERT complaint",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "sign-in",
+      "from": "guards",
+      "to": "auth",
+      "label": "sign-in",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "oidc",
+      "from": "auth",
+      "to": "google",
+      "label": "OIDC",
+      "variant": "security"
+    },
+    {
+      "id": "captcha",
+      "from": "auth",
+      "to": "turnstile",
+      "label": "siteverify",
+      "variant": "security"
+    },
+    {
+      "id": "verify-mail",
+      "from": "auth",
+      "to": "smtp",
+      "label": "verify email",
+      "variant": "dashed"
+    },
+    {
+      "id": "inspector-gate",
+      "from": "guards",
+      "to": "inspectorReview",
+      "label": "inspector role",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "status-change",
+      "from": "inspectorReview",
+      "to": "complaintSvc",
+      "label": "status change",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "risk-call",
+      "from": "complaintSvc",
+      "to": "mysql",
+      "label": "CALL risk proc"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Primary path",
+      "items": [
+        "Student POSTs a complaint with up to 5 files",
+        "Files are type-sniffed, hashed and written atomically to a private directory",
+        "Complaint and evidence rows commit together; failures roll back"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust boundaries",
+      "items": [
+        "Every POST needs the session CSRF token",
+        "role_required gates student and inspector routes (403 otherwise)",
+        "Evidence lives outside static/ and is served only through role-checked routes",
+        "CSP limits scripts to self, jsDelivr and Turnstile"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Database logic",
+      "items": [
+        "Risk level and reinspection date come from the calculate_stall_risk procedure",
+        "Triggers validate inspection scores and corrective actions"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Not shown",
+      "items": [
+        "Vendor and admin portals share the same guards",
+        "Browser loads Bootstrap/fonts from CDNs and map tiles from OpenStreetMap"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "183322ce-c534-44cb-a581-5d6333c8ee63",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Food-Safety-System\\.archify\\architecture-complaint-runtime-20261005-211025\\candidate.json",
+  "output": "C:\\Food-Safety-System\\.archify\\architecture-complaint-runtime-20261005-211025\\food-safety-runtime.html",
+  "specification": {
+    "sha256": "f3800478180cf6c311dc97abd053230bb9a75a67d2c6c786cdaa0e2a366c2850",
+    "bytes": 11391
+  },
+  "artifact": {
+    "sha256": "24d48c9e24db4b822a4fc4a12bd7674e47c188482399a5fc77a01b3900d288fe",
+    "bytes": 778021
+  }
+}
