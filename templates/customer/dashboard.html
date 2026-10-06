@@ -176,7 +176,7 @@
         </div>
 
         {% if top_safe_stalls %}
-        <div class="std-grid-3">
+        <div class="std-grid-3 top-stalls-slider">
             {% for s in top_safe_stalls %}
             <a href="{{ url_for('customer_portal.stall_detail', stall_id=s.stall_id) }}" class="pastel-stall-card {{ 'pastel-' ~ s.theme.color }}">
                 <div>

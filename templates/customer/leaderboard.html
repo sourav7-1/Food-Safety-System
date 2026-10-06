@@ -1,5 +1,5 @@
 {% extends "portal_base.html" %}
-{% from "customer/_leaderboard_macros.html" import render_leaderboard_rows %}
+{% from "customer/_leaderboard_macros.html" import render_leaderboard_rows, render_leaderboard_cards %}
 {% block title %}Risk Leaderboard{% endblock %}
 {% block dashboard_title %}Risk Leaderboard{% endblock %}
 {% block dashboard_subtitle %}Live rankings straight from MySQL — worst-first and safest-first.{% endblock %}
@@ -36,7 +36,45 @@
     </div>
 </div>
 
-<div class="row g-3 g-md-4 mt-1">
+<!-- Mobile Leaderboard Controls & Sticky Filter Bar (Phones) -->
+<div class="d-md-none leaderboard-mobile-bar sticky-top py-2 mb-3" style="top: 0; z-index: 1010; background: rgba(220, 231, 219, 0.96); backdrop-filter: blur(12px);">
+    <div class="btn-group w-100 mb-2 shadow-sm rounded-pill p-1 bg-white border" role="group" aria-label="Risk board toggle">
+        <button type="button" class="btn btn-sm rounded-pill fw-bold active btn-success" id="btnToggleSafest" onclick="switchMobileLeaderboardTab('safest')">
+            <i class="fa-solid fa-shield-heart me-1"></i> Safest (<span id="mobileCountSafest">{{ low_risk|length }}</span>)
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill fw-bold btn-outline-danger border-0" id="btnToggleHighRisk" onclick="switchMobileLeaderboardTab('high')">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> High Risk (<span id="mobileCountHigh">{{ high_risk|length }}</span>)
+        </button>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <div class="input-group input-group-sm flex-grow-1">
+            <span class="input-group-text bg-white border-end-0 rounded-start-pill text-secondary"><i class="fa-solid fa-filter"></i></span>
+            <select class="form-select form-select-sm border-start-0 rounded-end-pill" id="mobileAreaFilter" onchange="filterMobileLeaderboard()" aria-label="Filter stalls by area">
+                <option value="">All Campus Areas</option>
+                {% set area_names = [] %}
+                {% for s in (low_risk + high_risk) %}
+                    {% if s.area_name and s.area_name not in area_names %}
+                        {% set _ = area_names.append(s.area_name) %}
+                        <option value="{{ s.area_name }}">{{ s.area_name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Stacked Cards Container (Phones) -->
+<div class="d-md-none mb-3" id="mobileLeaderboardContainer">
+    <div id="mobileCardsSafest">
+        {{ render_leaderboard_cards(low_risk, "No low-risk stalls have been inspected yet.") }}
+    </div>
+    <div id="mobileCardsHighRisk" class="d-none">
+        {{ render_leaderboard_cards(high_risk, "No high-risk stalls right now.") }}
+    </div>
+</div>
+
+<!-- Desktop Side-by-Side Tables (Tablet & Desktop md+) -->
+<div class="row g-3 g-md-4 mt-1 d-none d-md-flex">
     <div class="col-lg-6">
         <section class="dashboard-card board-high">
             <div class="dashboard-card-header clickable-header" onclick="openRiskModal('high')">
@@ -352,6 +390,87 @@
             });
     };
 
+    function cardHtml(entry) {
+        var score = entry.overall_score != null ? entry.overall_score + "%" : "—";
+        var grade = entry.hygiene_grade || "—";
+        var risk = entry.risk_level || "unrated";
+        var area = escapeHtml(entry.area_name) + (entry.city ? ', ' + escapeHtml(entry.city) : '');
+        var scoreNum = entry.overall_score != null ? entry.overall_score : 0;
+        var scoreColor = scoreNum >= 70 ? 'success' : (scoreNum >= 50 ? 'warning' : 'danger');
+        var inspDate = entry.inspection_date ? escapeHtml(entry.inspection_date.substring(0, 10)) : '';
+
+        return (
+            '<article class="leaderboard-mobile-card p-3 mb-2 rounded-4 border bg-white shadow-sm" data-stall-area="' + escapeHtml(entry.area_name || '') + '">' +
+            '  <div class="d-flex align-items-start justify-content-between gap-2 mb-2">' +
+            '    <div class="d-flex align-items-center gap-2 min-w-0">' +
+            '      <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 small fw-bold">#' + entry.rank + '</span>' +
+            '      <div class="leaderboard-thumb-icon rounded-3 d-flex align-items-center justify-content-center bg-success-subtle text-success flex-shrink-0" style="width: 36px; height: 36px; font-size: 14px;">' +
+            '        <i class="fa-solid fa-store"></i>' +
+            '      </div>' +
+            '      <div class="min-w-0">' +
+            '        <a class="fw-bold text-dark text-truncate d-block text-decoration-none" style="font-size: 0.95rem;" href="' + entry.detail_url + '">' + escapeHtml(entry.stall_name) + '</a>' +
+            '        <div class="text-muted small text-truncate" style="font-size: 0.75rem;"><i class="fa-solid fa-location-dot me-1 text-secondary"></i>' + area + '</div>' +
+            '      </div>' +
+            '    </div>' +
+            '    <div class="text-end flex-shrink-0">' +
+            '      <div class="leaderboard-card-score fw-bold fs-4 text-' + scoreColor + '" style="line-height: 1;">' + escapeHtml(score) + '</div>' +
+            '      <small class="text-muted d-block mt-0.5" style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase;">Hygiene</small>' +
+            '    </div>' +
+            '  </div>' +
+            '  <div class="d-flex align-items-center justify-content-between pt-2 border-top gap-2">' +
+            '    <div class="d-flex align-items-center gap-1.5 flex-wrap">' +
+            '      <span class="grade-chip grade-' + escapeHtml(String(grade).toLowerCase()) + '" style="font-size: 0.72rem; padding: 2px 8px;">Grade ' + escapeHtml(grade) + '</span>' +
+            '      <span class="risk-badge risk-' + escapeHtml(risk) + '" style="font-size: 0.72rem; padding: 2px 8px;">' + escapeHtml(risk.charAt(0).toUpperCase() + risk.slice(1)) + '</span>' +
+            '    </div>' +
+            (inspDate ? '    <div class="text-muted small" style="font-size: 0.72rem;"><i class="fa-regular fa-calendar me-1"></i>' + inspDate + '</div>' : '') +
+            '  </div>' +
+            '</article>'
+        );
+    }
+
+    function renderCards(container, rows, emptyMessage) {
+        if (!container) return;
+        if (!rows || !rows.length) {
+            container.innerHTML = '<div class="text-center py-4 text-secondary small bg-white rounded-4 border p-3"><i class="fa-solid fa-circle-info mb-2 fs-4 d-block"></i>' + emptyMessage + '</div>';
+            return;
+        }
+        container.innerHTML = rows.map(cardHtml).join("");
+    }
+
+    window.switchMobileLeaderboardTab = function (mode) {
+        var btnSafest = document.getElementById("btnToggleSafest");
+        var btnHigh = document.getElementById("btnToggleHighRisk");
+        var cardSafest = document.getElementById("mobileCardsSafest");
+        var cardHigh = document.getElementById("mobileCardsHighRisk");
+
+        if (mode === "safest") {
+            if (btnSafest) { btnSafest.className = "btn btn-sm rounded-pill fw-bold active btn-success"; }
+            if (btnHigh) { btnHigh.className = "btn btn-sm rounded-pill fw-bold btn-outline-danger border-0"; }
+            if (cardSafest) { cardSafest.classList.remove("d-none"); }
+            if (cardHigh) { cardHigh.classList.add("d-none"); }
+        } else {
+            if (btnSafest) { btnSafest.className = "btn btn-sm rounded-pill fw-bold btn-outline-success border-0"; }
+            if (btnHigh) { btnHigh.className = "btn btn-sm rounded-pill fw-bold active btn-danger"; }
+            if (cardSafest) { cardSafest.classList.add("d-none"); }
+            if (cardHigh) { cardHigh.classList.remove("d-none"); }
+        }
+        window.filterMobileLeaderboard();
+    };
+
+    window.filterMobileLeaderboard = function () {
+        var filterEl = document.getElementById("mobileAreaFilter");
+        var selectedArea = filterEl ? filterEl.value.trim().toLowerCase() : "";
+        var activeCards = document.querySelectorAll("#mobileLeaderboardContainer .leaderboard-mobile-card");
+        activeCards.forEach(function (card) {
+            var cardArea = (card.getAttribute("data-stall-area") || "").toLowerCase();
+            if (!selectedArea || cardArea.indexOf(selectedArea) !== -1) {
+                card.style.display = "";
+            } else {
+                card.style.display = "none";
+            }
+        });
+    };
+
     function refresh() {
         fetch(apiUrl, { headers: { "Accept": "application/json" } })
             .then(function (response) {
@@ -361,8 +480,13 @@
             .then(function (data) {
                 renderBoard(highBody, data.high_risk, "No high-risk stalls right now.");
                 renderBoard(lowBody, data.low_risk, "No low-risk stalls have been inspected yet.");
+                renderCards(document.getElementById("mobileCardsHighRisk"), data.high_risk, "No high-risk stalls right now.");
+                renderCards(document.getElementById("mobileCardsSafest"), data.low_risk, "No low-risk stalls have been inspected yet.");
                 setText("highRiskCount", data.high_risk.length);
                 setText("lowRiskCount", data.low_risk.length);
+                setText("mobileCountHigh", data.high_risk.length);
+                setText("mobileCountSafest", data.low_risk.length);
+                window.filterMobileLeaderboard();
                 if (data.stats) {
                     setText("statTotalStalls", data.stats.total_active_stalls);
                     setText("statHighRisk", data.stats.high_risk_count);

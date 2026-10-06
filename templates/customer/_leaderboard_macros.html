@@ -15,3 +15,49 @@
 <tr><td colspan="6" class="leaderboard-empty-row">{{ empty_message }}</td></tr>
 {% endfor %}
 {% endmacro %}
+
+{% macro render_leaderboard_cards(rows, empty_message) %}
+{% for row in rows %}
+<article class="leaderboard-mobile-card p-3 mb-2 rounded-4 border bg-white shadow-sm" data-stall-area="{{ row.area_name }}">
+    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+        <div class="d-flex align-items-center gap-2 min-w-0">
+            <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 small fw-bold">#{{ loop.index }}</span>
+            <div class="leaderboard-thumb-icon rounded-3 d-flex align-items-center justify-content-center bg-success-subtle text-success flex-shrink-0" style="width: 36px; height: 36px; font-size: 14px;">
+                <i class="fa-solid fa-store"></i>
+            </div>
+            <div class="min-w-0">
+                <a class="fw-bold text-dark text-truncate d-block text-decoration-none" style="font-size: 0.95rem;" href="{{ url_for('customer_portal.stall_detail', stall_id=row.stall_id) }}">
+                    {{ row.stall_name }}
+                </a>
+                <div class="text-muted small text-truncate" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-location-dot me-1 text-secondary"></i>{{ row.area_name }}{{ ', ' ~ row.city if row.city }}
+                </div>
+            </div>
+        </div>
+        <div class="text-end flex-shrink-0">
+            <div class="leaderboard-card-score fw-bold fs-4 text-{{ 'success' if (row.overall_score or 0) >= 70 else ('warning' if (row.overall_score or 0) >= 50 else 'danger') }}" style="line-height: 1;">
+                {{ (row.overall_score ~ '%') if row.overall_score is not none else '—' }}
+            </div>
+            <small class="text-muted d-block mt-0.5" style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase;">Hygiene</small>
+        </div>
+    </div>
+    <div class="d-flex align-items-center justify-content-between pt-2 border-top gap-2">
+        <div class="d-flex align-items-center gap-1.5 flex-wrap">
+            <span class="grade-chip grade-{{ (row.hygiene_grade or 'x')|lower }}" style="font-size: 0.72rem; padding: 2px 8px;">Grade {{ row.hygiene_grade or '—' }}</span>
+            <span class="risk-badge risk-{{ row.risk_level or 'unrated' }}" style="font-size: 0.72rem; padding: 2px 8px;">{{ (row.risk_level or 'unrated')|title }}</span>
+        </div>
+        {% if row.inspection_date %}
+        <div class="text-muted small" style="font-size: 0.72rem;">
+            <i class="fa-regular fa-calendar me-1"></i>{{ row.inspection_date.strftime('%d %b %Y') if row.inspection_date.strftime is defined else row.inspection_date[:10] }}
+        </div>
+        {% endif %}
+    </div>
+</article>
+{% else %}
+<div class="text-center py-4 text-secondary small bg-white rounded-4 border p-3">
+    <i class="fa-solid fa-circle-info mb-2 fs-4 d-block"></i>
+    {{ empty_message }}
+</div>
+{% endfor %}
+{% endmacro %}
+

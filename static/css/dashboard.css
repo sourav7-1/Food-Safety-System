@@ -211,6 +211,18 @@
     }
 }
 
+@media (max-width: 575.98px) {
+    .dashboard-main {
+        padding: 8px 10px 20px;
+    }
+    .dashboard-topbar {
+        padding: 10px 14px;
+        border-radius: 16px;
+        margin-bottom: 12px;
+        top: 6px;
+    }
+}
+
 .dashboard-topbar {
     display: flex;
     align-items: center;

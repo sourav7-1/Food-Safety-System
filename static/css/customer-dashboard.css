@@ -429,6 +429,27 @@
     color: inherit;
 }
 
+@media (max-width: 767.98px) {
+    .top-stalls-slider {
+        display: flex !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 0.85rem !important;
+        padding-bottom: 0.5rem;
+        scrollbar-width: none !important;
+    }
+    .top-stalls-slider::-webkit-scrollbar {
+        display: none;
+    }
+    .top-stalls-slider .pastel-stall-card {
+        flex: 0 0 82% !important;
+        min-width: 240px !important;
+        max-width: 290px !important;
+        scroll-snap-align: start !important;
+    }
+}
+
 .pastel-stall-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);

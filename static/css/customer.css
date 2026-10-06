@@ -1990,3 +1990,134 @@
         padding: 1.25rem 1rem;
     }
 }
+
+/* ==========================================================================
+   Complaints List Cards — Mobile Optimization
+   ========================================================================== */
+.complaint-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    border-radius: var(--radius-card);
+}
+
+@media (max-width: 767.98px) {
+    .complaint-card {
+        padding: 1rem 1.15rem !important;
+        border-radius: 16px !important;
+    }
+    .complaint-card .badge {
+        font-size: 0.74rem;
+    }
+    .complaint-card .complaint-title {
+        font-size: 1.05rem !important;
+    }
+    .complaint-card .complaint-meta {
+        font-size: 0.8rem;
+    }
+    .complaint-card .complaint-desc {
+        font-size: 0.86rem;
+        margin-bottom: 0.65rem !important;
+        line-height: 1.45;
+    }
+    .complaint-card .notif-admin-callout {
+        margin-bottom: 0.65rem !important;
+        padding: 0.45rem 0.75rem !important;
+        font-size: 0.82rem;
+    }
+    .complaint-card .complaint-footer {
+        padding-top: 0.65rem !important;
+    }
+    .complaint-card .tracking-btn {
+        padding: 0.3rem 0.85rem !important;
+        font-size: 0.82rem !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .notif-shell {
+        gap: 0.85rem;
+    }
+    .notif-header-card {
+        padding: 1rem 0.95rem !important;
+        border-radius: 14px !important;
+    }
+    .notif-header-card h2 {
+        font-size: 1.15rem !important;
+    }
+    .notif-header-card p {
+        font-size: 0.8rem !important;
+    }
+    .notif-header-card .btn {
+        padding: 0.35rem 0.9rem !important;
+        font-size: 0.8rem !important;
+    }
+    .complaint-card {
+        padding: 0.8rem 0.9rem !important;
+        border-radius: 14px !important;
+    }
+    .complaint-card .badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+    }
+    .complaint-card .complaint-title {
+        font-size: 0.96rem !important;
+        margin-top: 0.3rem !important;
+        margin-bottom: 0.15rem !important;
+    }
+    .complaint-card .risk-badge {
+        font-size: 0.68rem;
+        padding: 0.2rem 0.6rem;
+    }
+    .complaint-card .complaint-meta {
+        font-size: 0.75rem;
+    }
+    .complaint-card .complaint-desc {
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem !important;
+        line-height: 1.4;
+    }
+    .complaint-card .notif-admin-callout {
+        margin-bottom: 0.5rem !important;
+        padding: 0.35rem 0.6rem !important;
+        font-size: 0.76rem;
+    }
+    .complaint-card .complaint-footer {
+        padding-top: 0.5rem !important;
+    }
+    .complaint-card .tracking-btn {
+        padding: 0.25rem 0.75rem !important;
+        font-size: 0.75rem !important;
+    }
+
+    .quick-risk-filters {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        border-radius: 16px !important;
+        padding: 0.35rem !important;
+        gap: 0.35rem !important;
+        max-width: 100% !important;
+        scrollbar-width: none !important;
+    }
+    .quick-risk-filters::-webkit-scrollbar {
+        display: none !important;
+    }
+    .quick-risk-filters .quick-pill {
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+        padding: 0.45rem 0.95rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .customer-shell .stall-banner {
+        aspect-ratio: 16 / 9 !important;
+        min-height: 200px !important;
+    }
+    .stall-banner-overlay {
+        padding: 1rem !important;
+    }
+    .stall-banner-overlay h2 {
+        font-size: 1.25rem !important;
+    }
+}
+

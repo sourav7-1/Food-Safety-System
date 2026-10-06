@@ -1117,52 +1117,67 @@ select.admin-form-control {
         padding: 0 0 32px;
     }
 
-    /* Hero: avatar beside the name, chips below, metrics as a 2×2 grid */
+    /* Hero: profile photo and basic info stack vertically on mobile (centered avatar on top) */
     .admin-profile-hero {
-        padding: 20px 16px;
+        padding: 22px 16px;
         border-radius: 20px;
         margin-bottom: 16px;
     }
     .admin-hero-content {
-        gap: 20px;
+        gap: 18px;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;
     }
     .admin-hero-identity {
-        flex-wrap: nowrap;
-        align-items: flex-start;
-        gap: 16px;
-        width: 100%;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 12px !important;
+        width: 100% !important;
     }
     .admin-hero-title-group {
         flex: 1;
         min-width: 0;
+        text-align: center !important;
+        width: 100%;
     }
     .admin-avatar-wrapper {
-        width: 64px;
-        height: 64px;
-        flex-basis: 64px;
+        width: 80px !important;
+        height: 80px !important;
+        flex-basis: 80px !important;
+        margin: 0 auto !important;
     }
     .admin-avatar-initials {
-        font-size: 24px;
+        font-size: 30px !important;
     }
     .admin-avatar-status {
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
         border-width: 2px;
     }
     .admin-hero-title-group h1 {
-        font-size: 20px;
+        font-size: 1.35rem !important;
         letter-spacing: -0.02em;
         margin-bottom: 8px;
         overflow-wrap: anywhere;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+    .admin-hero-badges {
+        justify-content: center !important;
     }
     .hero-chip {
         max-width: 100%;
         overflow-wrap: anywhere;
+        font-size: 11px;
     }
     .admin-hero-metrics {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
+        width: 100%;
     }
     .hero-metric-box {
         min-width: 0;
@@ -1179,26 +1194,32 @@ select.admin-form-control {
         white-space: nowrap;
     }
 
-    /* Tabs: equal-width segmented control, icon over label, no sideways scroll */
+    /* Tabs: touch-friendly segmented tabs on mobile (Profile Info, Security, Activity) */
     .admin-profile-nav {
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: 1fr;
-        gap: 4px;
-        padding: 4px;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        gap: 6px !important;
+        padding: 5px !important;
         margin-bottom: 16px;
-        overflow: visible;
+        border-radius: 16px;
+    }
+    .admin-profile-nav::-webkit-scrollbar {
+        display: none !important;
     }
     .admin-profile-tab {
-        flex-direction: column;
+        flex: 1 0 auto !important;
+        flex-direction: row !important;
         justify-content: center;
-        gap: 4px;
-        min-height: 52px;
-        padding: 8px 4px;
-        font-size: 11.5px;
+        gap: 6px;
+        min-height: 46px !important;
+        padding: 8px 14px !important;
+        font-size: 12px !important;
         line-height: 1.2;
         text-align: center;
-        white-space: normal;
+        white-space: nowrap !important;
     }
 
     /* Cards */

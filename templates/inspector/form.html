@@ -59,13 +59,19 @@
                 <thead><tr><th>Criterion</th><th class="text-center">Maximum</th><th>Score</th><th>Comments</th></tr></thead>
                 <tbody>
                 {% for criterion in criteria %}
-                    <tr>
-                        <td>
-                            <strong>{{ criterion.criteria_name }}</strong>
-                            {% if criterion.description %}<small>{{ criterion.description }}</small>{% endif %}
+                    <tr class="criterion-row">
+                        <td class="criterion-meta-col">
+                            <div class="d-flex align-items-start justify-content-between gap-2">
+                                <div>
+                                    <strong class="criterion-title d-block">{{ criterion.criteria_name }}</strong>
+                                    {% if criterion.description %}<small class="text-muted d-block mt-0.5">{{ criterion.description }}</small>{% endif %}
+                                </div>
+                                <span class="max-score d-md-none text-nowrap"><small class="text-muted me-1">Max</small>{{ criterion.max_score }}</span>
+                            </div>
                         </td>
-                        <td class="text-center"><span class="max-score">{{ criterion.max_score }}</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="max-score">{{ criterion.max_score }}</span></td>
                         <td class="score-column">
+                            <label class="form-label d-md-none small fw-bold text-muted mb-1">Score (Max: {{ criterion.max_score }})</label>
                             <input class="form-control criterion-score" type="number"
                                    name="score_{{ criterion.criteria_id }}"
                                    value="{{ request.form.get('score_' ~ criterion.criteria_id, '') }}"
@@ -73,8 +79,9 @@
                                    data-max="{{ criterion.max_score }}" required aria-label="Score for {{ criterion.criteria_name }}">
                             <div class="invalid-feedback">Enter 0–{{ criterion.max_score }}.</div>
                         </td>
-                        <td>
-                            <input class="form-control" name="comments_{{ criterion.criteria_id }}"
+                        <td class="comments-column">
+                            <label class="form-label d-md-none small fw-bold text-muted mb-1">Comments / Observations</label>
+                            <input class="form-control criterion-comment" name="comments_{{ criterion.criteria_id }}"
                                    value="{{ request.form.get('comments_' ~ criterion.criteria_id, '') }}"
                                    maxlength="255" placeholder="Observation or evidence..." aria-label="Comments for {{ criterion.criteria_name }}">
                         </td>
