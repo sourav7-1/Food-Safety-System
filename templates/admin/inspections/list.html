@@ -120,13 +120,13 @@
         <table class="table floating-inspection-table align-middle mb-0" id="inspectionDataTable">
             <thead>
                 <tr>
-                    <th>Audit</th>
+                    <th class="d-none d-md-table-cell">Audit</th>
                     <th>Target Stall</th>
-                    <th>Inspector</th>
-                    <th>Audit Date</th>
-                    <th>Hygiene Score</th>
-                    <th>Risk Tier</th>
-                    <th>Next Reinspection</th>
+                    <th class="d-none d-md-table-cell">Inspector</th>
+                    <th class="d-none d-md-table-cell">Audit Date</th>
+                    <th class="d-none d-md-table-cell">Hygiene Score</th>
+                    <th class="d-none d-md-table-cell">Risk Tier</th>
+                    <th class="d-none d-md-table-cell">Next Reinspection</th>
                     <th>Status</th>
                     {% if current_user.has_permission('inspections.approve') or current_user.has_permission('inspections.reject') %}
                     <th class="text-end">Decision</th>
@@ -144,7 +144,7 @@
                 onclick="if (!event.target.closest('a, button, form, input, select')) { openEntityDetailModal('inspection', {{ inspection.inspection_id }}); }"
             >
                 <!-- Col 1: Audit ID & Preview -->
-                <td class="text-nowrap">
+                <td class="d-none d-md-table-cell text-nowrap">
                     <div class="d-flex align-items-center gap-2">
                         <button type="button" class="btn-dock-action btn-inspect" title="Quick Audit Report" onclick="event.stopPropagation(); openEntityDetailModal('inspection', {{ inspection.inspection_id }})">
                             <i class="fa-solid fa-eye"></i>
@@ -171,19 +171,19 @@
                 </td>
 
                 <!-- Col 3: Inspector -->
-                <td>
+                <td class="d-none d-md-table-cell">
                     <div class="fw-semibold text-dark" style="font-size: 13px;">{{ inspection.inspector.user.full_name }}</div>
                     <small class="text-muted d-block" style="font-size: 11px;"><i class="fa-solid fa-id-badge me-1"></i>{{ inspection.inspector.employee_code }}</small>
                 </td>
 
                 <!-- Col 4: Audit Date -->
-                <td>
+                <td class="d-none d-md-table-cell">
                     <span class="text-secondary small fw-medium d-block"><i class="fa-regular fa-calendar me-1"></i>{{ inspection.inspection_date.strftime('%d %b %Y') }}</span>
                     <small class="text-muted d-block" style="font-size: 11px;">{{ inspection.inspection_date.strftime('%I:%M %p') }}</small>
                 </td>
 
                 <!-- Col 5: Hygiene Score -->
-                <td>
+                <td class="d-none d-md-table-cell">
                     {% if score_val is not none %}
                     <div class="audit-score-pill">
                         <span class="fw-bold {% if score_val >= 80 %}text-success{% elif score_val >= 60 %}text-warning{% else %}text-danger{% endif %}">
@@ -199,14 +199,14 @@
                 </td>
 
                 <!-- Col 6: Risk Tier -->
-                <td>
+                <td class="d-none d-md-table-cell">
                     <span class="stall-risk-tag risk-{{ risk_name }}">
                         {{ risk_name|title }}
                     </span>
                 </td>
 
                 <!-- Col 7: Next Reinspection -->
-                <td>
+                <td class="d-none d-md-table-cell">
                     {% if inspection.reinspection_date %}
                     <span class="text-dark fw-semibold small"><i class="fa-regular fa-clock me-1 text-primary"></i>{{ inspection.reinspection_date.strftime('%d %b %Y') }}</span>
                     {% else %}

@@ -103,10 +103,10 @@
             <thead>
                 <tr>
                     <th>Stall</th>
-                    <th>Area</th>
+                    <th class="d-none d-md-table-cell">Area</th>
                     <th>Score</th>
                     <th>Risk Classification</th>
-                    <th>Reinspection Due</th>
+                    <th class="d-none d-md-table-cell">Reinspection Due</th>
                 </tr>
             </thead>
             <tbody>
@@ -118,10 +118,10 @@
                         </a>
                         <small class="text-secondary"><i class="fa-solid fa-hashtag me-1"></i>{{ row.stall_code }}</small>
                     </td>
-                    <td>{{ row.area_name }}</td>
+                    <td class="d-none d-md-table-cell">{{ row.area_name }}</td>
                     <td><span class="score-value text-danger">{{ row.overall_score }}%</span></td>
                     <td><span class="status-pill risk-{{ row.risk_level }}">{{ row.risk_level }}</span></td>
-                    <td>{{ row.reinspection_date.strftime('%d %b %Y') if row.reinspection_date else 'Not scheduled' }}</td>
+                    <td class="d-none d-md-table-cell">{{ row.reinspection_date.strftime('%d %b %Y') if row.reinspection_date else 'Not scheduled' }}</td>
                 </tr>
             {% else %}
                 <tr><td colspan="5" class="empty-state"><i class="fa-solid fa-circle-check text-success mb-2"></i>No high-risk stalls found. Excellent!</td></tr>
@@ -143,8 +143,8 @@
             <thead>
                 <tr>
                     <th>Stall</th>
-                    <th>Campus Area</th>
-                    <th>Risk Level</th>
+                    <th class="d-none d-md-table-cell">Campus Area</th>
+                    <th class="d-none d-md-table-cell">Risk Level</th>
                     <th>Due Date</th>
                     <th>Urgency Timing</th>
                 </tr>
@@ -158,8 +158,8 @@
                         </a>
                         <small class="text-secondary"><i class="fa-solid fa-hashtag me-1"></i>{{ row.stall_code }}</small>
                     </td>
-                    <td>{{ row.area_name }}</td>
-                    <td><span class="status-pill risk-{{ row.risk_level }}">{{ row.risk_level }}</span></td>
+                    <td class="d-none d-md-table-cell">{{ row.area_name }}</td>
+                    <td class="d-none d-md-table-cell"><span class="status-pill risk-{{ row.risk_level }}">{{ row.risk_level }}</span></td>
                     <td>{{ row.reinspection_date.strftime('%d %b %Y') }}</td>
                     <td>
                         {% set days=(row.reinspection_date-generated_at).days %}
@@ -183,6 +183,9 @@
 Chart.defaults.font.family = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif";
 Chart.defaults.color = "#64748b";
 const grid = {color:"#f1f5f9"};
+// Phones only: long stall/area names would squeeze the bars; tooltips keep the full name.
+const phoneQuery = window.matchMedia("(max-width: 767.98px)");
+const shortLabel = {callback(value){ const label = String(this.getLabelForValue(value)); return phoneQuery.matches && label.length > 16 ? label.slice(0, 15) + "…" : label; }};
 
 new Chart(document.getElementById("inspectionTrendReport"),{
     type:"line",
@@ -242,7 +245,7 @@ new Chart(document.getElementById("areaHygieneReport"),{
         maintainAspectRatio:false,
         indexAxis:"y",
         plugins:{legend:{display:false}},
-        scales:{x:{beginAtZero:true,max:100,grid},y:{grid:{display:false}}}
+        scales:{x:{beginAtZero:true,max:100,grid},y:{grid:{display:false},ticks:shortLabel}}
     }
 });
 
@@ -279,7 +282,7 @@ new Chart(document.getElementById("topStallsReport"),{
         maintainAspectRatio:false,
         indexAxis:"y",
         plugins:{legend:{display:false}},
-        scales:{x:{beginAtZero:true,max:100,grid},y:{grid:{display:false}}}
+        scales:{x:{beginAtZero:true,max:100,grid},y:{grid:{display:false},ticks:shortLabel}}
     }
 });
 
@@ -316,7 +319,7 @@ new Chart(document.getElementById("highRiskStallsReport"),{
         responsive:true,
         maintainAspectRatio:false,
         plugins:{legend:{display:false}},
-        scales:{x:{grid:{display:false}},y:{beginAtZero:true,max:100,grid}}
+        scales:{x:{grid:{display:false},ticks:shortLabel},y:{beginAtZero:true,max:100,grid}}
     }
 });
 </script>

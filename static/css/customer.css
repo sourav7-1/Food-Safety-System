@@ -668,7 +668,12 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.85) 100%);
+    /* darkens early enough that text stays readable over light photos */
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.2) 0%, rgba(15, 23, 42, 0.88) 60%);
+}
+
+.stall-banner-overlay .text-white-50 {
+    color: rgba(255, 255, 255, 0.85) !important;
 }
 
 .text-shadow {
@@ -1049,6 +1054,7 @@
     background: var(--cf-canvas);
     transition: all 0.2s ease;
     color: var(--cf-ink);
+    min-height: 44px;
 }
 
 .notif-search-input:focus {

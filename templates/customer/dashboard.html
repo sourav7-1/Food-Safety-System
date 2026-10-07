@@ -170,7 +170,7 @@
                 </h3>
                 <p class="std-card-subtitle">Verified campus food spots with the highest hygiene scores</p>
             </div>
-            <a href="{{ url_for('customer_portal.search_stalls') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold">
+            <a href="{{ url_for('customer_portal.search_stalls') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold text-nowrap flex-shrink-0">
                 View All Stalls <i class="fa-solid fa-chevron-right ms-1"></i>
             </a>
         </div>
@@ -256,10 +256,10 @@
             {% if my_complaints %}
             <div class="d-flex flex-column gap-2">
                 {% for c in my_complaints %}
-                <div class="complaint-track-item">
+                <div class="complaint-track-item position-relative">
                     <div class="complaint-track-header">
                         <div class="overflow-hidden">
-                            <a href="{{ url_for('customer_portal.complaint_detail', complaint_id=c.complaint_id) }}" class="fw-bold text-dark text-truncate text-decoration-none d-block small mb-0.5">
+                            <a href="{{ url_for('customer_portal.complaint_detail', complaint_id=c.complaint_id) }}" class="fw-bold text-dark text-truncate text-decoration-none d-block small stretched-link">
                                 {{ c.stall_name }}
                             </a>
                             <span class="text-muted" style="font-size: 0.72rem;">{{ c.date }}</span>
@@ -337,13 +337,13 @@
                     <p class="std-card-subtitle" id="calendarMonthTitle">Campus Inspections</p>
                 </div>
                 <div class="d-flex align-items-center gap-1">
-                    <button class="btn btn-sm btn-light border rounded-circle p-1" id="calPrevMonthBtn" style="width: 28px; height: 28px;" title="Previous Month" aria-label="Previous Month">
+                    <button class="btn btn-sm btn-light border rounded-circle p-1 std-cal-nav-btn" id="calPrevMonthBtn" title="Previous Month" aria-label="Previous Month">
                         <i class="fa-solid fa-chevron-left small"></i>
                     </button>
                     <button class="btn btn-sm btn-light border rounded-pill px-2 py-0.5 small fw-bold" id="calTodayBtn" style="font-size: 11px;">
                         Today
                     </button>
-                    <button class="btn btn-sm btn-light border rounded-circle p-1" id="calNextMonthBtn" style="width: 28px; height: 28px;" title="Next Month" aria-label="Next Month">
+                    <button class="btn btn-sm btn-light border rounded-circle p-1 std-cal-nav-btn" id="calNextMonthBtn" title="Next Month" aria-label="Next Month">
                         <i class="fa-solid fa-chevron-right small"></i>
                     </button>
                 </div>
@@ -424,7 +424,7 @@
                     </h3>
                     <p class="std-card-subtitle">Active community contributors advocating for food safety</p>
                 </div>
-                <a href="{{ url_for('customer_portal.leaderboard') }}" class="btn btn-sm btn-light border rounded-pill px-3 py-1 text-secondary fw-bold small">
+                <a href="{{ url_for('customer_portal.leaderboard') }}" class="btn btn-sm btn-light border rounded-pill px-3 py-1 text-secondary fw-bold small text-nowrap flex-shrink-0">
                     Full Board <i class="fa-solid fa-chevron-right ms-1"></i>
                 </a>
             </div>
@@ -436,8 +436,8 @@
                         <tr class="text-muted small">
                             <th style="width: 48px;">Rank</th>
                             <th>Student</th>
-                            <th class="text-center">Reviews</th>
-                            <th class="text-center">Reports</th>
+                            <th class="text-center d-none d-sm-table-cell">Reviews</th>
+                            <th class="text-center d-none d-sm-table-cell">Reports</th>
                             <th class="text-end">Points</th>
                         </tr>
                     </thead>
@@ -460,7 +460,7 @@
                                     <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center fw-bold text-success flex-shrink-0" style="width: 28px; height: 28px; font-size: 12px;">
                                         {{ row.initial }}
                                     </div>
-                                    <span class="text-truncate fw-semibold" style="max-width: 140px;">
+                                    <span class="text-truncate fw-semibold std-champ-name">
                                         {{ row.name }}
                                         {% if row.is_current_user %}
                                         <span class="badge bg-success rounded-pill px-1.5 py-0.5 ms-1" style="font-size: 9.5px;">You</span>
@@ -468,8 +468,8 @@
                                     </span>
                                 </div>
                             </td>
-                            <td class="text-center">{{ row.reviews }}</td>
-                            <td class="text-center">{{ row.complaints }}</td>
+                            <td class="text-center d-none d-sm-table-cell">{{ row.reviews }}</td>
+                            <td class="text-center d-none d-sm-table-cell">{{ row.complaints }}</td>
                             <td class="text-end fw-bold text-success">{{ row.points }}</td>
                         </tr>
                         {% endfor %}

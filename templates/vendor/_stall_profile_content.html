@@ -143,9 +143,9 @@
                 <tr>
                     <th>Date</th>
                     <th>Score</th>
-                    <th>Risk Classification</th>
+                    <th class="d-none d-md-table-cell">Risk Classification</th>
                     <th>Status</th>
-                    <th>Inspector Remarks</th>
+                    <th class="d-none d-md-table-cell">Inspector Remarks</th>
                     <th>Dispute</th>
                 </tr>
             </thead>
@@ -158,9 +158,9 @@
                             {{ (item.overall_score ~ '%') if item.overall_score is not none else '—' }}
                         </span>
                     </td>
-                    <td><span class="risk-badge risk-{{ item.risk_level or 'unrated' }}">{{ item.risk_level or 'unrated' }}</span></td>
+                    <td class="d-none d-md-table-cell"><span class="risk-badge risk-{{ item.risk_level or 'unrated' }}">{{ item.risk_level or 'unrated' }}</span></td>
                     <td><span class="risk-badge status-{{ item.status }}">{{ item.status }}</span></td>
-                    <td class="text-secondary">{{ item.remarks or '—' }}</td>
+                    <td class="d-none d-md-table-cell text-secondary">{{ item.remarks or '—' }}</td>
                     <td>
                         {% if item.disputes %}
                         <div class="d-flex flex-column gap-1">

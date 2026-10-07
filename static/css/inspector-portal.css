@@ -304,3 +304,52 @@
     .ins-detail-list dt { flex-basis: auto; }
     .dashboard-content { padding: 0 0 36px; } /* .dashboard-main provides the gutter */
 }
+
+/* Complaint evidence on the inspector complaint page. These classes had no
+   styles, so photos rendered at their natural size and ran off the page. */
+.complaint-evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.complaint-evidence-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+}
+
+.complaint-evidence-card img,
+.complaint-evidence-card video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #e2e8f0;
+}
+
+.complaint-evidence-card audio {
+    width: 100%;
+}
+
+.complaint-evidence-card .evidence-file-name {
+    font-weight: 600;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.complaint-evidence-card .evidence-file-meta {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.complaint-evidence-card .risk-badge {
+    align-self: flex-start;
+}

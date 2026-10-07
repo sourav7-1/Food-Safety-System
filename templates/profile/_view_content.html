@@ -673,39 +673,38 @@
 </div>
 
 <script>
-// Client-side interactions for shared portal profile
-(function() {
-    // Instant image preview on file input select
-    const portalPhotoInput = document.getElementById('portalPhotoInput');
-    const portalPreviewCircle = document.getElementById('portalPhotoPreviewCircle');
-    const portalDropzoneText = document.getElementById('portalDropzoneText');
+// Client-side interactions for shared portal profile. Delegated from
+// document (bound once) because form posts swap #main-content via AJAX,
+// which replaces these inputs and does not re-run this inline script.
+if (!window.portalProfileBound) {
+    window.portalProfileBound = true;
 
-    if (portalPhotoInput && portalPreviewCircle) {
-        portalPhotoInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                if (portalDropzoneText) {
-                    portalDropzoneText.textContent = file.name;
-                }
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    portalPreviewCircle.innerHTML = '<img src="' + event.target.result + '" alt="Preview" style="width:100%;height:100%;object-fit:cover;">';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
+    // Instant image preview on file input select
+    document.addEventListener('change', function (e) {
+        if (e.target.id !== 'portalPhotoInput') return;
+        const file = e.target.files[0];
+        const previewCircle = document.getElementById('portalPhotoPreviewCircle');
+        const dropzoneText = document.getElementById('portalDropzoneText');
+        if (!file || !previewCircle) return;
+        if (dropzoneText) {
+            dropzoneText.textContent = file.name;
+        }
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            previewCircle.innerHTML = '<img src="' + event.target.result + '" alt="Preview" style="width:100%;height:100%;object-fit:cover;">';
+        };
+        reader.readAsDataURL(file);
+    });
 
     // Bio character counter
-    const portalBio = document.getElementById('portal_bio');
-    const portalBioCounter = document.getElementById('portalBioCounter');
-    if (portalBio && portalBioCounter) {
-        portalBio.addEventListener('input', function() {
-            const left = 2000 - portalBio.value.length;
-            portalBioCounter.textContent = left + ' chars left';
-        });
-    }
-})();
+    document.addEventListener('input', function (e) {
+        if (e.target.id !== 'portal_bio') return;
+        const counter = document.getElementById('portalBioCounter');
+        if (counter) {
+            counter.textContent = (2000 - e.target.value.length) + ' chars left';
+        }
+    });
+}
 
 // Password strength meter for portals
 function checkPortalPasswordStrength(password) {

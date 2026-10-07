@@ -260,7 +260,9 @@ p {
         color: #ffffff !important;
     }
 
-    .site-navbar .d-flex.align-items-center.gap-2 {
+    /* the menu's action wrapper only -- the account toggle inside it
+       carries the same utility classes and must stay a row */
+    .site-navbar .navbar-collapse > .d-flex.align-items-center.gap-2 {
         display: flex;
         flex-direction: column;
         width: 100%;
@@ -269,7 +271,7 @@ p {
         border-top: 1px solid rgba(255, 255, 255, 0.12);
     }
 
-    .site-navbar .d-flex.align-items-center.gap-2 .btn {
+    .site-navbar .navbar-collapse > .d-flex.align-items-center.gap-2 .btn {
         width: 100%;
         justify-content: center;
         padding: 0.65rem 1rem;
@@ -281,6 +283,7 @@ p {
 
     .site-navbar .nav-user-dropdown {
         width: 100%;
+        height: 48px !important; /* liquid-glass pins it to 38px */
         justify-content: space-between;
         padding: 0.65rem 1rem;
         background: rgba(255, 255, 255, 0.08);
@@ -645,17 +648,21 @@ p {
 }
 
 .input-group-password .form-control {
-    padding-right: 42px;
+    padding-right: 48px;
 }
 
 .input-group-password .password-toggle-btn {
     position: absolute;
-    right: 12px;
+    right: 2px;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
     background: transparent;
     border: none;
     color: var(--text-tertiary);
     cursor: pointer;
-    padding: 4px 6px;
+    padding: 0;
     font-size: 1rem;
     z-index: 5;
 }
@@ -2129,22 +2136,48 @@ p {
     }
 }
 
+/* Leaflet's layer-switcher icon is a jsdelivr-hosted PNG that the CSP's
+   img-src blocks (the toggle rendered blank); draw it with Font Awesome. */
+.leaflet-control-layers-toggle {
+    background-image: none !important;
+    display: grid;
+    place-items: center;
+    color: #1f2937;
+    text-decoration: none;
+}
+
+.leaflet-control-layers-toggle::before {
+    content: "\f5fd"; /* fa-layer-group */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    font-size: 18px;
+}
+
 /* ==========================================================================
    Global Mobile-First Responsiveness & Accessibility Rules
    ========================================================================== */
-html, body {
+/* body must use clip, not hidden: with html also non-visible, a hidden
+   body becomes its own (never-scrolling) scroll container, which silently
+   breaks every position: sticky element on the site. */
+html {
     overflow-x: hidden;
-    max-width: 100vw;
+}
+
+body {
+    overflow-x: clip;
 }
 
 @media (max-width: 767.98px) {
-    /* Prevent iOS auto-zoom on form inputs by ensuring at least 16px font-size */
-    input.form-control,
-    select.form-select,
-    textarea.form-control,
+    /* Prevent iOS auto-zoom on focus: every text-like field needs >= 16px,
+       including the bare search inputs/selects in admin & portal filter bars */
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="hidden"]),
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+
     .form-control,
     .form-select {
-        font-size: 16px !important;
         min-height: 44px;
     }
 
@@ -2160,10 +2193,67 @@ html, body {
         align-items: center;
     }
 
+    .btn {
+        justify-content: center;
+    }
+
     .btn-sm {
-        min-height: 38px;
+        min-height: 44px;
         padding-top: 0.35rem;
         padding-bottom: 0.35rem;
+    }
+
+    /* Icon-only controls: square 44px hit area */
+    .dashboard-notification-btn,
+    .topbar-icon-btn,
+    .admin-topbar .btn.d-lg-none,
+    .dashboard-topbar .btn.d-lg-none,
+    .password-toggle-btn,
+    .calendar-nav-btn,
+    .round-action-btn,
+    .btn-dock-action,
+    .btn-action-edit,
+    .ins-link-btn,
+    .criterion-guide-trigger,
+    .modal .btn-close,
+    .form-heading > a,
+    .btn-sm.btn-soft {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .form-heading > a {
+        display: inline-grid;
+        place-items: center;
+    }
+
+    /* Pills, chips and segmented tabs */
+    .portal-nav-link,
+    .ins-chip,
+    .mode-tab,
+    .quick-pill,
+    .hero-action-btn,
+    .btn-stall-menu {
+        min-height: 44px;
+    }
+
+    /* Standalone text links (not inline in a sentence) */
+    .ins-action,
+    .notif-meta-item,
+    .apple-link,
+    .ar-intro-fallback-link,
+    .forgot-password-link,
+    .footer-brand,
+    .ins-crumbs a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+
+    .leaflet-container.leaflet-touch .leaflet-bar a {
+        width: 44px;
+        height: 44px;
+        line-height: 44px;
     }
 
     /* Reduce excessive container paddings and margins on phones */

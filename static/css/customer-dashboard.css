@@ -186,6 +186,11 @@
     text-decoration: underline;
 }
 
+.std-cal-nav-btn {
+    width: 28px;
+    height: 28px;
+}
+
 /* -------------------------------------------------------------------------
    3. Content Cards & Layout Grids
    ------------------------------------------------------------------------- */
@@ -768,6 +773,19 @@
     vertical-align: middle;
 }
 
+.std-champ-name {
+    max-width: 140px;
+}
+
+@media (max-width: 575.98px) {
+    .leaderboard-mini-table td, .leaderboard-mini-table th {
+        padding: 0.55rem 0.4rem;
+    }
+    .std-champ-name {
+        max-width: 110px;
+    }
+}
+
 /* -------------------------------------------------------------------------
    9. Responsive CSS Grid Systems (3 Columns Desktop, 2 Tablet, 1 Mobile)
    ------------------------------------------------------------------------- */
@@ -846,6 +864,22 @@
         font-size: 0.82rem;
         gap: 7px;
     }
+    .risk-alert-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        padding: 0.75rem 1rem 0.25rem;
+        margin-bottom: 1rem;
+    }
+    .risk-alert-banner a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+    }
+    .std-cal-nav-btn {
+        width: 44px;
+        height: 44px;
+    }
     .std-grid-row1 {
         gap: 0.6rem;
         margin-bottom: 0.85rem;
@@ -876,7 +910,7 @@
     .std-rank-pill,
     .std-points-pill {
         padding: 1px 7px;
-        font-size: 0.65rem;
+        font-size: 0.7rem;
     }
     .std-actions-grid {
         grid-template-columns: repeat(4, 1fr);
@@ -893,7 +927,7 @@
         font-size: 0.76rem;
     }
     .std-action-label {
-        font-size: 0.64rem;
+        font-size: 0.72rem;
     }
     .std-stats-2x2 {
         gap: 0.5rem;
@@ -913,14 +947,14 @@
     }
     .std-stat-top .badge {
         padding: 2px 6px !important;
-        font-size: 0.62rem !important;
+        font-size: 0.68rem !important;
     }
     .std-stat-value {
         font-size: clamp(0.85rem, 3.5vw, 1.15rem);
         line-height: 1.15;
     }
     .std-stat-label {
-        font-size: 0.62rem;
+        font-size: 0.7rem;
         margin-top: 0.1rem;
         letter-spacing: 0.25px;
     }
@@ -943,7 +977,6 @@
     }
     .hero-action-btn {
         padding: 5.5px 12px;
-        font-size: 0.8rem;
         gap: 6px;
     }
     .std-profile-card {
@@ -964,9 +997,7 @@
         height: 30px;
         font-size: 0.72rem;
     }
-    .std-action-label {
-        font-size: 0.62rem;
-    }
+
     .std-stats-2x2 {
         gap: 0.45rem;
     }
@@ -983,9 +1014,7 @@
     .std-stat-value {
         font-size: clamp(0.82rem, 3.4vw, 1.1rem);
     }
-    .std-stat-label {
-        font-size: 0.6rem;
-    }
+
 }
 
 /* Stat tiles stay 2×2 on phones; only the narrowest screens stack them */

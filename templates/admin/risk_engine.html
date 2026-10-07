@@ -293,11 +293,11 @@
             <thead>
                 <tr>
                     <th>Stall &amp; Code</th>
-                    <th>Campus Area &amp; Vendor</th>
+                    <th class="d-none d-md-table-cell">Campus Area &amp; Vendor</th>
                     <th>Hygiene Score</th>
                     <th>Risk Classification</th>
-                    <th>Reinspection Due</th>
-                    <th>Last Inspected</th>
+                    <th class="d-none d-md-table-cell">Reinspection Due</th>
+                    <th class="d-none d-md-table-cell">Last Inspected</th>
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
@@ -327,7 +327,7 @@
                             </div>
                         </div>
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         <div>
                             <span class="badge bg-light text-dark border mb-1 d-inline-block">
                                 <i class="fa-solid fa-location-dot text-danger me-1"></i>{{ stall.area.area_name if stall.area else 'Campus Area' }}
@@ -365,7 +365,7 @@
                             {{ (risk_level or 'unrated')|title }}
                         </span>
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         {% if reinspection_date %}
                         <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2.5 py-1 fw-semibold">
                             <i class="fa-regular fa-calendar-clock me-1"></i>{{ reinspection_date.strftime('%d %b %Y') }}
@@ -374,7 +374,7 @@
                         <span class="text-secondary">—</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         <span class="text-secondary">{{ inspection_date.strftime('%d %b %Y') if inspection_date else '—' }}</span>
                     </td>
                     <td class="text-end">

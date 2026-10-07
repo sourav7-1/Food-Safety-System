@@ -212,6 +212,13 @@
     font-size: 0.88rem;
 }
 
+/* Clips the rounded corners like overflow-hidden did, but clip (unlike
+   hidden) keeps the sticky .submission-bar inside it working on phones */
+.criteria-panel {
+    overflow: hidden;
+    overflow: clip;
+}
+
 /* Inspection Result Hero */
 .result-hero {
     display: flex;
@@ -426,6 +433,19 @@
     .submission-bar .d-flex {
         width: 100%;
     }
+    /* "Scoring Guidelines" + live total wrap instead of clipping */
+    .criteria-header > .d-flex {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .criteria-header .live-total {
+        flex: 1 1 auto;
+        width: auto;
+    }
+    .criterion-guide-trigger {
+        display: inline-grid;
+        place-items: center;
+    }
     .submission-bar .d-flex .btn {
         flex: 1;
         min-height: 46px;
@@ -434,10 +454,132 @@
         justify-content: center;
         font-weight: 700;
     }
+    /* Cancel sized to its label so "Submit Inspection" keeps one line */
+    .submission-bar .d-flex .btn-outline-secondary {
+        flex: 0 0 auto;
+    }
     .result-hero {
         align-items: flex-start;
         flex-direction: column;
         padding: 1.15rem;
     }
+}
+
+/* ==========================================================================
+   Stall Preview Card & Inspection Card Modals
+   ========================================================================== */
+.stall-placeholder-prompt {
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 14px;
+    transition: all 0.2s ease;
+}
+
+.stall-preview-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f9fbf9 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.15rem;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stall-preview-card:hover {
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.stall-preview-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #eef8f2;
+    color: #15803d;
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.stall-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.stall-chip-success {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.stall-chip-warning {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.stall-metric-box {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.stall-metric-box small {
+    display: block;
+    color: #64748b;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+}
+
+.stall-metric-box strong {
+    color: #0f172a;
+    font-size: 0.9rem;
+}
+
+.criterion-guide-trigger {
+    color: #10b981;
+    font-size: 0.9rem;
+    line-height: 1;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.criterion-guide-trigger:hover {
+    color: #059669;
+    transform: scale(1.2);
+}
+
+.criterion-guide-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
+    margin-bottom: 0.85rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.criterion-guide-card:hover {
+    border-color: #10b981;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.08);
+}
+
+.criterion-guide-card.guide-highlight {
+    border-color: #10b981;
+    background: #f0fdf4;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+.ins-confirm-scorecard {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
 }
 

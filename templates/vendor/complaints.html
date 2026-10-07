@@ -70,9 +70,9 @@
                 <tr>
                     <th>Stall</th>
                     <th>Complaint Issue</th>
-                    <th>Classification</th>
-                    <th>Date Filed</th>
-                    <th>Evidence</th>
+                    <th class="d-none d-md-table-cell">Classification</th>
+                    <th class="d-none d-md-table-cell">Date Filed</th>
+                    <th class="d-none d-md-table-cell">Evidence</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -87,7 +87,7 @@
                         <strong class="text-dark d-block">{{ complaint.title }}</strong>
                         <small class="text-secondary text-truncate d-block" style="max-width: 300px;">{{ complaint.description }}</small>
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         <span class="badge bg-light text-dark border px-2 py-1 fw-semibold">
                             {{ complaint.complaint_type.type_name }}
                         </span>
@@ -99,8 +99,8 @@
                         </div>
                         {% endif %}
                     </td>
-                    <td class="text-nowrap">{{ complaint.submitted_at.strftime('%d %b %Y') }}</td>
-                    <td>
+                    <td class="d-none d-md-table-cell text-nowrap">{{ complaint.submitted_at.strftime('%d %b %Y') }}</td>
+                    <td class="d-none d-md-table-cell">
                         {% if complaint.evidence %}
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
                             <i class="fa-solid fa-paperclip me-1"></i>{{ complaint.evidence|length }} file{{ 's' if complaint.evidence|length != 1 }}

@@ -14,6 +14,16 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/glass-theme.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/liquid-glass.css') }}">
+    <script>
+    // Applied synchronously before paint to prevent sidebar flash
+    (function () {
+        try {
+            if (localStorage.getItem("dashboardSidebarCollapsed") === "1" || localStorage.getItem("portalSidebarCollapsed") === "1") {
+                document.documentElement.classList.add("sidebar-collapsed");
+            }
+        } catch (e) {}
+    })();
+    </script>
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -49,7 +59,7 @@
                                 {% else %}
                                 <span class="navbar-avatar-placeholder">{{ current_user.full_name[:1]|upper }}</span>
                                 {% endif %}
-                                <span class="d-none d-sm-inline fw-semibold text-white">{{ current_user.full_name }}</span>
+                                <span class="fw-semibold text-white text-truncate me-auto">{{ current_user.full_name }}</span>
                                 <i class="fa-solid fa-chevron-down ms-1 text-white-50" style="font-size: 10px;"></i>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="userNavbarDropdown">
@@ -356,7 +366,7 @@
             // e.g. changing a password from the Security tab doesn't bounce
             // the user back to the Info tab.
             var activeTabTarget = null;
-            var activeTabButton = current.querySelector(".nav-tabs .nav-link.active[data-bs-target]");
+            var activeTabButton = current.querySelector('[data-bs-toggle="tab"].active[data-bs-target]');
             if (activeTabButton) {
                 activeTabTarget = activeTabButton.getAttribute("data-bs-target");
             }
@@ -370,7 +380,7 @@
             }
 
             if (activeTabTarget && window.bootstrap) {
-                var restoredTabButton = current.querySelector('.nav-tabs .nav-link[data-bs-target="' + activeTabTarget + '"]');
+                var restoredTabButton = current.querySelector('[data-bs-toggle="tab"][data-bs-target="' + activeTabTarget + '"]');
                 if (restoredTabButton && !restoredTabButton.classList.contains("active")) {
                     bootstrap.Tab.getOrCreateInstance(restoredTabButton).show();
                 }
@@ -431,7 +441,10 @@
             }
             showProgress();
 
-            fetch(form.getAttribute("action"), {
+            // No action attribute means "submit to this page" (HTML spec);
+            // getAttribute() returns null there, which fetch() would turn
+            // into a request for the literal path "null".
+            fetch(form.getAttribute("action") || window.location.href, {
                 method: "POST",
                 body: new FormData(form),
                 headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -613,6 +626,40 @@
             document.addEventListener("DOMContentLoaded", function () { enhanceImageFades(); });
             document.addEventListener("site:content-updated", function () { enhanceImageFades(); });
             document.addEventListener("admin:content-updated", function () { enhanceImageFades(); });
+        })();
+    </script>
+    <script>
+        (function () {
+            "use strict";
+            function initDashboardSidebar() {
+                var toggle = document.getElementById("sidebarCollapseToggle");
+                if (!toggle) return;
+
+                function applyTitles() {
+                    document.querySelectorAll(".dashboard-link, .dashboard-logout button").forEach(function (el) {
+                        var span = el.querySelector("span:not(.notification-badge):not(.dashboard-badge)");
+                        if (span && !el.hasAttribute("title")) {
+                            el.setAttribute("title", span.textContent.trim());
+                        }
+                    });
+                }
+                applyTitles();
+
+                if (!toggle.dataset.collapseBound) {
+                    toggle.dataset.collapseBound = "1";
+                    toggle.addEventListener("click", function () {
+                        var isCollapsed = document.documentElement.classList.toggle("sidebar-collapsed");
+                        try {
+                            localStorage.setItem("dashboardSidebarCollapsed", isCollapsed ? "1" : "0");
+                            localStorage.setItem("portalSidebarCollapsed", isCollapsed ? "1" : "0");
+                        } catch (e) {}
+                    });
+                }
+            }
+
+            initDashboardSidebar();
+            document.addEventListener("DOMContentLoaded", initDashboardSidebar);
+            document.addEventListener("site:content-updated", initDashboardSidebar);
         })();
     </script>
     <script src="{{ url_for('static', filename='js/liquid-glass.js') }}"></script>

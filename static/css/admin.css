@@ -2790,3 +2790,82 @@ body.admin-body {
     color: #2563eb !important;
 }
 
+
+/* Phones: keep vendor/inspection row-cards within the screen so the
+   name, status and action columns show before any sideways scroll */
+@media (max-width: 767.98px) {
+    .floating-vendor-table thead th,
+    .floating-inspection-table thead th {
+        padding: 8px !important;
+    }
+    .vendor-row-card td,
+    .inspection-row-card td {
+        padding: 10px 8px !important;
+    }
+    .vendor-row-card .vendor-avatar-circle,
+    .inspection-row-card .business-icon-badge {
+        display: none;
+    }
+    .vendor-email-text {
+        overflow-wrap: anywhere;
+    }
+    .inspection-row-card .business-name {
+        white-space: normal;
+    }
+    /* the Audit # column is hidden here, so the stall cell opens the row */
+    .inspection-row-card td:nth-child(2) {
+        border-left: 1px solid rgba(226, 232, 240, 0.8) !important;
+        border-top-left-radius: 14px !important;
+        border-bottom-left-radius: 14px !important;
+    }
+    /* 44px dock buttons may wrap to a second line instead of widening the table */
+    .vendor-row-card td:last-child > .d-flex {
+        flex-wrap: wrap;
+    }
+    /* status select, Save and Edit stack in one narrow column instead of
+       pushing the Edit button off the right edge */
+    .table-actions > form.d-inline-flex {
+        display: flex !important;
+        flex-direction: column;
+        align-items: stretch;
+        margin: 0 0 6px !important;
+    }
+    .table-actions > .btn-action-edit {
+        width: 100%;
+    }
+}
+
+/* Evidence on the complaint / inspection-dispute panels. These classes had
+   no styles, so photos rendered at natural size and ran off the page. */
+.evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.evidence-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    overflow-wrap: anywhere;
+}
+
+.evidence-card img,
+.evidence-card video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #e2e8f0;
+}
+
+.evidence-card audio {
+    width: 100%;
+}

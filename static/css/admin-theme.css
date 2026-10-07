@@ -71,7 +71,7 @@ body.admin-body {
     font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
+    overflow-x: clip; /* not hidden: that breaks position: sticky */
     -webkit-font-smoothing: antialiased;
 }
 
@@ -1201,6 +1201,28 @@ body.admin-body {
     border: 1px solid #cbd5e1 !important;
     padding: 8px 16px !important;
     font-size: 13.5px !important;
+}
+
+@media (max-width: 767.98px) {
+    .form-control, .form-select {
+        font-size: 16px !important; /* below 16px iOS zooms the page on focus */
+    }
+    /* bare search/filter fields inside the pill .search-bar */
+    .search-bar input,
+    .search-bar select {
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    /* Phones: tighter cells so name/status/actions fit before any sideways scroll */
+    .table.admin-table thead th,
+    .table.admin-table tbody td {
+        padding: 10px 8px;
+    }
+    .table.admin-table small {
+        overflow-wrap: anywhere; /* long emails/codes wrap instead of widening the table */
+    }
 }
 
 .form-control:focus, .form-select:focus {

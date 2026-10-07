@@ -3,13 +3,14 @@
 {% block title %}Risk Leaderboard{% endblock %}
 {% block dashboard_title %}Risk Leaderboard{% endblock %}
 {% block dashboard_subtitle %}Live rankings straight from MySQL — worst-first and safest-first.{% endblock %}
+{% set limit_url = url_for('customer_portal.leaderboard', limit=max_limit if row_limit < max_limit else default_limit) %}
+{% set limit_label = 'Show top ' ~ (max_limit if row_limit < max_limit else default_limit) %}
 {% block dashboard_topbar_extra %}
-<span class="live-badge" id="leaderboardLive"><i class="fa-solid fa-tower-broadcast"></i> <span id="leaderboardLiveText">Updated just now</span></span>
-{% if row_limit < max_limit %}
-<a class="btn btn-sm btn-outline-success" href="{{ url_for('customer_portal.leaderboard', limit=max_limit) }}">Show top {{ max_limit }}</a>
-{% else %}
-<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('customer_portal.leaderboard', limit=default_limit) }}">Show top {{ default_limit }}</a>
-{% endif %}
+{# Phones get these inside the sticky filter bar below instead #}
+<div class="d-none d-md-flex align-items-center gap-2">
+    <span class="live-badge" id="leaderboardLive"><i class="fa-solid fa-tower-broadcast"></i> <span data-live-text>Updated just now</span></span>
+    <a class="btn btn-sm {{ 'btn-outline-success' if row_limit < max_limit else 'btn-outline-secondary' }}" href="{{ limit_url }}">{{ limit_label }}</a>
+</div>
 {% endblock %}
 
 {% block dashboard_content %}
@@ -36,30 +37,28 @@
     </div>
 </div>
 
-<!-- Mobile Leaderboard Controls & Sticky Filter Bar (Phones) -->
-<div class="d-md-none leaderboard-mobile-bar sticky-top py-2 mb-3" style="top: 0; z-index: 1010; background: rgba(220, 231, 219, 0.96); backdrop-filter: blur(12px);">
-    <div class="btn-group w-100 mb-2 shadow-sm rounded-pill p-1 bg-white border" role="group" aria-label="Risk board toggle">
-        <button type="button" class="btn btn-sm rounded-pill fw-bold active btn-success" id="btnToggleSafest" onclick="switchMobileLeaderboardTab('safest')">
-            <i class="fa-solid fa-shield-heart me-1"></i> Safest (<span id="mobileCountSafest">{{ low_risk|length }}</span>)
+<!-- Phones: sticky board toggle + area filter -->
+<div class="leaderboard-filter-bar d-md-none">
+    <div class="lb-toggle" role="group" aria-label="Choose leaderboard">
+        <button type="button" class="lb-toggle-btn lb-toggle-safe is-active" id="btnToggleSafest" aria-pressed="true" onclick="switchMobileLeaderboardTab('safest')">
+            <i class="fa-solid fa-shield-heart" aria-hidden="true"></i> Safest <span class="lb-toggle-count" id="mobileCountSafest">{{ low_risk|length }}</span>
         </button>
-        <button type="button" class="btn btn-sm rounded-pill fw-bold btn-outline-danger border-0" id="btnToggleHighRisk" onclick="switchMobileLeaderboardTab('high')">
-            <i class="fa-solid fa-triangle-exclamation me-1"></i> High Risk (<span id="mobileCountHigh">{{ high_risk|length }}</span>)
+        <button type="button" class="lb-toggle-btn lb-toggle-high" id="btnToggleHighRisk" aria-pressed="false" onclick="switchMobileLeaderboardTab('high')">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Highest Risk <span class="lb-toggle-count" id="mobileCountHigh">{{ high_risk|length }}</span>
         </button>
     </div>
-    <div class="d-flex align-items-center gap-2">
-        <div class="input-group input-group-sm flex-grow-1">
-            <span class="input-group-text bg-white border-end-0 rounded-start-pill text-secondary"><i class="fa-solid fa-filter"></i></span>
-            <select class="form-select form-select-sm border-start-0 rounded-end-pill" id="mobileAreaFilter" onchange="filterMobileLeaderboard()" aria-label="Filter stalls by area">
-                <option value="">All Campus Areas</option>
-                {% set area_names = [] %}
-                {% for s in (low_risk + high_risk) %}
-                    {% if s.area_name and s.area_name not in area_names %}
-                        {% set _ = area_names.append(s.area_name) %}
-                        <option value="{{ s.area_name }}">{{ s.area_name }}</option>
-                    {% endif %}
-                {% endfor %}
-            </select>
-        </div>
+    <div class="lb-filter-row">
+        <select class="form-select" id="mobileAreaFilter" onchange="filterMobileLeaderboard()" aria-label="Filter stalls by area">
+            <option value="">All campus areas</option>
+            {% set area_names = [] %}
+            {% for s in (low_risk + high_risk) %}
+                {% if s.area_name and s.area_name not in area_names %}
+                    {% set _ = area_names.append(s.area_name) %}
+                    <option value="{{ s.area_name }}">{{ s.area_name }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <span class="lb-live"><i class="fa-solid fa-tower-broadcast" aria-hidden="true"></i> <span data-live-text>Updated just now</span></span>
     </div>
 </div>
 
@@ -71,6 +70,7 @@
     <div id="mobileCardsHighRisk" class="d-none">
         {{ render_leaderboard_cards(high_risk, "No high-risk stalls right now.") }}
     </div>
+    <a class="btn btn-outline-success w-100 mt-1" href="{{ limit_url }}">{{ limit_label }}</a>
 </div>
 
 <!-- Desktop Side-by-Side Tables (Tablet & Desktop md+) -->
@@ -193,8 +193,25 @@
     var apiUrl = {{ url_for('customer_portal.api_leaderboard', limit=row_limit)|tojson }};
     var highBody = document.getElementById("highRiskBoardBody");
     var lowBody = document.getElementById("lowRiskBoardBody");
-    var liveText = document.getElementById("leaderboardLiveText");
+    var liveTexts = document.querySelectorAll("[data-live-text]");
     var refreshTimer = null;
+    var lastUpdated = Date.now();
+    var livePaused = false;
+
+    function setLiveText(text) {
+        liveTexts.forEach(function (el) { el.textContent = text; });
+    }
+
+    // Relative "Updated Xs ago" label; ticks on its own timer and never
+    // touches the polling schedule below.
+    function renderUpdatedAgo() {
+        if (livePaused) { return; }
+        var seconds = Math.round((Date.now() - lastUpdated) / 1000);
+        setLiveText(seconds < 10 ? "Updated just now"
+            : seconds < 60 ? "Updated " + seconds + "s ago"
+            : "Updated " + Math.floor(seconds / 60) + "m ago");
+    }
+    window.setInterval(renderUpdatedAgo, 5000);
 
     function escapeHtml(value) {
         return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
@@ -202,8 +219,14 @@
         });
     }
 
+    // Same two-decimal format the server renders (MySQL DECIMAL(6,2)), so
+    // scores don't change shape ("30.00%" -> "30%") on every live refresh.
+    function formatScore(value) {
+        return value != null ? Number(value).toFixed(2) + "%" : "—";
+    }
+
     function rowHtml(entry) {
-        var score = entry.overall_score != null ? entry.overall_score + "%" : "—";
+        var score = formatScore(entry.overall_score);
         var grade = entry.hygiene_grade || "—";
         var risk = entry.risk_level || "unrated";
         var area = escapeHtml(entry.area_name) + (entry.city ? ', ' + escapeHtml(entry.city) : '');
@@ -390,40 +413,34 @@
             });
     };
 
+    var dateFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+
+    // Mirrors render_leaderboard_cards() in customer/_leaderboard_macros.html.
     function cardHtml(entry) {
-        var score = entry.overall_score != null ? entry.overall_score + "%" : "—";
+        var score = formatScore(entry.overall_score);
         var grade = entry.hygiene_grade || "—";
         var risk = entry.risk_level || "unrated";
         var area = escapeHtml(entry.area_name) + (entry.city ? ', ' + escapeHtml(entry.city) : '');
         var scoreNum = entry.overall_score != null ? entry.overall_score : 0;
-        var scoreColor = scoreNum >= 70 ? 'success' : (scoreNum >= 50 ? 'warning' : 'danger');
-        var inspDate = entry.inspection_date ? escapeHtml(entry.inspection_date.substring(0, 10)) : '';
+        var scoreClass = scoreNum >= 70 ? 'lb-score-good' : (scoreNum >= 50 ? 'lb-score-ok' : 'lb-score-bad');
+        var inspDate = entry.inspection_date ? dateFormat.format(new Date(entry.inspection_date)) : '';
+        var thumb = entry.photo_url
+            ? '<img src="' + escapeHtml(entry.photo_url) + '" alt="" loading="lazy">'
+            : '<i class="fa-solid fa-store" aria-hidden="true"></i>';
 
         return (
-            '<article class="leaderboard-mobile-card p-3 mb-2 rounded-4 border bg-white shadow-sm" data-stall-area="' + escapeHtml(entry.area_name || '') + '">' +
-            '  <div class="d-flex align-items-start justify-content-between gap-2 mb-2">' +
-            '    <div class="d-flex align-items-center gap-2 min-w-0">' +
-            '      <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5 small fw-bold">#' + entry.rank + '</span>' +
-            '      <div class="leaderboard-thumb-icon rounded-3 d-flex align-items-center justify-content-center bg-success-subtle text-success flex-shrink-0" style="width: 36px; height: 36px; font-size: 14px;">' +
-            '        <i class="fa-solid fa-store"></i>' +
-            '      </div>' +
-            '      <div class="min-w-0">' +
-            '        <a class="fw-bold text-dark text-truncate d-block text-decoration-none" style="font-size: 0.95rem;" href="' + entry.detail_url + '">' + escapeHtml(entry.stall_name) + '</a>' +
-            '        <div class="text-muted small text-truncate" style="font-size: 0.75rem;"><i class="fa-solid fa-location-dot me-1 text-secondary"></i>' + area + '</div>' +
-            '      </div>' +
-            '    </div>' +
-            '    <div class="text-end flex-shrink-0">' +
-            '      <div class="leaderboard-card-score fw-bold fs-4 text-' + scoreColor + '" style="line-height: 1;">' + escapeHtml(score) + '</div>' +
-            '      <small class="text-muted d-block mt-0.5" style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase;">Hygiene</small>' +
+            '<article class="leaderboard-mobile-card" data-stall-area="' + escapeHtml(entry.area_name || '') + '">' +
+            '  <div class="lb-thumb">' + thumb + '<span class="lb-rank">#' + entry.rank + '</span></div>' +
+            '  <div class="lb-body">' +
+            '    <a class="lb-name stretched-link" href="' + entry.detail_url + '">' + escapeHtml(entry.stall_name) + '</a>' +
+            '    <div class="lb-area"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> ' + area + '</div>' +
+            '    <div class="lb-meta">' +
+            '      <span class="grade-chip grade-' + escapeHtml(String(grade).toLowerCase()) + '" title="Hygiene grade">' + escapeHtml(grade) + '</span>' +
+            '      <span class="risk-badge risk-' + escapeHtml(risk) + '">' + escapeHtml(risk.charAt(0).toUpperCase() + risk.slice(1)) + '</span>' +
+            (inspDate ? '      <span class="lb-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i> ' + inspDate + '</span>' : '') +
             '    </div>' +
             '  </div>' +
-            '  <div class="d-flex align-items-center justify-content-between pt-2 border-top gap-2">' +
-            '    <div class="d-flex align-items-center gap-1.5 flex-wrap">' +
-            '      <span class="grade-chip grade-' + escapeHtml(String(grade).toLowerCase()) + '" style="font-size: 0.72rem; padding: 2px 8px;">Grade ' + escapeHtml(grade) + '</span>' +
-            '      <span class="risk-badge risk-' + escapeHtml(risk) + '" style="font-size: 0.72rem; padding: 2px 8px;">' + escapeHtml(risk.charAt(0).toUpperCase() + risk.slice(1)) + '</span>' +
-            '    </div>' +
-            (inspDate ? '    <div class="text-muted small" style="font-size: 0.72rem;"><i class="fa-regular fa-calendar me-1"></i>' + inspDate + '</div>' : '') +
-            '  </div>' +
+            '  <div class="lb-score ' + scoreClass + '">' + escapeHtml(score) + '<small>Safety</small></div>' +
             '</article>'
         );
     }
@@ -431,29 +448,23 @@
     function renderCards(container, rows, emptyMessage) {
         if (!container) return;
         if (!rows || !rows.length) {
-            container.innerHTML = '<div class="text-center py-4 text-secondary small bg-white rounded-4 border p-3"><i class="fa-solid fa-circle-info mb-2 fs-4 d-block"></i>' + emptyMessage + '</div>';
+            container.innerHTML = '<div class="leaderboard-empty-card"><i class="fa-solid fa-circle-info" aria-hidden="true"></i>' + emptyMessage + '</div>';
             return;
         }
         container.innerHTML = rows.map(cardHtml).join("");
     }
 
     window.switchMobileLeaderboardTab = function (mode) {
-        var btnSafest = document.getElementById("btnToggleSafest");
-        var btnHigh = document.getElementById("btnToggleHighRisk");
-        var cardSafest = document.getElementById("mobileCardsSafest");
-        var cardHigh = document.getElementById("mobileCardsHighRisk");
-
-        if (mode === "safest") {
-            if (btnSafest) { btnSafest.className = "btn btn-sm rounded-pill fw-bold active btn-success"; }
-            if (btnHigh) { btnHigh.className = "btn btn-sm rounded-pill fw-bold btn-outline-danger border-0"; }
-            if (cardSafest) { cardSafest.classList.remove("d-none"); }
-            if (cardHigh) { cardHigh.classList.add("d-none"); }
-        } else {
-            if (btnSafest) { btnSafest.className = "btn btn-sm rounded-pill fw-bold btn-outline-success border-0"; }
-            if (btnHigh) { btnHigh.className = "btn btn-sm rounded-pill fw-bold active btn-danger"; }
-            if (cardSafest) { cardSafest.classList.add("d-none"); }
-            if (cardHigh) { cardHigh.classList.remove("d-none"); }
-        }
+        var showSafest = mode === "safest";
+        [["btnToggleSafest", showSafest], ["btnToggleHighRisk", !showSafest]].forEach(function (pair) {
+            var btn = document.getElementById(pair[0]);
+            if (btn) {
+                btn.classList.toggle("is-active", pair[1]);
+                btn.setAttribute("aria-pressed", String(pair[1]));
+            }
+        });
+        document.getElementById("mobileCardsSafest").classList.toggle("d-none", !showSafest);
+        document.getElementById("mobileCardsHighRisk").classList.toggle("d-none", showSafest);
         window.filterMobileLeaderboard();
     };
 
@@ -463,7 +474,7 @@
         var activeCards = document.querySelectorAll("#mobileLeaderboardContainer .leaderboard-mobile-card");
         activeCards.forEach(function (card) {
             var cardArea = (card.getAttribute("data-stall-area") || "").toLowerCase();
-            if (!selectedArea || cardArea.indexOf(selectedArea) !== -1) {
+            if (!selectedArea || cardArea === selectedArea) {
                 card.style.display = "";
             } else {
                 card.style.display = "none";
@@ -502,10 +513,13 @@
                     ];
                     chart.update();
                 }
-                if (liveText) { liveText.textContent = "Updated just now"; }
+                livePaused = false;
+                lastUpdated = Date.now();
+                renderUpdatedAgo();
             })
             .catch(function () {
-                if (liveText) { liveText.textContent = "Live refresh paused — showing last loaded data"; }
+                livePaused = true;
+                setLiveText("Live refresh paused — showing last loaded data");
             });
     }
 

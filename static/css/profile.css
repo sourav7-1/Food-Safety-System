@@ -1209,17 +1209,20 @@ select.admin-form-control {
     .admin-profile-nav::-webkit-scrollbar {
         display: none !important;
     }
+    /* Equal-width tabs, icon above label: all three fit at 360px
+       instead of the last one hiding off-screen */
     .admin-profile-tab {
-        flex: 1 0 auto !important;
-        flex-direction: row !important;
+        flex: 1 1 0 !important;
+        min-width: 0;
+        flex-direction: column !important;
         justify-content: center;
-        gap: 6px;
-        min-height: 46px !important;
-        padding: 8px 14px !important;
+        gap: 4px;
+        min-height: 56px !important;
+        padding: 6px 4px !important;
         font-size: 12px !important;
         line-height: 1.2;
         text-align: center;
-        white-space: nowrap !important;
+        white-space: normal !important;
     }
 
     /* Cards */

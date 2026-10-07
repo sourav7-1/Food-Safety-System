@@ -17,7 +17,7 @@
 <div class="panel-card p-0 overflow-hidden">
     <div class="table-responsive">
         <table class="table admin-table align-middle mb-0">
-            <thead><tr><th>When</th><th>Event</th><th>User</th><th>Provider</th><th>IP address</th><th>Details</th></tr></thead>
+            <thead><tr><th>When</th><th>Event</th><th>User</th><th class="d-none d-md-table-cell">Provider</th><th class="d-none d-md-table-cell">IP address</th><th class="d-none d-md-table-cell">Details</th></tr></thead>
             <tbody>
             {% for entry in entries %}
                 <tr>
@@ -39,9 +39,9 @@
                         <span class="text-secondary">{{ entry.email_attempted or 'Unknown' }}</span>
                         {% endif %}
                     </td>
-                    <td>{{ (entry.auth_provider or '—')|title }}</td>
-                    <td class="text-secondary">{{ entry.ip_address or '—' }}</td>
-                    <td class="text-secondary">{{ entry.details or '—' }}</td>
+                    <td class="d-none d-md-table-cell">{{ (entry.auth_provider or '—')|title }}</td>
+                    <td class="d-none d-md-table-cell text-secondary">{{ entry.ip_address or '—' }}</td>
+                    <td class="d-none d-md-table-cell text-secondary">{{ entry.details or '—' }}</td>
                 </tr>
             {% else %}<tr><td colspan="6" class="empty-state"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>No login activity recorded yet.</td></tr>{% endfor %}
             </tbody>

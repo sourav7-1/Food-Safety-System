@@ -3,12 +3,22 @@
 {% block title %}Create Inspection · Street Food Safety{% endblock %}
 {% block inspector_title %}Create Inspection{% endblock %}
 {% block inspector_subtitle %}Score every active hygiene criterion before submitting for MySQL risk analysis.{% endblock %}
+
 {% block inspector_action %}
-<a class="btn btn-outline-secondary" href="{{ url_for('inspection_workflow.inspections') }}"><i class="fa-solid fa-arrow-left me-2"></i>Back to inspections</a>
+<div class="d-flex align-items-center gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('inspector_complaints.complaints') }}">
+        <i class="fa-regular fa-message me-1"></i>Complaints
+    </a>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('inspection_workflow.inspections') }}">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to inspections
+    </a>
+</div>
 {% endblock %}
 
 {% block inspector_breadcrumb %}
 <nav class="ins-crumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('dashboard.inspector') }}">Dashboard</a>
+    <i class="fa-solid fa-chevron-right"></i>
     <a href="{{ url_for('inspection_workflow.inspections') }}">Inspections</a>
     <i class="fa-solid fa-chevron-right"></i>
     <span>New inspection</span>
@@ -34,6 +44,75 @@
                     </option>
                     {% endfor %}
                 </select>
+
+                {# Empty placeholder prompt when no stall is selected #}
+                <div id="stallEmptyPrompt" class="stall-placeholder-prompt text-muted mt-2 p-3 d-flex align-items-center gap-3">
+                    <div class="stall-preview-icon"><i class="fa-solid fa-store"></i></div>
+                    <div>
+                        <small class="d-block text-dark fw-bold">Select a stall to inspect</small>
+                        <small class="text-secondary">Vendor contact, profile details, complaints check, and modal card will populate here.</small>
+                    </div>
+                </div>
+
+                {# Dynamic Stall Live Card when a stall is selected #}
+                <div id="stallLiveCard" class="stall-preview-card mt-2 d-none">
+                    <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stall-preview-icon" id="stallPreviewIcon">
+                                <i class="fa-solid fa-store"></i>
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <h3 class="h6 fw-bold mb-0 text-dark" id="stallCardName">Stall Name</h3>
+                                    <span class="stall-chip" id="stallCardCode">CODE</span>
+                                    <span class="stall-chip stall-chip-success" id="stallCardCategory">Category</span>
+                                </div>
+                                <p class="small text-muted mb-0 mt-1" id="stallCardAddress">
+                                    <i class="fa-solid fa-location-dot me-1 text-danger"></i><span id="stallCardAddressText">Address</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 my-2 pt-2 border-top">
+                        <div class="col-6 col-md-3">
+                            <div class="stall-metric-box">
+                                <small>Operator</small>
+                                <strong id="stallCardVendor" class="text-truncate d-block">—</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="stall-metric-box">
+                                <small>Phone</small>
+                                <strong id="stallCardPhone" class="text-truncate d-block">—</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="stall-metric-box">
+                                <small>Menu items</small>
+                                <strong id="stallCardMenuCount">0 items</strong>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="stall-metric-box">
+                                <small>Last Audit</small>
+                                <strong id="stallCardLastScore">—</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 pt-2 flex-wrap">
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#stallCardModal">
+                            <i class="fa-solid fa-id-card me-1"></i>Stall Info Card
+                        </button>
+                        <a id="stallPublicLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Public Profile &amp; Menu
+                        </a>
+                        <a id="stallComplaintsLink" href="{{ url_for('inspector_complaints.complaints') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                            <i class="fa-regular fa-message me-1"></i>Check Complaints
+                        </a>
+                    </div>
+                </div>
             </div>
             <div class="col-md-5">
                 <label class="form-label" for="inspection_date">Inspection date and time</label>
@@ -49,10 +128,15 @@
         {% endif %}
     </section>
 
-    <section class="inspector-panel p-0 overflow-hidden">
+    <section class="inspector-panel p-0 criteria-panel">
         <div class="criteria-header">
             <div class="section-heading mb-0"><span>2</span><div><h2>Hygiene criteria</h2><p>Scores are validated against each configured maximum.</p></div></div>
-            <div class="live-total"><small>Entered score</small><strong><span id="enteredScore">0</span> / <span id="maximumScore">0</span></strong></div>
+            <div class="d-flex align-items-center gap-3">
+                <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#criteriaGuideModal">
+                    <i class="fa-solid fa-circle-question text-success me-1"></i>Scoring Guidelines
+                </button>
+                <div class="live-total"><small>Entered score</small><strong><span id="enteredScore">0</span> / <span id="maximumScore">0</span></strong></div>
+            </div>
         </div>
         <div class="table-responsive">
             <table class="table criteria-table align-middle mb-0">
@@ -63,7 +147,16 @@
                         <td class="criterion-meta-col">
                             <div class="d-flex align-items-start justify-content-between gap-2">
                                 <div>
-                                    <strong class="criterion-title d-block">{{ criterion.criteria_name }}</strong>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <strong class="criterion-title">{{ criterion.criteria_name }}</strong>
+                                        <button type="button" class="btn btn-link p-0 text-decoration-none criterion-guide-trigger"
+                                                data-criterion-id="{{ criterion.criteria_id }}"
+                                                data-bs-toggle="modal" data-bs-target="#criteriaGuideModal"
+                                                title="View scoring guidelines for {{ criterion.criteria_name }}"
+                                                aria-label="View guidelines for {{ criterion.criteria_name }}">
+                                            <i class="fa-regular fa-circle-question"></i>
+                                        </button>
+                                    </div>
                                     {% if criterion.description %}<small class="text-muted d-block mt-0.5">{{ criterion.description }}</small>{% endif %}
                                 </div>
                                 <span class="max-score d-md-none text-nowrap"><small class="text-muted me-1">Max</small>{{ criterion.max_score }}</span>
@@ -72,7 +165,7 @@
                         <td class="text-center d-none d-md-table-cell"><span class="max-score">{{ criterion.max_score }}</span></td>
                         <td class="score-column">
                             <label class="form-label d-md-none small fw-bold text-muted mb-1">Score (Max: {{ criterion.max_score }})</label>
-                            <input class="form-control criterion-score" type="number"
+                            <input class="form-control criterion-score" type="number" inputmode="decimal"
                                    name="score_{{ criterion.criteria_id }}"
                                    value="{{ request.form.get('score_' ~ criterion.criteria_id, '') }}"
                                    min="0" max="{{ criterion.max_score }}" step="0.01"
@@ -93,7 +186,7 @@
             </table>
         </div>
         <div class="submission-bar">
-            <div><i class="fa-solid fa-database me-2"></i>Final score and risk are calculated inside MySQL.</div>
+            <div class="d-none d-md-block"><i class="fa-solid fa-database me-2"></i>Final score and risk are calculated inside MySQL.</div>
             <div class="d-flex gap-2">
                 <a class="btn btn-outline-secondary" href="{{ url_for('inspection_workflow.inspections') }}">Cancel</a>
                 <button class="btn btn-success inspector-primary" type="submit" {{ 'disabled' if not stalls or not criteria }}>
@@ -104,28 +197,221 @@
     </section>
 </form>
 
-<div class="modal fade ins-modal" id="insConfirmSubmit" tabindex="-1" aria-labelledby="insConfirmSubmitTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+{# ==================== CARD MODAL 1: STALL INFO CARD MODAL ==================== #}
+<div class="modal fade ins-modal" id="stallCardModal" tabindex="-1" aria-labelledby="stallCardModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="insConfirmSubmitTitle">Submit this inspection?</h2>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stall-preview-icon">
+                        <i class="fa-solid fa-store"></i>
+                    </div>
+                    <div>
+                        <h2 class="modal-title h5 fw-bold mb-0" id="stallCardModalTitle">Stall Information Card</h2>
+                        <p class="small text-secondary mb-0">Assigned street food vendor profile and safety details</p>
+                    </div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <dl class="ins-detail-list">
-                    <div><dt>Stall</dt><dd id="confirmStall">—</dd></div>
-                    <div><dt>Inspection date</dt><dd id="confirmDate">—</dd></div>
-                    <div><dt>Entered score</dt><dd id="confirmScore">—</dd></div>
-                </dl>
-                <p class="text-secondary small mb-0">Once submitted, the final score, grade and risk level are calculated by MySQL and the inspection can't be edited.</p>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card h-100 border rounded-3 p-3 bg-light-subtle">
+                            <h3 class="h6 fw-bold text-dark mb-3"><i class="fa-solid fa-shop text-success me-2"></i>Stall Details</h3>
+                            <dl class="ins-detail-list mb-0">
+                                <div><dt>Stall Name</dt><dd id="modalStallName">—</dd></div>
+                                <div><dt>Stall Code</dt><dd id="modalStallCode">—</dd></div>
+                                <div><dt>Category</dt><dd id="modalStallCategory">—</dd></div>
+                                <div><dt>Assigned Area</dt><dd id="modalStallArea">—</dd></div>
+                                <div><dt>Full Address</dt><dd id="modalStallAddress">—</dd></div>
+                                <div><dt>GPS Coordinates</dt><dd id="modalStallCoords">—</dd></div>
+                            </dl>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border rounded-3 p-3 bg-light-subtle">
+                            <h3 class="h6 fw-bold text-dark mb-3"><i class="fa-solid fa-user-shield text-primary me-2"></i>Vendor Operator</h3>
+                            <dl class="ins-detail-list mb-0">
+                                <div><dt>Business Name</dt><dd id="modalVendorBusiness">—</dd></div>
+                                <div><dt>Operator Name</dt><dd id="modalVendorName">—</dd></div>
+                                <div><dt>Contact Phone</dt><dd id="modalVendorPhone">—</dd></div>
+                                <div><dt>Trade License</dt><dd id="modalVendorLicense">—</dd></div>
+                                <div><dt>Menu Registered</dt><dd id="modalFoodCount">—</dd></div>
+                            </dl>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card border rounded-3 p-3 bg-light-subtle">
+                            <h3 class="h6 fw-bold text-dark mb-2"><i class="fa-solid fa-clock-rotate-left text-warning me-2"></i>Prior Audit History</h3>
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-1" id="modalAuditHistory">
+                                <div>
+                                    <span class="text-secondary small d-block">Latest Inspection:</span>
+                                    <strong id="modalLastDate" class="text-dark">No prior inspection</strong>
+                                </div>
+                                <div>
+                                    <span class="text-secondary small d-block">Last Score:</span>
+                                    <strong id="modalLastScore" class="text-dark">—</strong>
+                                </div>
+                                <div>
+                                    <span class="text-secondary small d-block">Last Risk Level:</span>
+                                    <span id="modalLastRisk" class="ins-pill ins-pill-neutral">None</span>
+                                </div>
+                                <div>
+                                    <a id="modalStallComplaintsBtn" href="{{ url_for('inspector_complaints.complaints') }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa-solid fa-flag me-1"></i>Area Complaints
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep editing</button>
-                <button type="button" class="btn btn-success" id="confirmSubmitBtn"><i class="fa-solid fa-paper-plane me-2"></i>Confirm &amp; submit</button>
+            <div class="modal-footer d-flex justify-content-between">
+                <a id="modalPublicLink" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success">
+                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Open Public Menu
+                </a>
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-check me-1"></i>Select &amp; Score
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+{# ==================== CARD MODAL 2: CRITERIA GUIDELINES MODAL ==================== #}
+<div class="modal fade ins-modal" id="criteriaGuideModal" tabindex="-1" aria-labelledby="criteriaGuideModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title h5 fw-bold mb-0" id="criteriaGuideModalTitle">
+                        <i class="fa-solid fa-clipboard-check text-success me-2"></i>Hygiene Criteria &amp; Scoring Guide
+                    </h2>
+                    <p class="small text-secondary mb-0">Official scoring thresholds and inspection guidelines for DIU Food Safety</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 mb-3 small">
+                    <i class="fa-solid fa-circle-info fs-5 flex-shrink-0"></i>
+                    <div>Scores are entered out of each criterion's maximum. High scores indicate compliance; low scores trigger elevated risk ratings in MySQL.</div>
+                </div>
+                <div class="criteria-guide-list">
+                    {% for criterion in criteria %}
+                    <div class="criterion-guide-card" id="guide-criterion-{{ criterion.criteria_id }}">
+                        <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap mb-2">
+                            <div>
+                                <span class="badge bg-secondary-subtle text-secondary me-1">#{{ loop.index }}</span>
+                                <strong class="text-dark fs-6">{{ criterion.criteria_name }}</strong>
+                            </div>
+                            <span class="badge bg-success-subtle text-success">Max: {{ criterion.max_score }} Points</span>
+                        </div>
+                        {% if criterion.description %}
+                        <p class="small text-muted mb-2">{{ criterion.description }}</p>
+                        {% endif %}
+                        <div class="row g-2 pt-2 border-top small">
+                            <div class="col-sm-4">
+                                <div class="p-2 rounded bg-success-subtle text-success-emphasis border border-success-subtle">
+                                    <strong><i class="fa-solid fa-check-circle me-1"></i>Full Score</strong>
+                                    <div class="text-muted mt-0.5">Fully sanitized, covered food, certified clean water &amp; hygienic handling.</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="p-2 rounded bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                    <strong><i class="fa-solid fa-triangle-exclamation me-1"></i>Partial Score</strong>
+                                    <div class="text-muted mt-0.5">Minor deficiencies noted; corrective verbal instructions issued.</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="p-2 rounded bg-danger-subtle text-danger-emphasis border border-danger-subtle">
+                                    <strong><i class="fa-solid fa-circle-xmark me-1"></i>Zero / Low</strong>
+                                    <div class="text-muted mt-0.5">Critical violation; imminent contamination hazard observed.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close Guidelines</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ==================== CARD MODAL 3: ENHANCED SUBMIT CONFIRMATION ==================== #}
+<div class="modal fade ins-modal" id="insConfirmSubmit" tabindex="-1" aria-labelledby="insConfirmSubmitTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title h5 fw-bold mb-0" id="insConfirmSubmitTitle">Confirm Inspection Submission</h2>
+                    <p class="small text-secondary mb-0">Review entered score before committing to database</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="ins-confirm-scorecard mb-3">
+                    <dl class="ins-detail-list mb-0">
+                        <div><dt>Stall</dt><dd id="confirmStall" class="fw-bold text-dark">—</dd></div>
+                        <div><dt>Date &amp; Time</dt><dd id="confirmDate">—</dd></div>
+                        <div><dt>Entered Score</dt><dd id="confirmScore" class="fw-bold text-success">—</dd></div>
+                    </dl>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1 small">
+                        <span class="text-muted">Total Score Rating</span>
+                        <strong id="confirmScorePercent" class="text-dark">0%</strong>
+                    </div>
+                    <div class="progress" style="height: 10px; border-radius: 999px;">
+                        <div id="confirmScoreBar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+                <div class="p-3 bg-light rounded-3 border small text-secondary">
+                    <i class="fa-solid fa-microchip text-primary me-1"></i>
+                    <strong>Automated Risk Engine:</strong> Upon submission, MySQL triggers compute the final hygiene grade (A, B, C, D) and schedule the mandatory reinspection window based on risk level.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep editing</button>
+                <button type="button" class="btn btn-success" id="confirmSubmitBtn">
+                    <i class="fa-solid fa-paper-plane me-2"></i>Confirm &amp; submit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# JSON Data serialization for live stall cards and modals #}
+<script id="stallsJsonData" type="application/json">
+{
+    {% for stall in stalls %}
+    "{{ stall.stall_id }}": {
+        "id": {{ stall.stall_id }},
+        "name": {{ stall.stall_name|tojson }},
+        "code": {{ stall.stall_code|tojson }},
+        "area": {{ (stall.area.area_name if stall.area else 'Assigned Area')|tojson }},
+        "address": {{ stall.address|tojson }},
+        "category": {{ (stall.category|replace('_', ' ')|title)|tojson }},
+        "category_raw": {{ stall.category|tojson }},
+        "vendor_business": {{ (stall.vendor.business_name if stall.vendor else 'N/A')|tojson }},
+        "vendor_name": {{ (stall.vendor.user.full_name if stall.vendor and stall.vendor.user else 'N/A')|tojson }},
+        "vendor_phone": {{ (stall.vendor.user.phone if stall.vendor and stall.vendor.user and stall.vendor.user.phone else '')|tojson }},
+        "vendor_license": {{ (stall.vendor.license_number if stall.vendor else 'N/A')|tojson }},
+        "food_count": {{ stall.food_items|length }},
+        "has_location": {{ 'true' if stall.has_location else 'false' }},
+        "latitude": {{ stall.latitude|float if stall.latitude else 'null' }},
+        "longitude": {{ stall.longitude|float if stall.longitude else 'null' }},
+        "public_url": {{ url_for('customer_portal.stall_detail', stall_id=stall.stall_id)|tojson }},
+        {% set latest_ins = (stall.inspections|sort(attribute='inspection_date', reverse=true))[0] if stall.inspections else none %}
+        "latest_score": {{ (latest_ins.overall_score|round(1)|string if latest_ins and latest_ins.overall_score is not none else 'null')|tojson }},
+        "latest_risk": {{ (latest_ins.risk_level if latest_ins and latest_ins.risk_level else '')|tojson }},
+        "latest_date": {{ (latest_ins.inspection_date.strftime('%Y-%m-%d %H:%M') if latest_ins and latest_ins.inspection_date else '')|tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+}
+</script>
 {% endblock %}
 
 {% block scripts %}
@@ -136,6 +422,18 @@
     const scoreInputs = [...document.querySelectorAll(".criterion-score")];
     const entered = document.getElementById("enteredScore");
     const maximum = document.getElementById("maximumScore");
+    const stallSelect = document.getElementById("stall_id");
+    const stallsDataEl = document.getElementById("stallsJsonData");
+
+    let stallsData = {};
+    if (stallsDataEl) {
+        try {
+            stallsData = JSON.parse(stallsDataEl.textContent);
+        } catch (e) {
+            console.error("Failed to parse stalls data JSON", e);
+        }
+    }
+
     const totalMaximum = scoreInputs.reduce((sum, input) => sum + Number(input.dataset.max), 0);
     maximum.textContent = totalMaximum.toFixed(2).replace(/\.00$/, "");
 
@@ -151,6 +449,129 @@
         entered.textContent = total.toFixed(2).replace(/\.00$/, "");
     }
     scoreInputs.forEach(input => input.addEventListener("input", updatePreview));
+
+    // Stall Live Preview & Modal syncing
+    function updateStallPreview() {
+        if (!stallSelect) return;
+        const stallId = stallSelect.value;
+        const emptyPrompt = document.getElementById("stallEmptyPrompt");
+        const liveCard = document.getElementById("stallLiveCard");
+        const stall = stallsData[stallId];
+
+        if (!stallId || !stall) {
+            if (emptyPrompt) emptyPrompt.classList.remove("d-none");
+            if (liveCard) liveCard.classList.add("d-none");
+            return;
+        }
+
+        if (emptyPrompt) emptyPrompt.classList.add("d-none");
+        if (liveCard) liveCard.classList.remove("d-none");
+
+        // Update on-page Live Card
+        const setText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val || "—";
+        };
+
+        setText("stallCardName", stall.name);
+        setText("stallCardCode", stall.code);
+        setText("stallCardCategory", stall.category);
+        setText("stallCardAddressText", stall.address + (stall.area ? " · " + stall.area : ""));
+        setText("stallCardVendor", stall.vendor_name || stall.vendor_business);
+
+        const phoneEl = document.getElementById("stallCardPhone");
+        if (phoneEl) {
+            if (stall.vendor_phone) {
+                phoneEl.innerHTML = `<a href="tel:${stall.vendor_phone}" class="text-decoration-none text-dark"><i class="fa-solid fa-phone me-1 text-success"></i>${stall.vendor_phone}</a>`;
+            } else {
+                phoneEl.textContent = "—";
+            }
+        }
+
+        setText("stallCardMenuCount", `${stall.food_count} items`);
+
+        const lastScoreEl = document.getElementById("stallCardLastScore");
+        if (lastScoreEl) {
+            if (stall.latest_score !== "null" && stall.latest_score) {
+                lastScoreEl.textContent = `${stall.latest_score} pts (${stall.latest_risk || 'rated'})`;
+            } else {
+                lastScoreEl.textContent = "No audits yet";
+            }
+        }
+
+        const publicLink = document.getElementById("stallPublicLink");
+        if (publicLink && stall.public_url) {
+            publicLink.href = stall.public_url;
+        }
+
+        // Update Stall Info Card Modal
+        setText("modalStallName", stall.name);
+        setText("modalStallCode", stall.code);
+        setText("modalStallCategory", stall.category);
+        setText("modalStallArea", stall.area);
+        setText("modalStallAddress", stall.address);
+        setText("modalStallCoords", stall.has_location ? `${stall.latitude}, ${stall.longitude}` : "Not mapped (GPS unset)");
+        setText("modalVendorBusiness", stall.vendor_business);
+        setText("modalVendorName", stall.vendor_name);
+
+        const modalPhone = document.getElementById("modalVendorPhone");
+        if (modalPhone) {
+            if (stall.vendor_phone) {
+                modalPhone.innerHTML = `<a href="tel:${stall.vendor_phone}" class="text-success text-decoration-none"><i class="fa-solid fa-phone me-1"></i>${stall.vendor_phone}</a>`;
+            } else {
+                modalPhone.textContent = "—";
+            }
+        }
+
+        setText("modalVendorLicense", stall.vendor_license);
+        setText("modalFoodCount", `${stall.food_count} items listed`);
+
+        const modalLastDate = document.getElementById("modalLastDate");
+        const modalLastScore = document.getElementById("modalLastScore");
+        const modalLastRisk = document.getElementById("modalLastRisk");
+        if (stall.latest_score !== "null" && stall.latest_score) {
+            if (modalLastDate) modalLastDate.textContent = stall.latest_date;
+            if (modalLastScore) modalLastScore.textContent = `${stall.latest_score} / 100`;
+            if (modalLastRisk) {
+                modalLastRisk.textContent = stall.latest_risk.toUpperCase();
+                modalLastRisk.className = `ins-pill ins-pill-${stall.latest_risk === 'low' ? 'success' : (stall.latest_risk === 'moderate' ? 'warn' : 'danger')}`;
+            }
+        } else {
+            if (modalLastDate) modalLastDate.textContent = "No prior inspections";
+            if (modalLastScore) modalLastScore.textContent = "—";
+            if (modalLastRisk) {
+                modalLastRisk.textContent = "Unrated";
+                modalLastRisk.className = "ins-pill ins-pill-neutral";
+            }
+        }
+
+        const modalPublicLink = document.getElementById("modalPublicLink");
+        if (modalPublicLink && stall.public_url) {
+            modalPublicLink.href = stall.public_url;
+        }
+    }
+
+    if (stallSelect) {
+        stallSelect.addEventListener("change", updateStallPreview);
+        updateStallPreview();
+    }
+
+    // Criteria Guidelines modal triggering & highlighting
+    document.querySelectorAll(".criterion-guide-trigger").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const critId = btn.dataset.criterionId;
+            const targetCard = document.getElementById(`guide-criterion-${critId}`);
+            if (targetCard) {
+                document.querySelectorAll(".criterion-guide-card").forEach(c => c.classList.remove("guide-highlight"));
+                targetCard.classList.add("guide-highlight");
+                setTimeout(() => {
+                    targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 350);
+            }
+        });
+    });
+
+    // Confirmation Modal setup
     const confirmModalEl = document.getElementById("insConfirmSubmit");
     let confirmed = false;
     form.addEventListener("submit", event => {
@@ -159,19 +580,35 @@
             event.preventDefault();
             event.stopPropagation();
         } else if (!confirmed && confirmModalEl && window.bootstrap) {
-            // Valid form: ask for one last confirmation before it's final.
             event.preventDefault();
-            const stallSelect = document.getElementById("stall_id");
-            document.getElementById("confirmStall").textContent =
-                stallSelect.options[stallSelect.selectedIndex].text.trim();
+            const selectedText = stallSelect && stallSelect.selectedIndex >= 0
+                ? stallSelect.options[stallSelect.selectedIndex].text.trim()
+                : "—";
+            document.getElementById("confirmStall").textContent = selectedText;
             document.getElementById("confirmDate").textContent =
                 document.getElementById("inspection_date").value.replace("T", " ");
+
+            const scoreVal = Number(entered.textContent) || 0;
+            const maxVal = Number(maximum.textContent) || 1;
+            const pct = Math.min(100, Math.max(0, Math.round((scoreVal / maxVal) * 100)));
+
             document.getElementById("confirmScore").textContent =
-                entered.textContent + " / " + maximum.textContent;
+                entered.textContent + " / " + maximum.textContent + ` (${pct}%)`;
+
+            const scorePercentEl = document.getElementById("confirmScorePercent");
+            if (scorePercentEl) scorePercentEl.textContent = `${pct}%`;
+
+            const scoreBarEl = document.getElementById("confirmScoreBar");
+            if (scoreBarEl) {
+                scoreBarEl.style.width = `${pct}%`;
+                scoreBarEl.className = `progress-bar ${pct >= 80 ? 'bg-success' : (pct >= 50 ? 'bg-warning' : 'bg-danger')}`;
+            }
+
             bootstrap.Modal.getOrCreateInstance(confirmModalEl).show();
         }
         form.classList.add("was-validated");
     });
+
     const confirmBtn = document.getElementById("confirmSubmitBtn");
     if (confirmBtn) {
         confirmBtn.addEventListener("click", () => {
@@ -180,6 +617,7 @@
             form.requestSubmit();
         });
     }
+
     updatePreview();
 })();
 </script>

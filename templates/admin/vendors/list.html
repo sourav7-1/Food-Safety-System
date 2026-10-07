@@ -75,9 +75,9 @@
             <thead>
                 <tr>
                     <th>Person</th>
-                    <th>Request</th>
-                    <th>Business / proposed stall</th>
-                    <th>Since</th>
+                    <th class="d-none d-md-table-cell">Request</th>
+                    <th class="d-none d-md-table-cell">Business / proposed stall</th>
+                    <th class="d-none d-md-table-cell">Since</th>
                     {% if current_user.has_permission('vendors.edit') %}<th class="text-end">Decide</th>{% endif %}
                 </tr>
             </thead>
@@ -88,12 +88,12 @@
                         <strong class="text-dark">{{ vendor.user.full_name }}</strong>
                         <small class="text-muted d-block">{{ vendor.user.email }}</small>
                     </td>
-                    <td><span class="badge bg-warning-subtle text-warning-emphasis border-0"><i class="fa-solid fa-file-lines me-1"></i>Application</span></td>
-                    <td>
+                    <td class="d-none d-md-table-cell"><span class="badge bg-warning-subtle text-warning-emphasis border-0"><i class="fa-solid fa-file-lines me-1"></i>Application</span></td>
+                    <td class="d-none d-md-table-cell">
                         <span class="fw-semibold">{{ vendor.business_name }}</span>
                         <small class="text-muted d-block">Licence {{ vendor.license_number }}{% if vendor.requested_stall_name %} &middot; Stall: {{ vendor.requested_stall_name }}{% endif %}{% if vendor.requested_area %} ({{ vendor.requested_area.area_name }}){% endif %}</small>
                     </td>
-                    <td>{{ vendor.created_at.strftime('%d %b %Y') }}</td>
+                    <td class="d-none d-md-table-cell">{{ vendor.created_at.strftime('%d %b %Y') }}</td>
                     {% if current_user.has_permission('vendors.edit') %}
                     <td class="text-end">
                         <div class="d-flex justify-content-end gap-2 flex-wrap">
@@ -114,14 +114,14 @@
                         <strong class="text-dark">{{ person.full_name }}</strong>
                         <small class="text-muted d-block">{{ person.email }}</small>
                     </td>
-                    <td><span class="badge bg-secondary-subtle text-secondary border-0"><i class="fa-solid fa-user-clock me-1"></i>Sign-up only</span></td>
-                    <td>
+                    <td class="d-none d-md-table-cell"><span class="badge bg-secondary-subtle text-secondary border-0"><i class="fa-solid fa-user-clock me-1"></i>Sign-up only</span></td>
+                    <td class="d-none d-md-table-cell">
                         <span class="text-muted">No business details yet</span>
                         <small class="d-block {{ 'text-success' if person.email_verified_at else 'text-muted' }}">
                             {% if person.email_verified_at %}<i class="fa-solid fa-circle-check me-1"></i>Email verified{% else %}<i class="fa-regular fa-envelope me-1"></i>Email not verified -- can't log in yet{% endif %}
                         </small>
                     </td>
-                    <td>{{ person.created_at.strftime('%d %b %Y') }}</td>
+                    <td class="d-none d-md-table-cell">{{ person.created_at.strftime('%d %b %Y') }}</td>
                     {% if current_user.has_permission('vendors.edit') %}
                     <td class="text-end">
                         <div class="d-flex justify-content-end gap-2 flex-wrap">
@@ -178,11 +178,11 @@
             <thead>
                 <tr>
                     <th>Vendor</th>
-                    <th>Business</th>
-                    <th>Licence</th>
-                    <th>Expiry</th>
+                    <th class="d-none d-md-table-cell">Business</th>
+                    <th class="d-none d-md-table-cell">Licence</th>
+                    <th class="d-none d-md-table-cell">Expiry</th>
                     <th>Application</th>
-                    <th>Account</th>
+                    <th class="d-none d-md-table-cell">Account</th>
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
@@ -224,7 +224,7 @@
                             </div>
                         </div>
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         <div class="d-flex align-items-center gap-2">
                             <div class="business-icon-badge">
                                 <i class="fa-solid fa-store"></i>
@@ -234,12 +234,12 @@
                             </span>
                         </div>
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         <span class="vendor-licence-chip" title="Click to copy licence" onclick="event.stopPropagation(); navigator.clipboard.writeText('{{ vendor.license_number }}'); if(window.showFloatingToast) showFloatingToast('Licence copied: {{ vendor.license_number }}');">
                             <i class="fa-solid fa-id-card me-1 text-muted"></i>{{ vendor.license_number }}
                         </span>
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         {% if vendor.license_expiry_date %}
                         <span class="vendor-expiry-pill">
                             <i class="fa-regular fa-calendar-check text-muted me-1"></i>
@@ -266,7 +266,7 @@
                         </span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         {% if vendor.user.status == 'active' %}
                         <span class="account-status-badge active">
                             <span class="pulse-dot"></span> Active

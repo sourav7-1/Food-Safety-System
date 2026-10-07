@@ -46,7 +46,7 @@ html {
 body {
     background-color: #e3eee6 !important;
     position: relative;
-    overflow-x: hidden;
+    overflow-x: clip; /* not hidden: that breaks position: sticky */
     min-height: 100vh;
 }
 

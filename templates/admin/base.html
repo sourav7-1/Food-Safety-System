@@ -739,12 +739,23 @@
                 window.location.reload();
                 return;
             }
+            // Same tab memory as templates/base.html: re-rendered pages come
+            // back on their default tab, so a failed password change on the
+            // profile's Security tab would otherwise bounce to Personal Details.
+            var activeTabButton = current.querySelector('[data-bs-toggle="tab"].active[data-bs-target]');
+            var activeTabTarget = activeTabButton ? activeTabButton.getAttribute("data-bs-target") : null;
             cleanupModalArtifacts();
             // Quick opacity dip on the incoming content instead of a hard
             // pop-in -- reuses .admin-content's existing transition, so this
             // costs one class toggle, not a new animation system.
             current.classList.add("content-swap-in");
             current.innerHTML = next.innerHTML;
+            if (activeTabTarget && window.bootstrap) {
+                var restoredTabButton = current.querySelector('[data-bs-toggle="tab"][data-bs-target="' + activeTabTarget + '"]');
+                if (restoredTabButton && !restoredTabButton.classList.contains("active")) {
+                    bootstrap.Tab.getOrCreateInstance(restoredTabButton).show();
+                }
+            }
             current.classList.remove("is-loading");
             requestAnimationFrame(function () {
                 current.classList.remove("content-swap-in");
@@ -1262,7 +1273,10 @@
             showProgress();
 
             var submitter = event.submitter;
-            fetch(form.getAttribute("action"), {
+            // No action attribute means "submit to this page" (HTML spec);
+            // getAttribute() returns null there, which fetch() would turn
+            // into a request for the literal path "null".
+            fetch(form.getAttribute("action") || window.location.href, {
                 method: "POST",
                 body: new FormData(form),
                 headers: { "X-Requested-With": "XMLHttpRequest" },

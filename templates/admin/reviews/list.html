@@ -25,10 +25,10 @@
             <thead>
                 <tr>
                     <th>Student</th>
-                    <th>Stall</th>
-                    <th>Rating</th>
+                    <th class="d-none d-md-table-cell">Stall</th>
+                    <th class="d-none d-md-table-cell">Rating</th>
                     <th>Review Content</th>
-                    <th>Status</th>
+                    <th class="d-none d-md-table-cell">Status</th>
                     <th class="text-end">Moderation</th>
                 </tr>
             </thead>
@@ -39,12 +39,12 @@
                         <strong class="text-dark">{{ review.user.full_name }}</strong>
                         <small class="text-muted">{{ review.user.email }}</small>
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         <a class="entity-link" href="{{ url_for('admin.stalls', q=review.stall.stall_code) }}">
                             <strong>{{ review.stall.stall_name }}</strong>
                         </a>
                     </td>
-                    <td>
+                    <td class="d-none d-md-table-cell">
                         <div class="d-inline-flex align-items-center gap-1 bg-warning-subtle text-dark border border-warning-subtle px-2 py-1 rounded-pill fw-bold" style="font-size: 11.5px;">
                             <i class="fa-solid fa-star text-warning"></i>
                             <span>{{ review.rating }} / 5</span>
@@ -53,7 +53,7 @@
                     <td style="max-width: 320px;">
                         <span class="text-dark">{{ review.review_text or '—' }}</span>
                     </td>
-                    <td><span class="status-pill status-{{ review.status }}">{{ review.status }}</span></td>
+                    <td class="d-none d-md-table-cell"><span class="status-pill status-{{ review.status }}">{{ review.status }}</span></td>
                     <td class="text-end">
                         <form class="d-inline-flex gap-2 justify-content-end align-items-center" method="post" action="{{ url_for('admin.review_status', review_id=review.review_id) }}">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

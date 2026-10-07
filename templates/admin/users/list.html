@@ -33,15 +33,15 @@
 <div class="panel-card p-0 overflow-hidden">
     <div class="table-responsive">
         <table class="table admin-table align-middle mb-0">
-            <thead><tr><th>User</th><th>Role</th><th>Phone</th><th>Created</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+            <thead><tr><th>User</th><th class="d-none d-md-table-cell">Role</th><th class="d-none d-md-table-cell">Phone</th><th class="d-none d-md-table-cell">Created</th><th class="d-none d-md-table-cell">Status</th><th class="text-end">Actions</th></tr></thead>
             <tbody>
                 {% for user in users %}
                 <tr>
                     <td><strong>{{ user.full_name }}</strong><small>{{ user.email }}</small></td>
-                    <td>{{ user.role_name|title }}{% if user.is_super_admin %} <span class="code-chip">Super Admin</span>{% endif %}</td>
-                    <td>{{ user.phone or '—' }}</td>
-                    <td>{{ user.created_at.strftime('%d %b %Y') }}</td>
-                    <td><span class="status-pill status-{{ user.status }}">{{ user.status }}</span></td>
+                    <td class="d-none d-md-table-cell">{{ user.role_name|title }}{% if user.is_super_admin %} <span class="code-chip">Super Admin</span>{% endif %}</td>
+                    <td class="d-none d-md-table-cell">{{ user.phone or '—' }}</td>
+                    <td class="d-none d-md-table-cell">{{ user.created_at.strftime('%d %b %Y') }}</td>
+                    <td class="d-none d-md-table-cell"><span class="status-pill status-{{ user.status }}">{{ user.status }}</span></td>
                     <td class="text-end table-actions">
                         {% if current_user.has_permission('users.status') %}
                         <form class="d-inline-flex gap-1 align-items-center me-2" method="post" action="{{ url_for('admin.user_status', user_id=user.user_id) }}">
