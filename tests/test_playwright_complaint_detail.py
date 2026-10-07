@@ -127,12 +127,12 @@ if __name__ == '__main__':
             print('3D Pipeline Steps count:', steps_count)
             assert steps_count == 4
 
-            # 4. Check 3D Case Summary Modal Trigger
-            page.locator('button:has-text("3D Case Summary")').click()
+            # 4. Check Case Summary Modal Trigger
+            page.locator('button:has-text("Summary")').click()
             page.wait_for_selector('#complaintSummaryModal.show', timeout=3000)
             modal_title = page.locator('#summaryModalTitle').inner_text()
             print('Summary modal opened! Title:', modal_title)
-            assert '3D Case Summary Certificate' in modal_title
+            assert 'Case Summary' in modal_title
             page.locator('#complaintSummaryModal .btn-close').click()
             time.sleep(0.5)
 

@@ -19,8 +19,8 @@
 
     <div class="d-flex align-items-center gap-2">
         <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1.5" data-bs-toggle="modal" data-bs-target="#complaintSummaryModal">
-            <i class="fa-solid fa-cube"></i>
-            <span>3D Case Summary</span>
+            <i class="fa-solid fa-file-lines"></i>
+            <span>Summary</span>
         </button>
         <a href="{{ url_for('customer_portal.stall_detail', stall_id=complaint.stall_id) }}" class="btn btn-sm btn-success rounded-pill px-3 fw-semibold d-inline-flex align-items-center gap-1.5">
             <i class="fa-solid fa-store"></i>
@@ -30,7 +30,7 @@
 </div>
 
 <!-- =========================================================================
-     3D Interactive Complaint Progression Roadmap
+     Complaint Progression Roadmap
      ========================================================================= -->
 {% set st = complaint.status %}
 {% set track_pct = '25%' %}
@@ -47,22 +47,22 @@
         <!-- Header -->
         <div class="pipeline-header">
             <div>
-                <span class="pipeline-badge-pill">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> 3D Progression Pipeline
-                </span>
-                <h3 class="h5 fw-bold text-white mt-2 mb-0">Complaint Resolution Roadmap</h3>
+                <h3 class="h5 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-route text-success"></i>
+                    <span>Resolution Roadmap</span>
+                </h3>
             </div>
             <div>
-                <span class="notif-status-pill {{ st }} px-3 py-1.5 text-white border-0" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);">
-                    <i class="fa-solid fa-circle-dot me-1 text-warning"></i>
+                <span class="risk-badge status-{{ st }} px-3 py-1.5 shadow-sm">
+                    <i class="fa-solid fa-circle-dot me-1"></i>
                     <span>Current Stage: <strong>{{ st|replace('_',' ')|title }}</strong></span>
                 </span>
             </div>
         </div>
 
-        <!-- 3D Progress Track -->
+        <!-- Progress Track -->
         <div class="pipeline-progress-track">
-            <!-- Connecting Luminous Rail -->
+            <!-- Connecting Rail -->
             <div class="pipeline-track-rail">
                 <div class="pipeline-track-glow" style="width: {{ track_pct }};"></div>
             </div>
@@ -121,7 +121,7 @@
                 {% if complaint.resolved_at %}
                 <span class="pipeline-step-time">{{ complaint.resolved_at.strftime('%d %b %Y') }}</span>
                 {% else %}
-                <span class="pipeline-step-time" style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); border-color: transparent;">Pending Finalization</span>
+                <span class="pipeline-step-time pending">Pending Finalization</span>
                 {% endif %}
             </div>
         </div>
@@ -379,10 +379,10 @@
             <div class="modal-header">
                 <div class="d-flex align-items-center gap-3">
                     <div class="notif-modal-icon-badge notif-icon-circle resolved">
-                        <i class="fa-solid fa-cube"></i>
+                        <i class="fa-solid fa-file-lines"></i>
                     </div>
                     <div>
-                        <h4 class="modal-title h5 fw-bold mb-0 text-dark" id="summaryModalTitle">3D Case Summary Certificate</h4>
+                        <h4 class="modal-title h5 fw-bold mb-0 text-dark" id="summaryModalTitle">Case Summary</h4>
                         <p class="text-secondary small mb-0">Official complaint report transcript &amp; inspection verification</p>
                     </div>
                 </div>

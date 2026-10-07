@@ -213,14 +213,49 @@
     }
 }
 
+@media (max-width: 767.98px) {
+    .dashboard-topbar {
+        flex-wrap: nowrap;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 16px;
+        margin-bottom: 12px;
+    }
+    .dashboard-topbar > div:first-child {
+        min-width: 0;
+        flex: 1;
+        gap: 10px !important;
+    }
+    .dashboard-topbar h1 {
+        font-size: 1.05rem;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .dashboard-subtitle {
+        display: none;
+    }
+    .dashboard-notification-btn {
+        flex-shrink: 0;
+    }
+}
+
 @media (max-width: 575.98px) {
     .dashboard-main {
         padding: max(8px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
     }
     .dashboard-topbar {
-        padding: 10px 14px;
-        border-radius: 16px;
-        margin-bottom: 12px;
+        padding: 8px 12px;
+        border-radius: 14px;
+        margin-bottom: 10px;
+        gap: 8px;
+    }
+    .dashboard-topbar > div:first-child {
+        gap: 8px !important;
+    }
+    .dashboard-topbar h1 {
+        font-size: 0.98rem;
     }
 }
 

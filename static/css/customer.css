@@ -226,6 +226,50 @@
 .pill-dot-high { background: #ea580c; box-shadow: 0 0 6px #ea580c; }
 .pill-dot-critical { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
 
+@media (max-width: 767.98px) {
+    .quick-risk-filters {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        gap: 0.45rem;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        margin-bottom: 0.85rem !important;
+    }
+    .quick-pill {
+        flex-shrink: 0;
+        white-space: nowrap;
+        padding: 0.38rem 0.8rem;
+        font-size: 0.78rem;
+        min-height: 40px;
+        gap: 0.4rem;
+        display: inline-flex;
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid var(--cf-border);
+        border-radius: var(--radius-pill);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+    .quick-pill.active {
+        border-color: rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .quick-risk-filters {
+        gap: 0.35rem;
+    }
+    .quick-pill {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.76rem;
+        min-height: 38px;
+    }
+}
+
 /* ==========================================================================
    Apple-Style Frosted Search & Filter Capsule
    ========================================================================== */
@@ -666,6 +710,134 @@
 /* Card CTA Button */
 .stall-card-footer {
     border-color: var(--cf-border-light) !important;
+}
+
+/* Mobile Optimization for Modern Stall Discovery Cards (< 768px & < 576px) */
+@media (max-width: 767.98px) {
+    .customer-shell .row.g-4 {
+        --bs-gutter-y: 0.85rem;
+        --bs-gutter-x: 0.85rem;
+    }
+    .modern-stall-card {
+        padding: 0.85rem 0.95rem;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+    }
+    .customer-shell .stall-photo {
+        aspect-ratio: 16 / 9;
+        max-height: 145px;
+        margin: -0.85rem -0.95rem 0.75rem;
+        border-radius: 16px 16px 0 0;
+    }
+    .floating-risk-badge {
+        top: 10px;
+        right: 10px;
+        padding: 0.22rem 0.6rem;
+        font-size: 0.75rem;
+    }
+    .stall-card-header {
+        margin-bottom: 0.35rem;
+    }
+    .stall-code-chip {
+        font-size: 0.75rem;
+        padding: 0.15rem 0.45rem;
+    }
+    .grade-badge-sm {
+        font-size: 0.75rem;
+        padding: 0.15rem 0.55rem;
+    }
+    .stall-card-title {
+        font-size: 1.08rem;
+        margin: 0 0 0.15rem;
+        line-height: 1.25;
+    }
+    .stall-location-text {
+        font-size: 0.78rem;
+        margin-bottom: 0.55rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .modern-score-card {
+        padding: 0.45rem 0.75rem;
+        margin-bottom: 0.55rem;
+        border-radius: 10px;
+    }
+    .score-col small {
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.05rem;
+    }
+    .score-text,
+    .grade-text {
+        font-size: 1.05rem;
+    }
+    .score-divider {
+        height: 24px;
+    }
+    .category-chips {
+        gap: 0.25rem;
+        margin-bottom: 0.55rem;
+    }
+    .category-chip {
+        font-size: 0.75rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 6px;
+    }
+    .stall-card-footer {
+        padding-top: 0.45rem !important;
+    }
+    .stall-card-footer .btn {
+        min-height: 44px;
+        padding: 0.35rem 0.85rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border-radius: 9999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .modern-stall-card {
+        padding: 0.75rem 0.85rem;
+        border-radius: 14px;
+    }
+    .customer-shell .stall-photo {
+        aspect-ratio: 16 / 9;
+        max-height: 130px;
+        margin: -0.75rem -0.85rem 0.65rem;
+        border-radius: 14px 14px 0 0;
+    }
+    .stall-card-title {
+        font-size: 1rem;
+    }
+    .modern-score-card {
+        padding: 0.38rem 0.65rem;
+        margin-bottom: 0.45rem;
+    }
+    .score-col small {
+        font-size: 0.75rem;
+    }
+    .score-text,
+    .grade-text {
+        font-size: 0.98rem;
+    }
+    .category-chips {
+        margin-bottom: 0.45rem;
+    }
+    .stall-card-footer {
+        padding-top: 0.38rem !important;
+    }
+    .stall-card-footer .btn {
+        min-height: 44px;
+        font-size: 0.78rem;
+        padding: 0.3rem 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
 }
 
 /* Stall Details View */
@@ -1546,29 +1718,28 @@
    Complaint Detail 3D Progress Roadmap & Glassmorphic Workspace
    ========================================================================== */
 
-/* 3D Perspective Container */
+/* ==========================================================================
+   Complaint Detail Resolution Roadmap (DIU Clean Light Theme)
+   ========================================================================== */
+
 .complaint-3d-pipeline {
-    perspective: 1200px;
     margin-bottom: 2rem;
 }
 
 .pipeline-3d-card {
-    background: radial-gradient(circle at 85% 15%, rgba(16, 185, 129, 0.22) 0%, transparent 50%),
-                radial-gradient(circle at 15% 90%, rgba(59, 130, 246, 0.15) 0%, transparent 45%),
-                linear-gradient(145deg, #0b132b 0%, #1c2541 60%, #0b132b 100%);
-    border-radius: var(--radius-card-lg);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 25px 60px -10px rgba(11, 19, 43, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    padding: 2.25rem 2rem;
-    color: #ffffff;
+    background: radial-gradient(circle at 90% 10%, rgba(5, 150, 105, 0.05) 0%, transparent 60%), #ffffff;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--cf-border);
+    box-shadow: var(--cf-shadow-md);
+    padding: 1.75rem 2rem;
+    color: var(--cf-ink);
     position: relative;
     overflow: hidden;
-    transform-style: preserve-3d;
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+    transition: box-shadow 0.3s ease;
 }
 
 .pipeline-3d-card:hover {
-    box-shadow: 0 30px 70px -10px rgba(11, 19, 43, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    box-shadow: var(--cf-shadow-hover);
 }
 
 .pipeline-header {
@@ -1577,29 +1748,9 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 1rem;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
     position: relative;
     z-index: 2;
-}
-
-.pipeline-badge-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.35rem 0.9rem;
-    border-radius: var(--radius-pill);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #a7f3d0;
-}
-
-.pipeline-badge-pill i {
-    color: #34d399;
 }
 
 .pipeline-progress-track {
@@ -1612,14 +1763,14 @@
     z-index: 2;
 }
 
-/* 3D Glowing Connecting Beam */
+/* Connecting Progress Rail */
 .pipeline-track-rail {
     position: absolute;
-    top: 32px;
+    top: 28px;
     left: 8%;
     right: 8%;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.12);
+    height: 5px;
+    background: #e2e8f0;
     border-radius: 9999px;
     z-index: 1;
     overflow: hidden;
@@ -1630,21 +1781,13 @@
     top: 0;
     left: 0;
     height: 100%;
-    background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #059669 100%);
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
     border-radius: 9999px;
-    box-shadow: 0 0 16px rgba(52, 211, 153, 0.8), 0 0 30px rgba(16, 185, 129, 0.5);
-    background-size: 200% 100%;
-    animation: beam-flow 3s linear infinite;
-    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes beam-flow {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-/* 3D Progress Step */
+/* Progress Step */
 .pipeline-step {
     position: relative;
     z-index: 2;
@@ -1654,115 +1797,125 @@
     text-align: center;
     width: 22%;
     cursor: default;
-    transform-style: preserve-3d;
 }
 
-/* 3D Floating Node Disk */
+/* Step Node Disk */
 .pipeline-node-3d {
-    width: 64px;
-    height: 64px;
-    border-radius: 20px;
-    background: linear-gradient(145deg, #1e293b, #0f172a);
-    border: 2px solid rgba(255, 255, 255, 0.18);
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: #f8fafc;
+    border: 2px solid #cbd5e1;
     display: grid;
     place-items: center;
-    font-size: 1.45rem;
-    color: #64748b;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.15);
-    margin-bottom: 1rem;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    transform-style: preserve-3d;
+    font-size: 1.25rem;
+    color: #94a3b8;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    margin-bottom: 0.85rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Completed Step State */
 .pipeline-step.completed .pipeline-node-3d {
-    background: linear-gradient(145deg, #059669, #10b981);
-    border-color: #6ee7b7;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-color: #059669;
     color: #ffffff;
-    box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4), inset 0 2px 6px rgba(255, 255, 255, 0.35);
-    transform: translateZ(15px);
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
 }
 
-/* Active 3D Animated Pulse State */
+/* Active Pulse State */
 .pipeline-step.active .pipeline-node-3d {
-    background: linear-gradient(135deg, #10b981, #059669);
-    border-color: #a7f3d0;
+    background: linear-gradient(135deg, #059669, #047857);
+    border-color: #34d399;
     color: #ffffff;
-    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.25), 0 20px 40px rgba(16, 185, 129, 0.5);
-    animation: node-float-3d 3.5s ease-in-out infinite, pulse-ring-3d 2.5s infinite;
-    transform: translateZ(30px) scale(1.08);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.18), 0 6px 18px rgba(5, 150, 105, 0.35);
 }
 
 .pipeline-step.active.action_required .pipeline-node-3d {
     background: linear-gradient(135deg, #f59e0b, #d97706);
     border-color: #fde68a;
-    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.25), 0 20px 40px rgba(245, 158, 11, 0.5);
-    animation: node-float-3d 3.5s ease-in-out infinite, pulse-amber-3d 2.5s infinite;
-}
-
-@keyframes node-float-3d {
-    0%, 100% {
-        transform: translateY(0px) translateZ(30px) rotateX(4deg);
-    }
-    50% {
-        transform: translateY(-8px) translateZ(40px) rotateX(-3deg);
-    }
-}
-
-@keyframes pulse-ring-3d {
-    0% {
-        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.6), 0 12px 30px rgba(16, 185, 129, 0.4);
-    }
-    70% {
-        box-shadow: 0 0 0 15px rgba(52, 211, 153, 0), 0 18px 40px rgba(16, 185, 129, 0.6);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0), 0 12px 30px rgba(16, 185, 129, 0.4);
-    }
-}
-
-@keyframes pulse-amber-3d {
-    0% {
-        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6), 0 12px 30px rgba(217, 119, 6, 0.4);
-    }
-    70% {
-        box-shadow: 0 0 0 15px rgba(245, 158, 11, 0), 0 18px 40px rgba(217, 119, 6, 0.6);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0), 0 12px 30px rgba(217, 119, 6, 0.4);
-    }
+    color: #ffffff;
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.18), 0 6px 18px rgba(217, 119, 6, 0.35);
 }
 
 .pipeline-step-title {
-    font-size: 0.92rem;
-    font-weight: 800;
-    color: #94a3b8;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #334155;
     margin-bottom: 0.2rem;
     letter-spacing: -0.01em;
-    transition: color 0.3s ease;
 }
 
 .pipeline-step.active .pipeline-step-title,
 .pipeline-step.completed .pipeline-step-title {
-    color: #ffffff;
+    color: #0f172a;
+    font-weight: 800;
 }
 
 .pipeline-step-desc {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: #64748b;
     line-height: 1.35;
 }
 
 .pipeline-step-time {
     display: inline-block;
     margin-top: 0.35rem;
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    color: #a7f3d0;
-    background: rgba(16, 185, 129, 0.15);
-    padding: 0.15rem 0.55rem;
+    color: #065f46;
+    background: #ecfdf5;
+    padding: 0.2rem 0.6rem;
     border-radius: var(--radius-pill);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    border: 1px solid #a7f3d0;
+}
+
+.pipeline-step-time.pending {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #e2e8f0;
+}
+
+@media (max-width: 767.98px) {
+    .pipeline-3d-card {
+        padding: 1.15rem 0.95rem;
+        border-radius: 16px;
+    }
+    .pipeline-header {
+        margin-bottom: 1.25rem;
+        gap: 0.5rem;
+    }
+    .pipeline-progress-track {
+        padding: 0;
+        margin: 0.5rem 0 0;
+    }
+    .pipeline-track-rail {
+        top: 22px;
+        left: 5%;
+        right: 5%;
+        height: 4px;
+    }
+    .pipeline-node-3d {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        font-size: 1.05rem;
+        margin-bottom: 0.5rem;
+    }
+    .pipeline-step {
+        width: 24%;
+    }
+    .pipeline-step-title {
+        font-size: 0.76rem;
+        line-height: 1.2;
+    }
+    .pipeline-step-desc {
+        display: none;
+    }
+    .pipeline-step-time {
+        font-size: 0.68rem;
+        padding: 0.15rem 0.45rem;
+    }
 }
 
 /* Detail Main Grid */

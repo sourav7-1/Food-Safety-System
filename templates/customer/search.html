@@ -13,7 +13,7 @@
     </a>
     <a href="{{ url_for('customer_portal.search_stalls', q=filters.q, area_id=filters.area_id, category_id=filters.category_id, risk_level='low') }}" 
        class="quick-pill quick-pill-low {{ 'active' if filters.risk_level == 'low' }}">
-        <span class="pill-dot pill-dot-low"></span> Low Risk (Safest)
+        <span class="pill-dot pill-dot-low"></span> Low Risk<span class="d-none d-md-inline"> (Safest)</span>
     </a>
     <a href="{{ url_for('customer_portal.search_stalls', q=filters.q, area_id=filters.area_id, category_id=filters.category_id, risk_level='medium') }}" 
        class="quick-pill quick-pill-medium {{ 'active' if filters.risk_level == 'medium' }}">
