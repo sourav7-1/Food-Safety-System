@@ -232,9 +232,8 @@ body.admin-body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: sticky;
-    top: 16px;
-    z-index: 1020;
+    position: relative;
+    z-index: 10;
     box-shadow: 0 4px 20px -2px rgba(28, 43, 31, 0.05), 0 1px 3px rgba(28, 43, 31, 0.03);
     margin-bottom: 24px;
 }
@@ -2869,3 +2868,21 @@ body.admin-body {
 .evidence-card audio {
     width: 100%;
 }
+
+@media (max-width: 767.98px) {
+    /* Safe-area insets for notched phones */
+    .admin-topbar {
+        padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+        padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+        padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    }
+    .admin-mobile-nav {
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+    }
+    /* Mobile iOS input zoom safeguard */
+    input, select, textarea,
+    .form-control, .form-select, .admin-form-control {
+        font-size: 16px !important;
+    }
+}
+

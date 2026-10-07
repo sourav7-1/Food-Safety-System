@@ -583,3 +583,73 @@
     padding: 1rem 1.15rem;
 }
 
+/* ==========================================================================
+   Mobile Responsive Adjustments (< 768px)
+   ========================================================================== */
+@media (max-width: 767.98px) {
+    .inspector-shell {
+        padding-top: max(0.85rem, env(safe-area-inset-top, 0px));
+        padding-bottom: max(2.5rem, env(safe-area-inset-bottom, 0px));
+        padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+        padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    }
+    .inspector-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.65rem;
+        margin-bottom: 1.25rem;
+    }
+    .inspector-header h1 {
+        font-size: 1.35rem;
+    }
+    .inspector-tabs {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        border-radius: 12px;
+        padding: 3px;
+        margin-bottom: 1.25rem;
+        scrollbar-width: none;
+    }
+    .inspector-tabs::-webkit-scrollbar {
+        display: none;
+    }
+    .inspector-tabs a {
+        font-size: 0.78rem;
+        padding: 0.4rem 0.75rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .inspector-panel {
+        padding: 14px 12px;
+        border-radius: 16px;
+        margin-bottom: 1.25rem;
+    }
+    .criteria-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 14px 12px;
+    }
+    .criteria-table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+    .criterion-score,
+    .criterion-comment {
+        font-size: 16px !important;
+    }
+    .criterion-score {
+        min-width: 75px;
+    }
+    .criterion-comment {
+        min-width: 130px;
+    }
+    .score-column {
+        min-width: 90px;
+    }
+    .comments-column {
+        min-width: 140px;
+    }
+}
+

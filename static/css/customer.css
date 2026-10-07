@@ -265,15 +265,78 @@
 @media (max-width: 1199.98px) {
     .filter-inputs-grid {
         grid-template-columns: 1fr 1fr;
+        gap: 0.55rem 0.75rem;
     }
-    .filter-search, .filter-actions {
+    .filter-search {
         grid-column: 1 / -1;
+    }
+    .filter-actions {
+        grid-column: 2;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .modern-filter-card {
+        padding: 0.85rem 1rem;
+        border-radius: 14px;
+        margin-bottom: 0.85rem;
+    }
+    .filter-inputs-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.55rem 0.75rem;
+        align-items: end;
+    }
+    .filter-search {
+        grid-column: 1 / -1;
+    }
+    .filter-actions {
+        grid-column: 2;
+        min-width: 0;
+        width: 100%;
+        gap: 0.45rem;
+    }
+    .filter-label {
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+    }
+    .filter-field .form-control,
+    .filter-field .form-select {
+        min-height: 44px;
+        padding: 0.4rem 0.65rem;
+        font-size: 16px;
+        border-radius: 8px;
+    }
+    .filter-actions .btn {
+        min-height: 44px;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        border-radius: 8px;
     }
 }
 
 @media (max-width: 575.98px) {
+    .modern-filter-card {
+        padding: 0.75rem 0.85rem;
+        border-radius: 12px;
+        margin-bottom: 0.75rem;
+    }
     .filter-inputs-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem 0.6rem;
+    }
+    .filter-label {
+        font-size: 0.75rem;
+    }
+    .filter-field .form-control,
+    .filter-field .form-select {
+        min-height: 44px;
+        font-size: 16px;
+    }
+    .filter-actions .btn {
+        min-height: 44px;
+        font-size: 0.78rem;
     }
 }
 
@@ -2007,34 +2070,35 @@
 
 @media (max-width: 767.98px) {
     .complaint-card {
-        padding: 1rem 1.15rem !important;
-        border-radius: 16px !important;
+        padding: 1rem 1.15rem;
+        border-radius: 16px;
     }
     .complaint-card .badge {
-        font-size: 0.74rem;
+        font-size: 0.75rem;
     }
     .complaint-card .complaint-title {
-        font-size: 1.05rem !important;
+        font-size: 1.05rem;
     }
     .complaint-card .complaint-meta {
         font-size: 0.8rem;
     }
     .complaint-card .complaint-desc {
         font-size: 0.86rem;
-        margin-bottom: 0.65rem !important;
+        margin-bottom: 0.65rem;
         line-height: 1.45;
     }
     .complaint-card .notif-admin-callout {
-        margin-bottom: 0.65rem !important;
-        padding: 0.45rem 0.75rem !important;
+        margin-bottom: 0.65rem;
+        padding: 0.45rem 0.75rem;
         font-size: 0.82rem;
     }
     .complaint-card .complaint-footer {
-        padding-top: 0.65rem !important;
+        padding-top: 0.65rem;
     }
     .complaint-card .tracking-btn {
-        padding: 0.3rem 0.85rem !important;
-        font-size: 0.82rem !important;
+        min-height: 44px;
+        padding: 0.35rem 0.85rem;
+        font-size: 0.82rem;
     }
 }
 
@@ -2043,34 +2107,35 @@
         gap: 0.85rem;
     }
     .notif-header-card {
-        padding: 1rem 0.95rem !important;
-        border-radius: 14px !important;
+        padding: 1rem 0.95rem;
+        border-radius: 14px;
     }
     .notif-header-card h2 {
-        font-size: 1.15rem !important;
+        font-size: 1.15rem;
     }
     .notif-header-card p {
-        font-size: 0.8rem !important;
+        font-size: 0.8rem;
     }
     .notif-header-card .btn {
-        padding: 0.35rem 0.9rem !important;
-        font-size: 0.8rem !important;
+        min-height: 44px;
+        padding: 0.35rem 0.9rem;
+        font-size: 0.8rem;
     }
     .complaint-card {
-        padding: 0.8rem 0.9rem !important;
-        border-radius: 14px !important;
+        padding: 0.85rem 0.95rem;
+        border-radius: 14px;
     }
     .complaint-card .badge {
-        font-size: 0.7rem;
+        font-size: 0.75rem;
         padding: 0.2rem 0.5rem;
     }
     .complaint-card .complaint-title {
-        font-size: 0.96rem !important;
-        margin-top: 0.3rem !important;
-        margin-bottom: 0.15rem !important;
+        font-size: 0.96rem;
+        margin-top: 0.3rem;
+        margin-bottom: 0.15rem;
     }
     .complaint-card .risk-badge {
-        font-size: 0.68rem;
+        font-size: 0.75rem;
         padding: 0.2rem 0.6rem;
     }
     .complaint-card .complaint-meta {
@@ -2078,52 +2143,56 @@
     }
     .complaint-card .complaint-desc {
         font-size: 0.8rem;
-        margin-bottom: 0.5rem !important;
+        margin-bottom: 0.5rem;
         line-height: 1.4;
     }
     .complaint-card .notif-admin-callout {
-        margin-bottom: 0.5rem !important;
-        padding: 0.35rem 0.6rem !important;
+        margin-bottom: 0.5rem;
+        padding: 0.35rem 0.6rem;
         font-size: 0.76rem;
     }
     .complaint-card .complaint-footer {
-        padding-top: 0.5rem !important;
+        padding-top: 0.5rem;
     }
     .complaint-card .tracking-btn {
-        padding: 0.25rem 0.75rem !important;
-        font-size: 0.75rem !important;
+        min-height: 44px;
+        padding: 0.3rem 0.75rem;
+        font-size: 0.75rem;
     }
 
     .quick-risk-filters {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        border-radius: 16px !important;
-        padding: 0.35rem !important;
-        gap: 0.35rem !important;
-        max-width: 100% !important;
-        scrollbar-width: none !important;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 16px;
+        padding: 0.35rem;
+        gap: 0.35rem;
+        max-width: 100%;
+        scrollbar-width: none;
     }
     .quick-risk-filters::-webkit-scrollbar {
-        display: none !important;
+        display: none;
     }
     .quick-risk-filters .quick-pill {
-        white-space: nowrap !important;
-        flex-shrink: 0 !important;
-        padding: 0.45rem 0.95rem !important;
-        font-size: 0.8rem !important;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 0.45rem 0.95rem;
+        font-size: 0.8rem;
     }
 
     .customer-shell .stall-banner {
-        aspect-ratio: 16 / 9 !important;
-        min-height: 200px !important;
+        aspect-ratio: 16 / 9;
+        min-height: 200px;
     }
     .stall-banner-overlay {
-        padding: 1rem !important;
+        padding: 1rem;
     }
     .stall-banner-overlay h2 {
-        font-size: 1.25rem !important;
+        font-size: 1.25rem;
     }
 }
 

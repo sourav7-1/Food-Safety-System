@@ -438,9 +438,8 @@ body.admin-body {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    position: sticky;
-    top: 12px;
-    z-index: 1020;
+    position: relative;
+    z-index: 10;
     box-shadow: var(--card-shadow);
     margin-bottom: 20px;
 }

@@ -2256,11 +2256,16 @@ body {
         line-height: 44px;
     }
 
-    /* Reduce excessive container paddings and margins on phones */
+    /* Reduce excessive container paddings and margins on phones, respect safe areas */
     .container,
     .container-fluid {
-        padding-left: 14px;
-        padding-right: 14px;
+        padding-left: max(14px, env(safe-area-inset-left, 0px));
+        padding-right: max(14px, env(safe-area-inset-right, 0px));
+    }
+
+    .site-navbar {
+        padding-left: max(1rem, env(safe-area-inset-left, 0px));
+        padding-right: max(1rem, env(safe-area-inset-right, 0px));
     }
 
     /* Form rows stack cleanly on mobile */
@@ -2273,6 +2278,57 @@ body {
     img {
         max-width: 100%;
         height: auto;
+    }
+}
+
+@media (max-width: 575.98px) {
+    /* Mobile Modals: Safe Margins & Fullscreen-sm-down */
+    .modal-dialog:not(.modal-fullscreen):not(.modal-fullscreen-sm-down) {
+        margin: 0.5rem auto;
+        max-width: calc(100vw - 1rem);
+    }
+    .modal-dialog.modal-fullscreen-sm-down {
+        margin: 0;
+        max-width: 100vw;
+        width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+    .modal-dialog.modal-fullscreen-sm-down .modal-content {
+        min-height: 100vh;
+        min-height: 100dvh;
+        border-radius: 0;
+        border: none;
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
+    }
+    .modal-dialog.modal-fullscreen-sm-down .modal-header {
+        padding-top: calc(0.85rem + env(safe-area-inset-top, 0px));
+    }
+    .modal-dialog.modal-fullscreen-sm-down .modal-footer {
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    }
+    .modal-content {
+        border-radius: 16px;
+    }
+    .modal-header {
+        padding: 0.85rem 1rem;
+    }
+    .modal-body {
+        padding: 0.85rem 1rem;
+    }
+    .modal-footer {
+        padding: 0.75rem 1rem;
+        gap: 0.5rem;
+    }
+
+    /* Off-Canvas Navigation Safe Areas */
+    .offcanvas-start,
+    .offcanvas-end {
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
     }
 }
 

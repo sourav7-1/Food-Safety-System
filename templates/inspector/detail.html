@@ -38,10 +38,10 @@
     <div class="criteria-header"><div class="section-heading mb-0"><span><i class="fa-solid fa-list-check"></i></span><div><h2>Submitted scores</h2><p>Complete criterion-level inspection record.</p></div></div></div>
     <div class="table-responsive">
         <table class="table criteria-table align-middle mb-0">
-            <thead><tr><th>Criterion</th><th>Score</th><th>Maximum</th><th>Comments</th></tr></thead>
+            <thead><tr><th>Criterion</th><th>Score</th><th class="d-none d-md-table-cell">Maximum</th><th>Comments</th></tr></thead>
             <tbody>
             {% for item in inspection.scores %}
-                <tr><td><strong>{{ item.criterion.criteria_name }}</strong></td><td><strong>{{ item.score }}</strong></td><td>{{ item.criterion.max_score }}</td><td>{{ item.comments or '—' }}</td></tr>
+                <tr><td><strong>{{ item.criterion.criteria_name }}</strong></td><td><strong>{{ item.score }}</strong><small class="text-muted d-md-none"> / {{ item.criterion.max_score }}</small></td><td class="d-none d-md-table-cell">{{ item.criterion.max_score }}</td><td>{{ item.comments or '—' }}</td></tr>
             {% endfor %}
             </tbody>
         </table>

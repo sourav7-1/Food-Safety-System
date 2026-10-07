@@ -1255,8 +1255,9 @@ select.admin-form-control {
     .btn-prof-danger {
         min-height: 48px;
     }
-    .admin-form-control {
-        font-size: 16px; /* below 16px iOS zooms the page on focus */
+    input, select, textarea,
+    .form-control, .form-select, .admin-form-control {
+        font-size: 16px !important; /* below 16px iOS zooms the page on focus */
     }
     .security-notice-box .admin-input-group {
         max-width: none !important;

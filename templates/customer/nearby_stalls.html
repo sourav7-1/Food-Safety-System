@@ -217,8 +217,20 @@
 .nearby-popup p { margin: 0 0 4px; font-size: 0.82rem; color: #475569; }
 .nearby-popup a.btn { margin-top: 6px; }
 
-@media (max-width: 576px) {
-    #nearbyMap { height: 360px; }
+@media (max-width: 767.98px) {
+    #nearbyMap {
+        height: 380px;
+        height: clamp(300px, 52vh, 460px);
+        height: clamp(300px, 52dvh, 460px);
+    }
+    .leaflet-popup-content-wrapper {
+        max-width: calc(100vw - 32px);
+        border-radius: 14px;
+    }
+    .nearby-popup {
+        max-width: 100%;
+        word-break: break-word;
+    }
 }
 </style>
 {% endblock %}
@@ -291,6 +303,9 @@
     // render at a stale size.
     window.setTimeout(function () { map.invalidateSize(); }, 150);
     window.addEventListener("resize", function () { map.invalidateSize(); });
+    window.addEventListener("orientationchange", function () {
+        window.setTimeout(function () { map.invalidateSize(); }, 200);
+    });
 
     var USER_ICON = L.divIcon({
         className: "nearby-user-icon",
@@ -397,7 +412,7 @@
         data.stalls.forEach(function (stall) {
             var marker = L.marker([stall.latitude, stall.longitude], { icon: stallIcon(stall.marker_color, stall.category) })
                 .addTo(map)
-                .bindPopup(popupHtml(stall));
+                .bindPopup(popupHtml(stall), { maxWidth: Math.min(320, Math.max(220, window.innerWidth - 32)) });
             stallMarkers.push(marker);
         });
     }
