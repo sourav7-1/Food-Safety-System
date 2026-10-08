@@ -1247,7 +1247,7 @@ p {
     padding: 0;
     margin: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
     gap: 1.5rem;
 }
 
@@ -2333,3 +2333,27 @@ body {
 }
 
 
+
+/* Global reduced-motion safety net: the per-component rules above only
+   covered a few elements (dashboard fade-ins, pulsing live dots, bell ring,
+   card lifts and smooth scrolling still moved). Animations jump to their
+   end state instead of being removed, so nothing is left hidden. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Touch screens have no real hover: a tapped card kept its hover lift
+   ("sticky hover") until the next tap elsewhere. Mouse/trackpad users keep
+   the lift; press feedback still comes from the :active styles. */
+@media (hover: none) {
+    [class*="card"]:hover {
+        transform: none !important;
+    }
+}

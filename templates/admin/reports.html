@@ -181,6 +181,7 @@
 <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
 <script>
 Chart.defaults.font.family = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif";
+if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { Chart.defaults.animation = false; }
 Chart.defaults.color = "#64748b";
 const grid = {color:"#f1f5f9"};
 // Phones only: long stall/area names would squeeze the bars; tooltips keep the full name.

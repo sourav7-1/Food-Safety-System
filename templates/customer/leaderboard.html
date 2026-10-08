@@ -264,6 +264,7 @@
     if (chartEl && window.Chart) {
         var initial = {{ risk_distribution|tojson }};
         Chart.defaults.font.family = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif";
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { Chart.defaults.animation = false; }
         Chart.defaults.color = "#64748b";
         chart = new Chart(chartEl, {
             type: "doughnut",

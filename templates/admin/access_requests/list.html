@@ -34,29 +34,6 @@
                         {% if entry.status == 'pending' %}
                         {% if entry.requested_role == 'inspector' %}
                         <button class="btn btn-sm btn-success" type="button" data-bs-toggle="modal" data-bs-target="#approveInspector{{ entry.request_id }}">Approve</button>
-                        <div class="modal fade" id="approveInspector{{ entry.request_id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                                <form class="modal-content" method="post" action="{{ url_for('admin.access_request_approve', request_id=entry.request_id) }}">
-                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                    <div class="modal-header"><h5 class="modal-title">Approve Inspector access</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                                    <div class="modal-body">
-                                        <p class="text-secondary small">Inspector accounts need an employee code, same as creating one directly in Users.</p>
-                                        <label>Employee code</label>
-                                        <input class="form-control mb-2" name="employee_code" required maxlength="80">
-                                        <label>Designation <span class="text-secondary">(optional)</span></label>
-                                        <input class="form-control mb-2" name="designation" maxlength="100">
-                                        <label>Assigned area <span class="text-secondary">(optional)</span></label>
-                                        <select class="form-select" name="assigned_area_id">
-                                            <option value="">Not assigned</option>
-                                            {% for area in areas %}
-                                            <option value="{{ area.area_id }}">{{ area.area_name }} — {{ area.city }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    <div class="modal-footer"><button class="btn btn-success" type="submit">Approve</button></div>
-                                </form>
-                            </div>
-                        </div>
                         {% else %}
                         <form method="post" action="{{ url_for('admin.access_request_approve', request_id=entry.request_id) }}" class="d-inline">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -78,6 +55,36 @@
         </table>
     </div>
 </div>
+
+{# Approve-inspector dialogs live outside the table: the glass table and
+   reveal-animated card create containing blocks that would otherwise
+   size/position these fixed modals against the table (422px wide on a
+   360px phone). #}
+{% for entry in role_entries if entry.status == 'pending' and entry.requested_role == 'inspector' %}
+        <div class="modal fade" id="approveInspector{{ entry.request_id }}" tabindex="-1" aria-labelledby="approveInspectorTitle{{ entry.request_id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <form class="modal-content" method="post" action="{{ url_for('admin.access_request_approve', request_id=entry.request_id) }}">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header"><h5 class="modal-title" id="approveInspectorTitle{{ entry.request_id }}">Approve Inspector access</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                    <div class="modal-body">
+                        <p class="text-secondary small">Inspector accounts need an employee code, same as creating one directly in Users.</p>
+                        <label>Employee code</label>
+                        <input class="form-control mb-2" name="employee_code" required maxlength="80">
+                        <label>Designation <span class="text-secondary">(optional)</span></label>
+                        <input class="form-control mb-2" name="designation" maxlength="100">
+                        <label>Assigned area <span class="text-secondary">(optional)</span></label>
+                        <select class="form-select" name="assigned_area_id">
+                            <option value="">Not assigned</option>
+                            {% for area in areas %}
+                            <option value="{{ area.area_id }}">{{ area.area_name }} — {{ area.city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="modal-footer"><button class="btn btn-success" type="submit">Approve</button></div>
+                </form>
+            </div>
+        </div>
+{% endfor %}
 
 <div class="panel-card p-0 overflow-hidden">
     <div class="table-responsive">

@@ -284,6 +284,10 @@ function initRiskDistributionChart() {
         },
     };
 
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        Chart.defaults.animation = false;
+    }
+
     new Chart(ctx, {
         type: "doughnut",
         data: {

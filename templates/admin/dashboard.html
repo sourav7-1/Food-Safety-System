@@ -251,7 +251,7 @@
                     <p class="text-secondary small mb-0" style="font-size: 11.5px;">Latest feedback and safety incidents</p>
                 </div>
                 {% if current_user.has_permission('complaints.view') %}
-                <a href="{{ url_for('admin.complaints') }}" class="small fw-bold text-primary text-decoration-none">
+                <a href="{{ url_for('admin.complaints') }}" class="small fw-bold text-primary text-decoration-none text-nowrap flex-shrink-0">
                     View all &rarr;
                 </a>
                 {% endif %}

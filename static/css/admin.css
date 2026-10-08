@@ -1562,6 +1562,8 @@ body.admin-body {
     .admin-topbar .topbar-title-group { gap: 8px; }
     .admin-topbar .topbar-title-group h1 { font-size: 1rem; }
     .page-actionbar { align-items: stretch; flex-direction: column; }
+    /* fill the column instead of shrink-wrapping the input (overflowed at 320px) */
+    .search-bar { width: 100%; }
     .action-button { align-self: flex-start; }
     .kpi-card { min-height: 140px; }
     .chart-wide, .chart-doughnut { height: 220px; }
@@ -1578,9 +1580,14 @@ body.admin-body {
     will-change: opacity, transform;
 }
 
+/* Ends at `none` (still animates) and releases will-change: an identity
+   transform kept forever makes every revealed card a containing block for
+   fixed descendants (modals inside tables rendered table-sized) and a
+   permanent GPU layer. */
 .scroll-reveal.is-visible {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: none;
+    will-change: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

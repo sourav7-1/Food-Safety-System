@@ -794,9 +794,32 @@ body.admin-body {
 
 .ongoing-header {
     display: flex;
+    flex-wrap: wrap; /* the View All link drops below instead of crushing to 3 lines */
+    gap: 8px 12px;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 18px;
+}
+
+.ongoing-header .btn {
+    white-space: nowrap;
+}
+
+/* Phones: the three status chips share the row instead of running off it */
+@media (max-width: 575.98px) {
+    .dashboard-subheader .chip-group {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+    }
+    .dashboard-subheader .filter-chip {
+        justify-content: center;
+        padding-left: 6px;
+        padding-right: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
 
 .pastel-card {
